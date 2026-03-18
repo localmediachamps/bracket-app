@@ -18,7 +18,7 @@ query "admin/weight/{id}/wrestlers" verb=GET {
       field_value = $input.id
     } as $weight_class
   
-    precondition ($weight_class == null) {
+    precondition ($weight_class != null) {
       error_type = "notfound"
       error = "Weight class not found."
     }

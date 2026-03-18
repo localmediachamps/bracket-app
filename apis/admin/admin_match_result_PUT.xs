@@ -27,7 +27,7 @@ query "admin/match/{id}/result" verb=PUT {
       field_value = $input.id
     } as $match
   
-    precondition ($match == null) {
+    precondition ($match != null) {
       error_type = "notfound"
       error = "Bracket match not found."
     }

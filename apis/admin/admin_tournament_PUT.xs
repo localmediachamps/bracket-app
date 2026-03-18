@@ -27,7 +27,7 @@ query "admin/tournament/{id}" verb=PUT {
       field_value = $input.id
     } as $existing
   
-    precondition ($existing == null) {
+    precondition ($existing != null) {
       error_type = "notfound"
       error = "Tournament not found."
     }

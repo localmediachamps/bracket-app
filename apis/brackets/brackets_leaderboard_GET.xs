@@ -20,7 +20,7 @@ query "brackets/tournament/{id}/leaderboard" verb=GET {
       field_value = $input.id
     } as $tournament
   
-    precondition ($tournament == null) {
+    precondition ($tournament != null) {
       error_type = "notfound"
       error = "Tournament not found."
     }

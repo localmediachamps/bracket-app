@@ -18,12 +18,12 @@ query "admin/tournament/{id}/publish" verb=POST {
       field_value = $input.id
     } as $tournament
   
-    precondition ($tournament == null) {
+    precondition ($tournament != null) {
       error_type = "notfound"
       error = "Tournament not found."
     }
   
-    precondition ($tournament.status != "draft") {
+    precondition ($tournament.status == "draft") {
       error_type = "badrequest"
       error = "Only draft tournaments can be published."
     }

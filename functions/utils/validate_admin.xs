@@ -12,7 +12,7 @@ function validate_admin {
       output = ["id", "is_admin"]
     } as $user
   
-    precondition ($user == null || $user.is_admin != true) {
+    precondition ($user != null && $user.is_admin == true) {
       error_type = "accessdenied"
       error = "Admin access required."
     }
