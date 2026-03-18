@@ -74,4 +74,6 @@ function parse_bracket_pdf {
     parsed    : $parsed.weights
     raw_output: $content_text
   }
+
+  history = 100
 }
