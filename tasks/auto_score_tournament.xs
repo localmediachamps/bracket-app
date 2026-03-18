@@ -82,6 +82,4 @@ task "auto_score_tournament" {
       value = {total_scored: $total_scored}
     }
   }
-
-  response = {total_scored: $total_scored}
 }

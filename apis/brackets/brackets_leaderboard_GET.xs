@@ -29,10 +29,7 @@ query "brackets/tournament/{id}/leaderboard" verb=GET {
     db.query user_bracket {
       where  = $db.user_bracket.tournament_id == $input.id
       sort   = {user_bracket.total_points: "desc"}
-      return = {
-        type  : "page"
-        paging: {page: $input.page, per_page: $input.per}
-      }
+      return = {type: "list", paging: {page: $input.page, per_page: $input.per, totals: true}}
     } as $brackets_page
 
     var $enriched_items {
