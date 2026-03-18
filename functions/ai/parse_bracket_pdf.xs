@@ -1,20 +1,17 @@
-// Sends a PDF (base64-encoded) to Claude AI and extracts wrestler data per weight class.
-// Returns a raw parsed array for admin review — does NOT write to the database.
-// Uses Anthropic Messages API with PDF document support (claude-opus-4-6).
+// Sends a PDF (base64-encoded) to Claude AI and extracts wrestler data.
+// Works with any bracket format — discovers weight classes and participant counts from the PDF.
+// Does NOT write to the database.
 function parse_bracket_pdf {
   input {
     // base64-encoded PDF content
     text pdf_base64
-  
-    // Anthropic API key
-    text anthropic_api_key
   }
 
   stack {
     var $user_prompt {
-      value = 'Extract all wrestlers from this NCAA Division I wrestling bracket PDF for all 10 weight classes (125, 133, 141, 149, 157, 165, 174, 184, 197, 285). NCAA DI has 33 qualifiers per weight class, seeded 1-33. Return ONLY a valid JSON object in exactly this format with no other text: {"weights": [{"weight": 125, "wrestlers": [{"seed": 1, "name": "First Last", "school": "University Name"}, ...]}, ...]}. Rules: seed must be integer 1-33, name should be First Last format, school is full institution name, if a seed slot is empty use null for name and school, return exactly 33 entries per weight class.'
+      value = 'Extract all wrestlers from this wrestling bracket PDF. Identify every weight class present in the document and all participants in each weight class. Return ONLY a valid JSON object in exactly this format with no other text: {"weights": [{"weight": 125, "wrestlers": [{"seed": 1, "name": "First Last", "school": "Team Name"}, ...]}, ...]}. Rules: weight is the integer weight class value in pounds, seed is the wrestler seeding integer (or null if not seeded), name is in First Last format, school is the full team or institution name. Include ALL weight classes found in the PDF and ALL wrestlers in each class. Skip empty entries. Do not assume any fixed number of weight classes or wrestlers per class.'
     }
-  
+
     // Call Claude API to parse bracket PDF
     api.request {
       url = "https://api.anthropic.com/v1/messages"
@@ -22,7 +19,7 @@ function parse_bracket_pdf {
       params = {
         model     : "claude-opus-4-6"
         max_tokens: 8192
-        system    : "You are a data extraction assistant. You extract NCAA Division I wrestling bracket data from PDF documents. Return only valid JSON with no additional text, markdown formatting, or explanation."
+        system    : "You are a data extraction assistant. You extract wrestling bracket data from PDF documents. Return only valid JSON with no additional text, markdown formatting, or explanation."
         messages  : [
           {
             role: "user"
@@ -43,29 +40,29 @@ function parse_bracket_pdf {
           }
         ]
       }
-    
+
       headers = []
-        |push:"x-api-key: " ~ $input.anthropic_api_key
+        |push:"x-api-key: " ~ $env.anthropicAPIkey
         |push:"anthropic-version: 2023-06-01"
         |push:"content-type: application/json"
     } as $api_response
-  
+
     var $content_text {
       value = $api_response|get:"content.0.text":null
     }
-  
+
     precondition ($content_text != null) {
       error_type = "inputerror"
-      error = "No response content from Claude API. Check API key and PDF format."
+      error = "Claude API returned no content. Full response: " ~ ($api_response|json_encode)
     }
-  
+
     var $parsed {
       value = $content_text|json_decode
     }
-  
+
     precondition ($parsed != null && ($parsed|get:"weights":null) != null) {
       error_type = "inputerror"
-      error = "Failed to parse Claude response as valid bracket JSON. Please review the raw output and enter data manually."
+      error = "Failed to parse Claude response as JSON. Raw output: " ~ $content_text
     }
   }
 
@@ -74,6 +71,4 @@ function parse_bracket_pdf {
     parsed    : $parsed.weights
     raw_output: $content_text
   }
-
-  history = 100
 }
