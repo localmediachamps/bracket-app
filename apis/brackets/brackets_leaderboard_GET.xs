@@ -1,53 +1,56 @@
+// Get the leaderboard for a tournament with user names and rankings.
 query "brackets/tournament/{id}/leaderboard" verb=GET {
-  api_group = "Brackets"
-  description = "Get the leaderboard for a tournament with user names and rankings."
+  api_group = "brackets"
   auth = "user"
 
   input {
-    int id {
-      description = "Tournament ID"
-    }
-    int page?=1 filters=min:1 {
-      description = "Page number"
-    }
-    int per?=25 filters=min:1|max:100 {
-      description = "Results per page"
-    }
+    // Tournament ID
+    int id
+  
+    // Page number
+    int page?=1 filters=min:1
+  
+    // Results per page
+    int per?=25 filters=min:1|max:100
   }
 
   stack {
     db.get tournament {
-      field_name  = "id"
+      field_name = "id"
       field_value = $input.id
     } as $tournament
-
+  
     precondition ($tournament != null) {
       error_type = "notfound"
-      error      = "Tournament not found."
+      error = "Tournament not found."
     }
-
+  
     db.query user_bracket {
-      where  = $db.user_bracket.tournament_id == $input.id
-      sort   = {user_bracket.total_points: "desc"}
-      return = {type: "list", paging: {page: $input.page, per_page: $input.per, totals: true}}
+      where = $db.user_bracket.tournament_id == $input.id
+      sort = {user_bracket.total_points: "desc"}
+      return = {
+        type  : "list"
+        paging: {page: $input.page, per_page: $input.per, totals: true}
+      }
     } as $brackets_page
-
+  
     var $enriched_items {
       value = []
     }
-
+  
     foreach ($brackets_page.items) {
       each as $bracket {
         db.get user {
-          field_name  = "id"
+          field_name = "id"
           field_value = $bracket.user_id
-          output      = ["id", "name"]
+          output = ["id", "name"]
         } as $bracket_user
-
+      
         var $item {
-          value = $bracket|set:"user_name":$bracket_user.name
+          value = $bracket
+            |set:"user_name":$bracket_user.name
         }
-
+      
         array.push $enriched_items {
           value = $item
         }

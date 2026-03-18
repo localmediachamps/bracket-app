@@ -1,6 +1,6 @@
+// List all tournaments ordered by year descending.
 query "brackets/tournaments" verb=GET {
-  api_group = "Brackets"
-  description = "List all tournaments ordered by year descending."
+  api_group = "brackets"
   auth = "user"
 
   input {
@@ -8,7 +8,7 @@ query "brackets/tournaments" verb=GET {
 
   stack {
     db.query tournament {
-      sort   = {tournament.year: "desc"}
+      sort = {tournament.year: "desc"}
       return = {type: "list"}
     } as $tournaments
   }

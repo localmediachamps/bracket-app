@@ -1,42 +1,41 @@
+// Record the result of a bracket match. Admin only.
 query "admin/match/{id}/result" verb=PUT {
-  api_group = "Admin"
-  description = "Record the result of a bracket match. Admin only."
+  api_group = "admin"
   auth = "user"
 
   input {
-    int id {
-      description = "Bracket match ID"
-    }
-    int winner_wrestler_id {
-      description = "ID of the winning wrestler"
-    }
-    text decision filters=trim {
-      description = "Win decision type (dec, md, tf, fall, inj_def, ff, dq)"
-    }
-    text score? filters=trim {
-      description = "Match score (optional)"
-    }
+    // Bracket match ID
+    int id
+  
+    // ID of the winning wrestler
+    int winner_wrestler_id
+  
+    // Win decision type (dec, md, tf, fall, inj_def, ff, dq)
+    text decision filters=trim
+  
+    // Match score (optional)
+    text score? filters=trim
   }
 
   stack {
     function.run validate_admin {
       input = {user_id: $auth.id}
     } as $admin_check
-
+  
     db.get bracket_match {
-      field_name  = "id"
+      field_name = "id"
       field_value = $input.id
     } as $match
-
+  
     precondition ($match != null) {
       error_type = "notfound"
-      error      = "Bracket match not found."
+      error = "Bracket match not found."
     }
-
+  
     db.edit bracket_match {
-      field_name  = "id"
+      field_name = "id"
       field_value = $input.id
-      data        = {
+      data = {
         actual_winner_wrestler_id: $input.winner_wrestler_id
         actual_winner_decision   : $input.decision
         actual_score             : $input.score

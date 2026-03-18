@@ -1,25 +1,24 @@
+// Create a new tournament with default scoring rules and weight classes. Admin only.
 query "admin/tournament" verb=POST {
-  api_group = "Admin"
-  description = "Create a new tournament with default scoring rules and weight classes. Admin only."
+  api_group = "admin"
   auth = "user"
 
   input {
-    text name filters=trim {
-      description = "Tournament name"
-    }
-    int year {
-      description = "Tournament year"
-    }
-    int locks_at {
-      description = "Timestamp when bracket picks are locked"
-    }
+    // Tournament name
+    text name filters=trim
+  
+    // Tournament year
+    int year
+  
+    // Timestamp when bracket picks are locked
+    int locks_at
   }
 
   stack {
     function.run validate_admin {
       input = {user_id: $auth.id}
     } as $admin_check
-
+  
     db.add tournament {
       data = {
         created_at: now
@@ -29,11 +28,8 @@ query "admin/tournament" verb=POST {
         locks_at  : $input.locks_at
       }
     } as $tournament
-
-    function.run get_default_scoring_config {
-      input = {}
-    } as $scoring_rules
-
+  
+    function.run get_default_scoring_config as $scoring_rules
     foreach ($scoring_rules) {
       each as $rule {
         db.add scoring_rule {
@@ -45,11 +41,11 @@ query "admin/tournament" verb=POST {
         } as $new_rule
       }
     }
-
+  
     var $weights {
       value = [125, 133, 141, 149, 157, 165, 174, 184, 197, 285]
     }
-
+  
     foreach ($weights) {
       each as $w {
         db.add weight_class {
