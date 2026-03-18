@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign In — NCAA Wrestling Bracket</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:2.5rem;">🤼</div>
+      <h1>NCAA Wrestling<br>Bracket Predictions</h1>
+      <p>Sign in to make your picks</p>
+    </div>
+
+    <div id="alert" class="alert alert-danger alert-hidden"><span id="alert-msg"></span></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input type="email" id="email" class="form-control" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+      <button type="submit" id="submit-btn" class="btn btn-primary" style="width:100%;">Sign In</button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="/register.html">Create one</a>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  if (getToken()) window.location.replace('/tournaments.html');
+
+  const form      = document.getElementById('login-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const alertEl   = document.getElementById('alert');
+  const alertMsg  = document.getElementById('alert-msg');
+
+  function showError(msg) {
+    alertMsg.textContent = msg;
+    alertEl.classList.remove('alert-hidden');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertEl.classList.add('alert-hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in…';
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const res  = await apiLogin(email, password);
+      setToken(res.authToken);
+      const user = await apiMe();
+      setUser(user);
+      window.location.replace('/tournaments.html');
+    } catch (err) {
+      showError(err.message || 'Login failed. Check your credentials.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bracket — NCAA Wrestling</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/bracket.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/tournaments.html" class="navbar-brand">🤼 Wrestling Bracket</a>
+  <ul class="navbar-nav">
+    <li><span id="nav-user" class="nav-user"></span></li>
+    <li><a id="leaderboard-link" href="/leaderboard.html" class="nav-link">Leaderboard</a></li>
+    <li><button onclick="logout()" class="btn btn-secondary btn-sm">Sign Out</button></li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <h1 id="tournament-name" style="margin-bottom:0.15rem;">Loading…</h1>
+      <p class="text-muted" id="tournament-status" style="margin:0;"></p>
+    </div>
+  </div>
+
+  <div id="locked-banner" class="locked-banner hidden">
+    Picks are closed — this tournament is locked. You can still view your bracket below.
+  </div>
+
+  <div id="weight-tabs" class="weight-tabs"></div>
+
+  <div id="bracket-loading" class="loading-overlay"><div class="spinner"></div></div>
+  <div id="bracket-error" class="alert alert-danger alert-hidden"><span id="bracket-error-msg"></span></div>
+
+  <div id="bracket-container" class="bracket-container hidden"></div>
+</div>
+
+<div id="save-indicator" class="save-indicator hidden"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/bracket-renderer.js"></script>
+<script>
+  requireAuth();
+
+  const user = getUser();
+  if (user) document.getElementById('nav-user').textContent = user.name || user.email;
+
+  const params       = new URLSearchParams(window.location.search);
+  const tournamentId = parseInt(params.get('tournament_id'), 10);
+
+  if (!tournamentId) {
+    window.location.replace('/tournaments.html');
+  }
+
+  document.getElementById('leaderboard-link').href = `/leaderboard.html?tournament_id=${tournamentId}`;
+
+  const WEIGHTS     = [125, 133, 141, 149, 157, 165, 174, 184, 197, 285];
+  let activeWeight  = WEIGHTS[0];
+  let userBracketId = null;
+  let tournament    = null;
+  let currentData   = null; // current weight bracket data
+  let picksMap      = {};   // local picks map for current weight
+
+  // ── Save indicator ──────────────────────────────────────────────────────────
+  let saveTimer = null;
+  function showSave(msg, type = 'saving') {
+    const el = document.getElementById('save-indicator');
+    el.textContent = msg;
+    el.className = `save-indicator ${type}`;
+    el.classList.remove('hidden', 'fade-out');
+    clearTimeout(saveTimer);
+    if (type !== 'saving') {
+      saveTimer = setTimeout(() => { el.classList.add('fade-out'); }, 1800);
+    }
+  }
+
+  // ── Weight tabs ─────────────────────────────────────────────────────────────
+  function buildWeightTabs() {
+    const container = document.getElementById('weight-tabs');
+    for (const w of WEIGHTS) {
+      const btn = document.createElement('button');
+      btn.className = 'weight-tab' + (w === activeWeight ? ' active' : '');
+      btn.textContent = w + ' lbs';
+      btn.dataset.weight = w;
+      btn.addEventListener('click', () => selectWeight(w));
+      container.appendChild(btn);
+    }
+  }
+
+  function selectWeight(w) {
+    if (w === activeWeight) return;
+    activeWeight = w;
+    document.querySelectorAll('.weight-tab').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.weight, 10) === w);
+    });
+    loadWeight(w);
+  }
+
+  // ── Load weight ─────────────────────────────────────────────────────────────
+  async function loadWeight(weight) {
+    const loadingEl   = document.getElementById('bracket-loading');
+    const containerEl = document.getElementById('bracket-container');
+    const errorEl     = document.getElementById('bracket-error');
+
+    loadingEl.classList.remove('hidden');
+    containerEl.classList.add('hidden');
+    errorEl.classList.add('alert-hidden');
+
+    try {
+      const data = await apiGetWeightBracket(tournamentId, weight);
+      currentData = data;
+      picksMap    = { ...(data.picks_map || {}) };
+
+      // Normalize keys to int
+      const normalized = {};
+      for (const [k, v] of Object.entries(picksMap)) normalized[parseInt(k, 10)] = v;
+      picksMap = normalized;
+
+      if (data.user_bracket_id) userBracketId = data.user_bracket_id;
+
+      loadingEl.classList.add('hidden');
+      containerEl.classList.remove('hidden');
+
+      renderBracket(containerEl, { ...data, picks_map: picksMap }, handlePickClick);
+    } catch (err) {
+      loadingEl.classList.add('hidden');
+      document.getElementById('bracket-error-msg').textContent = err.message || 'Failed to load bracket.';
+      errorEl.classList.remove('alert-hidden');
+    }
+  }
+
+  // ── Pick click handler ──────────────────────────────────────────────────────
+  async function handlePickClick(matchId, wrestlerId) {
+    if (!userBracketId) return;
+    if (tournament && (tournament.status === 'locked' || tournament.status === 'completed')) return;
+
+    // Optimistic update
+    const prevPick = picksMap[matchId];
+    picksMap[matchId] = wrestlerId;
+    const containerEl = document.getElementById('bracket-container');
+    renderBracket(containerEl, { ...currentData, picks_map: picksMap }, handlePickClick);
+    showSave('Saving…', 'saving');
+
+    try {
+      await apiMakePick(userBracketId, matchId, wrestlerId);
+      showSave('Saved', 'saved');
+    } catch (err) {
+      // Revert
+      if (prevPick != null) picksMap[matchId] = prevPick;
+      else delete picksMap[matchId];
+      renderBracket(containerEl, { ...currentData, picks_map: picksMap }, handlePickClick);
+      showSave(err.message || 'Save failed', 'error');
+    }
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      // Fetch tournament info + create/get user bracket in parallel
+      const [tournData, bracket] = await Promise.all([
+        apiGetTournament(tournamentId),
+        apiGetMyBracket(tournamentId),
+      ]);
+
+      tournament    = tournData.tournament;
+      userBracketId = bracket.id;
+
+      document.getElementById('tournament-name').textContent = `${tournament.name} ${tournament.year}`;
+      document.getElementById('tournament-status').textContent = 'Status: ' + tournament.status;
+
+      if (tournament.status === 'locked' || tournament.status === 'completed') {
+        document.getElementById('locked-banner').classList.remove('hidden');
+      }
+
+      buildWeightTabs();
+      await loadWeight(activeWeight);
+    } catch (err) {
+      document.getElementById('bracket-loading').classList.add('hidden');
+      document.getElementById('bracket-error-msg').textContent = err.message || 'Failed to initialize bracket.';
+      document.getElementById('bracket-error').classList.remove('alert-hidden');
+    }
+  })();
+</script>
+</body>
+</html>

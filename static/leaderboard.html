@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaderboard — NCAA Wrestling Bracket</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/tournaments.html" class="navbar-brand">🤼 Wrestling Bracket</a>
+  <ul class="navbar-nav">
+    <li><span id="nav-user" class="nav-user"></span></li>
+    <li><a id="bracket-link" href="/bracket.html" class="nav-link">My Bracket</a></li>
+    <li><button onclick="logout()" class="btn btn-secondary btn-sm">Sign Out</button></li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1 id="tournament-title">Leaderboard</h1>
+  </div>
+
+  <div id="alert" class="alert alert-danger alert-hidden"><span id="alert-msg"></span></div>
+  <div id="loading" class="loading-overlay"><div class="spinner"></div></div>
+
+  <div id="content" style="display:none;">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px;">Rank</th>
+            <th>Name</th>
+            <th style="text-align:right; padding-right:1rem;">Points</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+    <div id="pagination" class="pagination"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  const user         = getUser();
+  const params       = new URLSearchParams(window.location.search);
+  const tournamentId = parseInt(params.get('tournament_id'), 10);
+  const PER_PAGE     = 25;
+
+  if (user)    document.getElementById('nav-user').textContent = user.name || user.email;
+  if (tournamentId) {
+    document.getElementById('bracket-link').href      = `/bracket.html?tournament_id=${tournamentId}`;
+  }
+
+  const loadingEl = document.getElementById('loading');
+  const contentEl = document.getElementById('content');
+  const bodyEl    = document.getElementById('leaderboard-body');
+  const alertEl   = document.getElementById('alert');
+  const alertMsg  = document.getElementById('alert-msg');
+  const paginEl   = document.getElementById('pagination');
+
+  let currentPage = 1;
+  let totalPages  = 1;
+
+  function rankBadge(rank) {
+    if (rank === 1) return `<span class="rank-badge rank-1">1</span>`;
+    if (rank === 2) return `<span class="rank-badge rank-2">2</span>`;
+    if (rank === 3) return `<span class="rank-badge rank-3">3</span>`;
+    return `<span class="rank-badge rank-other">${rank}</span>`;
+  }
+
+  async function loadPage(page) {
+    loadingEl.style.display = '';
+    contentEl.style.display = 'none';
+    alertEl.classList.add('alert-hidden');
+
+    try {
+      const data     = await apiGetLeaderboard(tournamentId, page, PER_PAGE);
+      const items    = data.items || [];
+      totalPages     = data.pageTotal || 1;
+      currentPage    = data.curPage   || page;
+
+      loadingEl.style.display = 'none';
+      contentEl.style.display = '';
+      bodyEl.innerHTML = '';
+
+      if (!items.length) {
+        bodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No entries yet.</td></tr>';
+      }
+
+      for (const entry of items) {
+        const isMe  = user && entry.user_id === user.id;
+        const row   = document.createElement('tr');
+        if (isMe) row.className = 'tr-highlight';
+        const rank  = entry.rank != null ? entry.rank : '—';
+        row.innerHTML = `
+          <td>${rankBadge(rank)}</td>
+          <td>${entry.user_name || 'Anonymous'}${isMe ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(you)</span>' : ''}</td>
+          <td style="text-align:right; padding-right:1rem; font-weight:600; color:var(--accent-gold);">${entry.total_points || 0}</td>
+        `;
+        bodyEl.appendChild(row);
+      }
+
+      buildPagination();
+    } catch (err) {
+      loadingEl.style.display = 'none';
+      alertMsg.textContent = err.message || 'Failed to load leaderboard.';
+      alertEl.classList.remove('alert-hidden');
+    }
+  }
+
+  function buildPagination() {
+    paginEl.innerHTML = '';
+    if (totalPages <= 1) return;
+    const prev = document.createElement('button');
+    prev.className = 'page-btn';
+    prev.textContent = '← Prev';
+    prev.disabled = currentPage <= 1;
+    prev.addEventListener('click', () => loadPage(currentPage - 1));
+    paginEl.appendChild(prev);
+    for (let p = 1; p <= totalPages; p++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+      btn.textContent = p;
+      btn.addEventListener('click', () => loadPage(p));
+      paginEl.appendChild(btn);
+    }
+    const next = document.createElement('button');
+    next.className = 'page-btn';
+    next.textContent = 'Next →';
+    next.disabled = currentPage >= totalPages;
+    next.addEventListener('click', () => loadPage(currentPage + 1));
+    paginEl.appendChild(next);
+  }
+
+  async function loadTournamentName() {
+    try {
+      const data = await apiGetTournament(tournamentId);
+      const t    = data.tournament;
+      if (t) document.getElementById('tournament-title').textContent = `${t.name} ${t.year} — Leaderboard`;
+    } catch {}
+  }
+
+  if (!tournamentId) {
+    loadingEl.style.display = 'none';
+    alertMsg.textContent = 'No tournament selected.';
+    alertEl.classList.remove('alert-hidden');
+  } else {
+    loadTournamentName();
+    loadPage(1);
+  }
+</script>
+</body>
+</html>

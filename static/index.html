@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NCAA Wrestling Bracket</title>
+</head>
+<body>
+<script>
+  if (localStorage.getItem('bracket_token')) {
+    window.location.replace('/tournaments.html');
+  } else {
+    window.location.replace('/login.html');
+  }
+</script>
+</body>
+</html>

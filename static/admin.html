@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — NCAA Wrestling Bracket</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/tournaments.html" class="navbar-brand">🤼 Wrestling Bracket</a>
+  <ul class="navbar-nav">
+    <li><span id="nav-user" class="nav-user"></span></li>
+    <li><a href="/tournaments.html" class="nav-link">Tournaments</a></li>
+    <li><button onclick="logout()" class="btn btn-secondary btn-sm">Sign Out</button></li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Admin Panel</h1>
+    <p class="text-muted">Manage tournaments, wrestlers, brackets, and scoring.</p>
+  </div>
+
+  <!-- ── Create Tournament ────────────────────────────────────────────────── -->
+  <div class="admin-section">
+    <div class="admin-section-header">Create Tournament</div>
+    <div class="admin-section-body">
+      <div id="create-alert"   class="alert alert-danger  alert-hidden"><span id="create-alert-msg"></span></div>
+      <div id="create-success" class="alert alert-success alert-hidden"><span id="create-success-msg"></span></div>
+      <form id="create-form" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0.75rem; align-items:end;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Tournament Name</label>
+          <input type="text" id="t-name" class="form-control" placeholder="NCAA Championships 2026" required />
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Year</label>
+          <input type="number" id="t-year" class="form-control" value="2026" required />
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Locks At</label>
+          <input type="datetime-local" id="t-locks" class="form-control" required />
+        </div>
+        <button type="submit" id="create-btn" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Manage Tournament ────────────────────────────────────────────────── -->
+  <div class="admin-section">
+    <div class="admin-section-header">
+      <span>Manage Tournament</span>
+      <select id="tournament-select" class="form-control" style="width:auto; min-width:260px;">
+        <option value="">— Select tournament —</option>
+      </select>
+    </div>
+    <div class="admin-section-body" id="manage-body">
+      <p class="text-muted">Select a tournament above.</p>
+    </div>
+  </div>
+
+  <!-- ── Weight Classes ───────────────────────────────────────────────────── -->
+  <div class="admin-section" id="weight-section" style="display:none;">
+    <div class="admin-section-header">
+      <span>Weight Classes</span>
+      <select id="weight-select" class="form-control" style="width:auto; min-width:200px;">
+        <option value="">— Select weight —</option>
+      </select>
+    </div>
+    <div class="admin-section-body" id="weight-body">
+      <p class="text-muted">Select a weight class to manage wrestlers.</p>
+    </div>
+  </div>
+
+  <!-- ── Match Results ─────────────────────────────────────────────────────── -->
+  <div class="admin-section" id="results-section" style="display:none;">
+    <div class="admin-section-header">Match Results</div>
+    <div class="admin-section-body" id="results-body">
+      <p class="text-muted">Select a weight class above to enter match results.</p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  requireAuth();
+  requireAdmin();
+
+  const user = getUser();
+  if (user) document.getElementById('nav-user').textContent = user.name || user.email;
+
+  let allTournaments  = [];
+  let selectedTournId = null;
+  let selectedWeightId = null;
+  let wrestlerCache   = {};
+
+  // ── Tournaments ────────────────────────────────────────────────────────────
+  async function loadTournaments() {
+    allTournaments = await apiGetTournaments();
+    const sel = document.getElementById('tournament-select');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select tournament —</option>';
+    for (const t of allTournaments) {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.name} (${t.year}) — ${t.status}`;
+      if (String(t.id) === cur) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  // ── Create tournament ──────────────────────────────────────────────────────
+  document.getElementById('create-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('create-btn');
+    document.getElementById('create-alert').classList.add('alert-hidden');
+    document.getElementById('create-success').classList.add('alert-hidden');
+
+    const name    = document.getElementById('t-name').value.trim();
+    const year    = parseInt(document.getElementById('t-year').value, 10);
+    const locksAt = Math.floor(new Date(document.getElementById('t-locks').value).getTime() / 1000);
+
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      const t = await apiCreateTournament(name, year, locksAt);
+      document.getElementById('create-success-msg').textContent = `Created "${t.name}" (ID: ${t.id})`;
+      document.getElementById('create-success').classList.remove('alert-hidden');
+      document.getElementById('t-name').value = '';
+      await loadTournaments();
+    } catch (err) {
+      document.getElementById('create-alert-msg').textContent = err.message || 'Failed.';
+      document.getElementById('create-alert').classList.remove('alert-hidden');
+    } finally { btn.disabled = false; btn.textContent = 'Create'; }
+  });
+
+  // ── Tournament select ──────────────────────────────────────────────────────
+  document.getElementById('tournament-select').addEventListener('change', async (e) => {
+    selectedTournId = parseInt(e.target.value, 10) || null;
+    document.getElementById('weight-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'none';
+    if (!selectedTournId) {
+      document.getElementById('manage-body').innerHTML = '<p class="text-muted">Select a tournament.</p>';
+      return;
+    }
+    const t = allTournaments.find(x => x.id === selectedTournId);
+    if (t) renderManageSection(t);
+    await loadWeightSelect(selectedTournId);
+    document.getElementById('weight-section').style.display = '';
+    document.getElementById('results-section').style.display = '';
+  });
+
+  function renderManageSection(t) {
+    const body   = document.getElementById('manage-body');
+    const locks  = t.locks_at ? new Date(t.locks_at * 1000).toLocaleString() : '—';
+    const badges = { draft:'badge-draft', active:'badge-active', locked:'badge-locked', completed:'badge-completed' };
+    body.innerHTML = `
+      <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center; margin-bottom:1rem;">
+        <div><strong>${t.name}</strong> ${t.year} &nbsp;<span class="badge ${badges[t.status]||'badge-draft'}">${t.status}</span></div>
+        <div class="text-muted" style="font-size:0.85rem;">Locks: ${locks}</div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+        <button class="btn btn-primary btn-sm"    id="btn-publish" ${t.status!=='draft'   ?'disabled':''}>Publish</button>
+        <button class="btn btn-secondary btn-sm"  id="btn-lock"    ${t.status==='locked'||t.status==='completed'?'disabled':''}>Lock</button>
+        <button class="btn btn-success btn-sm"    id="btn-score">Score Tournament</button>
+        <a href="/bracket.html?tournament_id=${t.id}"     class="btn btn-outline-secondary btn-sm" target="_blank">View Bracket</a>
+        <a href="/leaderboard.html?tournament_id=${t.id}" class="btn btn-outline-secondary btn-sm" target="_blank">Leaderboard</a>
+      </div>
+      <div id="manage-msg" style="margin-top:0.75rem; font-size:0.85rem;"></div>
+    `;
+    document.getElementById('btn-publish').addEventListener('click', async () => {
+      setManageMsg('Publishing…', 'muted');
+      try { const r = await apiPublishTournament(t.id); setManageMsg(`Published. Status: ${r.status}`, 'success'); await loadTournaments(); } catch(err) { setManageMsg(err.message,'danger'); }
+    });
+    document.getElementById('btn-lock').addEventListener('click', async () => {
+      setManageMsg('Locking…', 'muted');
+      try { const r = await apiLockTournament(t.id); setManageMsg(`Locked. Status: ${r.status}`, 'success'); await loadTournaments(); } catch(err) { setManageMsg(err.message,'danger'); }
+    });
+    document.getElementById('btn-score').addEventListener('click', async () => {
+      setManageMsg('Scoring…', 'muted');
+      try { const r = await apiScoreTournament(t.id); setManageMsg(`Scored ${r.scored_brackets} brackets.`, 'success'); } catch(err) { setManageMsg(err.message,'danger'); }
+    });
+  }
+  function setManageMsg(msg, type) {
+    const el = document.getElementById('manage-msg');
+    el.textContent = msg;
+    el.style.color = type === 'danger' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--text-muted)';
+  }
+
+  // ── Weight select ──────────────────────────────────────────────────────────
+  async function loadWeightSelect(tournId) {
+    const wcs = await apiGetWeightClasses(tournId);
+    const sel = document.getElementById('weight-select');
+    sel.innerHTML = '<option value="">— Select weight —</option>';
+    for (const wc of wcs) {
+      const opt = document.createElement('option');
+      opt.value = wc.id;
+      opt.textContent = `${wc.weight} lbs`;
+      sel.appendChild(opt);
+    }
+  }
+
+  document.getElementById('weight-select').addEventListener('change', async (e) => {
+    selectedWeightId = parseInt(e.target.value, 10) || null;
+    if (!selectedWeightId) return;
+    await loadWeightSection(selectedWeightId);
+    await loadResultsSection(selectedWeightId);
+  });
+
+  // ── Wrestler management ────────────────────────────────────────────────────
+  async function loadWeightSection(wcId) {
+    const body = document.getElementById('weight-body');
+    body.innerHTML = '<div class="loading-overlay" style="padding:1rem;"><div class="spinner"></div></div>';
+    try {
+      const wrestlers = await apiGetWrestlers(wcId);
+      wrestlerCache[wcId] = wrestlers;
+      renderWrestlerTable(wcId, wrestlers, body);
+    } catch(err) { body.innerHTML = `<p class="text-danger">${err.message}</p>`; }
+  }
+
+  function renderWrestlerTable(wcId, wrestlers, body) {
+    const rows = wrestlers.map((w, i) => `
+      <tr data-idx="${i}" data-id="${w.id || ''}">
+        <td><input type="number" class="form-control w-seed" value="${w.seed||''}" min="1" max="33" style="width:70px;" /></td>
+        <td><input type="text"   class="form-control w-name"   value="${w.name||''}"   placeholder="Name" /></td>
+        <td><input type="text"   class="form-control w-school" value="${w.school||''}" placeholder="School" /></td>
+      </tr>
+    `).join('');
+    body.innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+        <span class="text-muted" style="font-size:0.85rem;">${wrestlers.length} wrestlers</span>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn btn-secondary btn-sm" id="btn-init">Initialize Bracket</button>
+          <button class="btn btn-primary btn-sm"   id="btn-save">Save Wrestlers</button>
+        </div>
+      </div>
+      <div id="wrestlers-msg" style="font-size:0.85rem; margin-bottom:0.5rem;"></div>
+      <div class="table-wrap" style="max-height:400px; overflow-y:auto;">
+        <table><thead><tr><th>Seed</th><th>Name</th><th>School</th></tr></thead>
+        <tbody id="w-tbody">${rows}</tbody></table>
+      </div>
+    `;
+    document.getElementById('btn-save').addEventListener('click', () => saveWrestlers(wcId));
+    document.getElementById('btn-init').addEventListener('click', () => initBracket(wcId));
+  }
+
+  async function saveWrestlers(wcId) {
+    const msgEl = document.getElementById('wrestlers-msg');
+    const rows  = document.getElementById('w-tbody').querySelectorAll('tr');
+    const data  = [];
+    rows.forEach(row => {
+      const id = row.dataset.id ? parseInt(row.dataset.id, 10) : undefined;
+      data.push({ ...(id ? { id } : {}), seed: parseInt(row.querySelector('.w-seed').value,10)||0, name: row.querySelector('.w-name').value.trim(), school: row.querySelector('.w-school').value.trim() });
+    });
+    msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';
+    try { const r = await apiSaveWrestlers(wcId, data); msgEl.textContent = `Saved ${r.updated} wrestlers.`; msgEl.style.color = 'var(--success)'; }
+    catch(err) { msgEl.textContent = err.message; msgEl.style.color = 'var(--danger)'; }
+  }
+
+  async function initBracket(wcId) {
+    const msgEl = document.getElementById('wrestlers-msg');
+    msgEl.textContent = 'Initializing bracket…'; msgEl.style.color = 'var(--text-muted)';
+    try { const r = await apiInitializeBracket(wcId); msgEl.textContent = `Bracket initialized — ${r.matches_created||''} matches created.`; msgEl.style.color = 'var(--success)'; }
+    catch(err) { msgEl.textContent = err.message; msgEl.style.color = 'var(--danger)'; }
+  }
+
+  // ── Match results ──────────────────────────────────────────────────────────
+  const ROUND_LABELS = { pigtail:'Pigtail', champ_r1:'Champ R1', champ_qf:'Quarters', champ_sf:'Semis', champ_finals:'Finals', champ_3rd:'3rd Place', cons_r1:'Cons R1', cons_r2:'Cons R2', cons_r3:'Cons R3', cons_r4:'Cons R4', cons_sf:'Cons SF', cons_finals:'Cons Finals' };
+  const ROUND_ORDER  = Object.keys(ROUND_LABELS);
+
+  async function loadResultsSection(wcId) {
+    const body = document.getElementById('results-body');
+    body.innerHTML = '<div class="loading-overlay" style="padding:1rem;"><div class="spinner"></div></div>';
+    try {
+      const [bracketData, wrestlers] = await Promise.all([
+        apiGetWeightBracket(selectedTournId, null).catch(() => null),
+        wrestlerCache[wcId] ? Promise.resolve(wrestlerCache[wcId]) : apiGetWrestlers(wcId),
+      ]);
+
+      // bracketData may be null if we can't get it by weight class id — use tournament results instead
+      const matches = bracketData ? bracketData.matches || [] : [];
+      wrestlerCache[wcId] = wrestlers;
+      renderResultsTable(wcId, matches, wrestlers, body);
+    } catch(err) { body.innerHTML = `<p class="text-danger">${err.message}</p>`; }
+  }
+
+  function renderResultsTable(wcId, matches, wrestlers, body) {
+    const wMap = {};
+    for (const w of wrestlers) wMap[w.id] = w;
+    function wName(id) { if (!id) return 'TBD'; const w = wMap[id]; return w ? `${w.seed?'#'+w.seed+' ':''}${w.name}` : `ID:${id}`; }
+
+    if (!matches.length) {
+      body.innerHTML = '<p class="text-muted">No matches found. Initialize the bracket first, then come back here.</p>';
+      return;
+    }
+
+    const sorted = [...matches].sort((a,b) => (ROUND_ORDER.indexOf(a.round_code)-ROUND_ORDER.indexOf(b.round_code)) || (a.match_number-b.match_number));
+    const DECISIONS = ['dec','md','tf','fall','inj_def','ff','dq'];
+
+    const rows = sorted.map(m => {
+      const wOpts = [m.actual_top_wrestler_id, m.actual_bottom_wrestler_id].filter(Boolean)
+        .map(id => `<option value="${id}" ${m.actual_winner_wrestler_id===id?'selected':''}>${wName(id)}</option>`).join('');
+      const dOpts = DECISIONS.map(d => `<option value="${d}" ${m.actual_winner_decision===d?'selected':''}>${d.toUpperCase()}</option>`).join('');
+      return `<tr data-match-id="${m.id}">
+        <td style="font-size:0.8rem;color:var(--text-muted);">${ROUND_LABELS[m.round_code]||m.round_code}</td>
+        <td style="font-size:0.8rem;">${wName(m.actual_top_wrestler_id)}</td>
+        <td style="font-size:0.8rem;color:var(--text-muted);">vs</td>
+        <td style="font-size:0.8rem;">${wName(m.actual_bottom_wrestler_id)}</td>
+        <td><select class="form-control r-winner" style="font-size:0.8rem;padding:0.3rem 0.5rem;"><option value="">— Winner —</option>${wOpts}</select></td>
+        <td><select class="form-control r-dec"    style="font-size:0.8rem;padding:0.3rem 0.5rem;"><option value="">— Dec —</option>${dOpts}</select></td>
+        <td><button class="btn btn-primary btn-sm r-save">Save</button> <span class="r-msg" style="font-size:0.78rem;"></span></td>
+      </tr>`;
+    }).join('');
+
+    body.innerHTML = `<div class="table-wrap" style="max-height:500px;overflow-y:auto;"><table>
+      <thead><tr><th>Round</th><th>Top</th><th></th><th>Bottom</th><th>Winner</th><th>Decision</th><th>Action</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+
+    body.querySelectorAll('.r-save').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row      = btn.closest('tr');
+        const matchId  = parseInt(row.dataset.matchId, 10);
+        const winnerId = parseInt(row.querySelector('.r-winner').value, 10);
+        const dec      = row.querySelector('.r-dec').value;
+        const msgEl    = row.querySelector('.r-msg');
+        if (!winnerId || !dec) { msgEl.textContent = 'Set winner & decision'; msgEl.style.color='var(--danger)'; return; }
+        btn.disabled = true;
+        msgEl.textContent = 'Saving…'; msgEl.style.color='var(--text-muted)';
+        try { await apiSetMatchResult(matchId, winnerId, dec); msgEl.textContent='Saved!'; msgEl.style.color='var(--success)'; }
+        catch(err) { msgEl.textContent=err.message||'Failed'; msgEl.style.color='var(--danger)'; }
+        finally { btn.disabled = false; }
+      });
+    });
+  }
+
+  // ── Boot ────────────────────────────────────────────────────────────────────
+  loadTournaments();
+</script>
+</body>
+</html>

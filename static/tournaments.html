@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tournaments — NCAA Wrestling Bracket</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/tournaments.html" class="navbar-brand">🤼 Wrestling Bracket</a>
+  <ul class="navbar-nav">
+    <li><span id="nav-user" class="nav-user"></span></li>
+    <li id="admin-link-wrap" style="display:none;"><a href="/admin.html" class="nav-link">Admin</a></li>
+    <li><button onclick="logout()" class="btn btn-secondary btn-sm">Sign Out</button></li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Tournaments</h1>
+    <p class="text-muted">Pick a tournament to make your bracket predictions.</p>
+  </div>
+
+  <div id="alert" class="alert alert-danger alert-hidden"><span id="alert-msg"></span></div>
+
+  <div id="loading" class="loading-overlay"><div class="spinner"></div></div>
+
+  <div id="tournament-grid" class="tournament-grid" style="display:none;"></div>
+
+  <p id="empty-msg" class="text-muted" style="display:none;">No tournaments available yet. Check back soon!</p>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  const user = getUser();
+  if (user) {
+    document.getElementById('nav-user').textContent = user.name || user.email;
+    if (user.is_admin) document.getElementById('admin-link-wrap').style.display = '';
+  }
+
+  function statusBadge(status) {
+    const map = { draft: 'badge-draft', active: 'badge-active', locked: 'badge-locked', completed: 'badge-completed' };
+    return `<span class="badge ${map[status] || 'badge-draft'}">${status}</span>`;
+  }
+
+  (async () => {
+    try {
+      const tournaments = await apiGetTournaments();
+      document.getElementById('loading').style.display = 'none';
+
+      if (!tournaments.length) {
+        document.getElementById('empty-msg').style.display = '';
+        return;
+      }
+
+      const grid = document.getElementById('tournament-grid');
+      grid.style.display = '';
+
+      for (const t of tournaments) {
+        const canPick = t.status === 'active';
+        const locksStr = t.locks_at
+          ? 'Picks lock: ' + new Date(t.locks_at * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+          : '';
+        const card = document.createElement(canPick ? 'a' : 'div');
+        card.className = 'tournament-card' + (canPick ? '' : ' disabled');
+        if (canPick) card.href = `/bracket.html?tournament_id=${t.id}`;
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+            <div class="year">${t.year}</div>
+            ${statusBadge(t.status)}
+          </div>
+          <h3>${t.name}</h3>
+          ${locksStr ? `<div class="locks">${locksStr}</div>` : ''}
+          <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+            ${canPick ? '<span class="btn btn-primary btn-sm">Make Picks →</span>' : ''}
+            <a href="/leaderboard.html?tournament_id=${t.id}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">Leaderboard</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('alert-msg').textContent = err.message || 'Failed to load tournaments.';
+      document.getElementById('alert').classList.remove('alert-hidden');
+    }
+  })();
+</script>
+</body>
+</html>

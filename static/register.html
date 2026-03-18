@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create Account — NCAA Wrestling Bracket</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:2.5rem;">🤼</div>
+      <h1>Create Account</h1>
+      <p>Join the bracket competition</p>
+    </div>
+
+    <div id="alert" class="alert alert-danger alert-hidden"><span id="alert-msg"></span></div>
+
+    <form id="reg-form">
+      <div class="form-group">
+        <label class="form-label" for="name">Your name</label>
+        <input type="text" id="name" class="form-control" placeholder="Display name" required autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input type="email" id="email" class="form-control" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirm">Confirm password</label>
+        <input type="password" id="confirm" class="form-control" placeholder="Repeat password" required autocomplete="new-password" />
+      </div>
+      <button type="submit" id="submit-btn" class="btn btn-primary" style="width:100%;">Create Account</button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login.html">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  if (getToken()) window.location.replace('/tournaments.html');
+
+  const form      = document.getElementById('reg-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const alertEl   = document.getElementById('alert');
+  const alertMsg  = document.getElementById('alert-msg');
+
+  function showError(msg) {
+    alertMsg.textContent = msg;
+    alertEl.classList.remove('alert-hidden');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertEl.classList.add('alert-hidden');
+
+    const name     = document.getElementById('name').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm').value;
+
+    if (password !== confirm) { showError('Passwords do not match.'); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account…';
+
+    try {
+      const res  = await apiSignup(name, email, password);
+      setToken(res.authToken);
+      const user = await apiMe();
+      setUser(user);
+      window.location.replace('/tournaments.html');
+    } catch (err) {
+      showError(err.message || 'Registration failed.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account';
+    }
+  });
+</script>
+</body>
+</html>
