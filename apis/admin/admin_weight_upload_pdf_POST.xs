@@ -28,8 +28,7 @@ query "admin/weight/{id}/upload-pdf" verb=POST {
   
     function.run parse_bracket_pdf {
       input = {
-        pdf_base64       : $input.pdf_base64
-        anthropic_api_key: $env.ANTHROPIC_API_KEY
+        pdf_base64: $input.pdf_base64
       }
     } as $parse_result
   }

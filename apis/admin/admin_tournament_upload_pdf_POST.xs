@@ -36,8 +36,7 @@ query "admin/tournament/{id}/upload-pdf" verb=POST {
     // Parse the PDF with Claude AI
     function.run parse_bracket_pdf {
       input = {
-        pdf_base64       : $input.pdf_base64
-        anthropic_api_key: $env.ANTHROPIC_API_KEY
+        pdf_base64: $input.pdf_base64
       }
     } as $parse_result
   
