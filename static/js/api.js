@@ -97,10 +97,12 @@ async function apiSetMatchResult(matchId, winnerId, decision, score = '') {
     body: JSON.stringify({ winner_wrestler_id: winnerId, decision, score }),
   });
 }
-async function apiUploadTournamentPdf(tournamentId, pdfBase64) {
+async function apiUploadTournamentPdf(tournamentId, pdfFile) {
+  const formData = new FormData();
+  formData.append('pdf_file', pdfFile);
   return apiFetch(XANO_ADMIN, `/admin/tournament/${tournamentId}/upload-pdf`, {
     method: 'POST',
-    body: JSON.stringify({ id: tournamentId, pdf_base64: pdfBase64 }),
+    body: formData,
   });
 }
 async function apiGetWeightClasses(tournId) {

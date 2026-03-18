@@ -266,23 +266,16 @@
   async function handleTournamentPdfUpload(tournId, e) {
     const file = e.target.files[0];
     if (!file) return;
-    setManageMsg('Reading PDF…', 'muted');
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result.split(',')[1];
-      setManageMsg('Sending to AI for parsing all 10 weight classes… (this may take 20-40 seconds)', 'muted');
-      try {
-        const result = await apiUploadTournamentPdf(tournId, base64);
-        setManageMsg(`Done! Saved ${result.saved_wrestlers} wrestlers across all weight classes.`, 'success');
-        // Reload the weight section if one is open
-        if (selectedWeightId) await loadWeightSection(selectedWeightId);
-      } catch(err) {
-        setManageMsg('Parse failed: ' + (err.message || 'Unknown error'), 'danger');
-      }
-      e.target.value = '';
-    };
-    reader.readAsDataURL(file);
+    setManageMsg('Sending to AI for parsing all 10 weight classes… (this may take 20-40 seconds)', 'muted');
+    try {
+      const result = await apiUploadTournamentPdf(tournId, file);
+      setManageMsg(`Done! Saved ${result.saved_wrestlers} wrestlers across all weight classes.`, 'success');
+      // Reload the weight section if one is open
+      if (selectedWeightId) await loadWeightSection(selectedWeightId);
+    } catch(err) {
+      setManageMsg('Parse failed: ' + (err.message || 'Unknown error'), 'danger');
+    }
+    e.target.value = '';
   }
 
   async function initBracket(wcId) {
