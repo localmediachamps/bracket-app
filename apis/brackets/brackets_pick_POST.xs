@@ -20,12 +20,12 @@ query "brackets/pick" verb=POST {
       field_value = $input.user_bracket_id
     } as $user_bracket
   
-    precondition ($user_bracket != null) {
+    precondition ($user_bracket == null) {
       error_type = "notfound"
       error = "User bracket not found."
     }
   
-    precondition ($user_bracket.user_id == $auth.id) {
+    precondition ($user_bracket.user_id != $auth.id) {
       error_type = "accessdenied"
       error = "You do not own this bracket."
     }
@@ -35,12 +35,12 @@ query "brackets/pick" verb=POST {
       field_value = $user_bracket.tournament_id
     } as $tournament
   
-    precondition ($tournament != null) {
+    precondition ($tournament == null) {
       error_type = "notfound"
       error = "Tournament not found."
     }
   
-    precondition ($tournament.status != "locked" && $tournament.status != "completed") {
+    precondition ($tournament.status == "locked" || $tournament.status == "completed") {
       error_type = "badrequest"
       error = "Picks are not allowed — tournament is locked or completed."
     }

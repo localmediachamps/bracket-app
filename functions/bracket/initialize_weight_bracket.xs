@@ -28,7 +28,7 @@ function initialize_weight_bracket {
       output = ["id", "seed"]
     } as $wrestlers
   
-    precondition (($wrestlers|count) == 33) {
+    precondition (($wrestlers|count) != 33) {
       error_type = "inputerror"
       error = "Weight class must have exactly 33 wrestlers before initializing bracket."
     }

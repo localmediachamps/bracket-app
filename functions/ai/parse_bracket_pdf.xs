@@ -54,7 +54,7 @@ function parse_bracket_pdf {
       value = $api_response|get:"content.0.text":null
     }
   
-    precondition ($content_text != null) {
+    precondition ($content_text == null) {
       error_type = "inputerror"
       error = "No response content from Claude API. Check API key and PDF format."
     }
@@ -63,7 +63,7 @@ function parse_bracket_pdf {
       value = $content_text|json_decode
     }
   
-    precondition ($parsed != null && ($parsed|get:"weights":null) != null) {
+    precondition ($parsed == null || ($parsed|get:"weights":null) == null) {
       error_type = "inputerror"
       error = "Failed to parse Claude response as valid bracket JSON. Please review the raw output and enter data manually."
     }

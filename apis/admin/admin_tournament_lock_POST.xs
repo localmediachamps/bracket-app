@@ -18,7 +18,7 @@ query "admin/tournament/{id}/lock" verb=POST {
       field_value = $input.id
     } as $tournament
   
-    precondition ($tournament != null) {
+    precondition ($tournament == null) {
       error_type = "notfound"
       error = "Tournament not found."
     }
