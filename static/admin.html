@@ -164,6 +164,10 @@
         <button class="btn btn-primary btn-sm"    id="btn-publish" ${t.status!=='draft'   ?'disabled':''}>Publish</button>
         <button class="btn btn-secondary btn-sm"  id="btn-lock"    ${t.status==='locked'||t.status==='completed'?'disabled':''}>Lock</button>
         <button class="btn btn-success btn-sm"    id="btn-score">Score Tournament</button>
+        <label class="btn btn-outline-secondary btn-sm" style="cursor:pointer; margin:0;" id="lbl-pdf-upload">
+          📄 Upload Bracket PDF
+          <input type="file" id="pdf-tournament-input" accept="application/pdf" style="display:none;" />
+        </label>
         <a href="/bracket.html?tournament_id=${t.id}"     class="btn btn-outline-secondary btn-sm" target="_blank">View Bracket</a>
         <a href="/leaderboard.html?tournament_id=${t.id}" class="btn btn-outline-secondary btn-sm" target="_blank">Leaderboard</a>
       </div>
@@ -181,6 +185,7 @@
       setManageMsg('Scoring…', 'muted');
       try { const r = await apiScoreTournament(t.id); setManageMsg(`Scored ${r.scored_brackets} brackets.`, 'success'); } catch(err) { setManageMsg(err.message,'danger'); }
     });
+    document.getElementById('pdf-tournament-input').addEventListener('change', (e) => handleTournamentPdfUpload(t.id, e));
   }
   function setManageMsg(msg, type) {
     const el = document.getElementById('manage-msg');
@@ -231,10 +236,6 @@
       <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
         <span class="text-muted" style="font-size:0.85rem;">${wrestlers.length} wrestlers</span>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <label class="btn btn-outline-secondary btn-sm" style="cursor:pointer; margin:0;">
-            📄 Upload PDF
-            <input type="file" id="pdf-input" accept="application/pdf" style="display:none;" />
-          </label>
           <button class="btn btn-secondary btn-sm" id="btn-init">Initialize Bracket</button>
           <button class="btn btn-primary btn-sm"   id="btn-save">Save Wrestlers</button>
         </div>
@@ -247,7 +248,6 @@
     `;
     document.getElementById('btn-save').addEventListener('click', () => saveWrestlers(wcId));
     document.getElementById('btn-init').addEventListener('click', () => initBracket(wcId));
-    document.getElementById('pdf-input').addEventListener('change', (e) => handlePdfUpload(wcId, e));
   }
 
   async function saveWrestlers(wcId) {
@@ -263,47 +263,22 @@
     catch(err) { msgEl.textContent = err.message; msgEl.style.color = 'var(--danger)'; }
   }
 
-  async function handlePdfUpload(wcId, e) {
+  async function handleTournamentPdfUpload(tournId, e) {
     const file = e.target.files[0];
     if (!file) return;
-    const msgEl = document.getElementById('wrestlers-msg');
-    msgEl.textContent = 'Reading PDF…'; msgEl.style.color = 'var(--text-muted)';
+    setManageMsg('Reading PDF…', 'muted');
 
     const reader = new FileReader();
     reader.onload = async () => {
-      // Strip the data URL prefix to get raw base64
       const base64 = reader.result.split(',')[1];
-      msgEl.textContent = 'Sending to AI for parsing… (this may take 10-20 seconds)'; msgEl.style.color = 'var(--text-muted)';
+      setManageMsg('Sending to AI for parsing all 10 weight classes… (this may take 20-40 seconds)', 'muted');
       try {
-        const result = await apiUploadPdf(wcId, base64);
-        // Find this weight class's data in the parsed results
-        const wc = (await apiGetWeightClasses(selectedTournId)).find(w => w.id === wcId);
-        const weightLbs = wc ? wc.weight : null;
-        let wrestlers = [];
-        if (result.parsed && weightLbs) {
-          const weightData = result.parsed.find(w => w.weight === weightLbs);
-          if (weightData) wrestlers = weightData.wrestlers.filter(w => w.name);
-        }
-        if (!wrestlers.length && result.parsed) {
-          // fallback: use first weight class in result
-          wrestlers = result.parsed[0]?.wrestlers?.filter(w => w.name) || [];
-        }
-        if (!wrestlers.length) {
-          msgEl.textContent = 'AI parsed but found no wrestlers for this weight. Check raw output.'; msgEl.style.color = 'var(--danger)';
-          return;
-        }
-        // Populate the table
-        const tbody = document.getElementById('w-tbody');
-        tbody.innerHTML = wrestlers.map((w, i) => `
-          <tr data-idx="${i}" data-id="">
-            <td><input type="number" class="form-control w-seed" value="${w.seed||''}" min="1" max="33" style="width:70px;" /></td>
-            <td><input type="text"   class="form-control w-name"   value="${w.name||''}"   placeholder="Name" /></td>
-            <td><input type="text"   class="form-control w-school" value="${w.school||''}" placeholder="School" /></td>
-          </tr>
-        `).join('');
-        msgEl.textContent = `AI parsed ${wrestlers.length} wrestlers — review and click Save Wrestlers.`; msgEl.style.color = 'var(--success)';
+        const result = await apiUploadTournamentPdf(tournId, base64);
+        setManageMsg(`Done! Saved ${result.saved_wrestlers} wrestlers across all weight classes.`, 'success');
+        // Reload the weight section if one is open
+        if (selectedWeightId) await loadWeightSection(selectedWeightId);
       } catch(err) {
-        msgEl.textContent = 'Parse failed: ' + (err.message || 'Unknown error'); msgEl.style.color = 'var(--danger)';
+        setManageMsg('Parse failed: ' + (err.message || 'Unknown error'), 'danger');
       }
       e.target.value = '';
     };
