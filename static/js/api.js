@@ -1,6 +1,6 @@
-const XANO_AUTH    = 'https://xhuf-7flt-jytp.n7c.xano.io/api:47V6PWBN';
-const XANO_BRACKET = 'https://xhuf-7flt-jytp.n7c.xano.io/api:17Ryya5W';
-const XANO_ADMIN   = 'https://xhuf-7flt-jytp.n7c.xano.io/api:PBpa1T2y';
+const XANO_AUTH    = 'https://xhuf-7flt-jytp.n7d.xano.io/api:47V6PWBN';
+const XANO_BRACKET = 'https://xhuf-7flt-jytp.n7d.xano.io/api:17Ryya5W';
+const XANO_ADMIN   = 'https://xhuf-7flt-jytp.n7d.xano.io/api:PBpa1T2y';
 
 async function apiFetch(base, path, options = {}) {
   const token = localStorage.getItem('bracket_token');
