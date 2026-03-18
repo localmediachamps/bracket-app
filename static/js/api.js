@@ -100,7 +100,7 @@ async function apiSetMatchResult(matchId, winnerId, decision, score = '') {
 async function apiUploadTournamentPdf(tournamentId, pdfBase64) {
   return apiFetch(XANO_ADMIN, `/admin/tournament/${tournamentId}/upload-pdf`, {
     method: 'POST',
-    body: JSON.stringify({ pdf_base64: pdfBase64 }),
+    body: JSON.stringify({ id: tournamentId, pdf_base64: pdfBase64 }),
   });
 }
 async function apiGetWeightClasses(tournId) {
