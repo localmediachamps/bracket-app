@@ -1,0 +1,102 @@
+import React, { Suspense, lazy } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from './lib/store'
+import AppShell from './components/layout/AppShell'
+import AdminShell from './components/layout/AdminShell'
+import { Toaster, Skeleton } from './components/ui'
+
+/* Lazy pages — code-split per route */
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Tournaments = lazy(() => import('./pages/Tournaments'))
+const TournamentHub = lazy(() => import('./pages/TournamentHub'))
+const Predict = lazy(() => import('./pages/Predict'))
+const Pickem = lazy(() => import('./pages/Pickem'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const EntryReview = lazy(() => import('./pages/EntryReview'))
+const Compare = lazy(() => import('./pages/Compare'))
+const Groups = lazy(() => import('./pages/Groups'))
+const GroupNew = lazy(() => import('./pages/GroupNew'))
+const GroupDetail = lazy(() => import('./pages/GroupDetail'))
+const Profile = lazy(() => import('./pages/Profile'))
+const UserProfile = lazy(() => import('./pages/UserProfile'))
+const Notifications = lazy(() => import('./pages/Notifications'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const TournamentWizard = lazy(() => import('./pages/admin/TournamentWizard'))
+const AdminTournament = lazy(() => import('./pages/admin/AdminTournament'))
+const AdminBuilder = lazy(() => import('./pages/admin/AdminBuilder'))
+const AdminImport = lazy(() => import('./pages/admin/AdminImport'))
+const AdminResults = lazy(() => import('./pages/admin/AdminResults'))
+const AdminScoring = lazy(() => import('./pages/admin/AdminScoring'))
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
+const AdminIngestion = lazy(() => import('./pages/admin/AdminIngestion'))
+const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+
+function PageLoader() {
+  return (
+    <div className="space-y-4 pt-4">
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-48 w-full" />
+      <Skeleton className="h-48 w-full" />
+    </div>
+  )
+}
+
+function RequireAuth({ children }) {
+  const token = useAuthStore((s) => s.token)
+  const location = useLocation()
+  if (!token) return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  return children
+}
+
+function RequireAdmin({ children }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  if (!user?.is_admin) return <Navigate to="/" replace />
+  return children
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Toaster />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/tournaments/:slug" element={<TournamentHub />} />
+            <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />
+            <Route path="/tournaments/:slug/pickem" element={<RequireAuth><Pickem /></RequireAuth>} />
+            <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/entries/:id/review" element={<RequireAuth><EntryReview /></RequireAuth>} />
+            <Route path="/compare/:aId/:bId" element={<RequireAuth><Compare /></RequireAuth>} />
+            <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
+            <Route path="/groups/new" element={<RequireAuth><GroupNew /></RequireAuth>} />
+            <Route path="/groups/:id" element={<GroupDetail />} />
+            <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+            <Route path="/users/:id" element={<UserProfile />} />
+            <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+            <Route path="/admin" element={<RequireAdmin><AdminShell /></RequireAdmin>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="tournaments/new" element={<TournamentWizard />} />
+              <Route path="tournaments/:id" element={<AdminTournament />} />
+              <Route path="tournaments/:id/builder" element={<AdminBuilder />} />
+              <Route path="tournaments/:id/import" element={<AdminImport />} />
+              <Route path="tournaments/:id/results" element={<AdminResults />} />
+              <Route path="tournaments/:id/ingestion" element={<AdminIngestion />} />
+              <Route path="tournaments/:id/scoring" element={<AdminScoring />} />
+              <Route path="tournaments/:id/analytics" element={<AdminAnalytics />} />
+              <Route path="audit" element={<AdminAudit />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  )
+}

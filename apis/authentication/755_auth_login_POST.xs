@@ -1,17 +1,18 @@
-// Login and retrieve an authentication token
+// Login and retrieve an authentication token plus the user object
 query "auth/login" verb=POST {
   api_group = "Authentication"
 
   input {
     email email? filters=trim|lower
-    text password?
+    text password? {
+      sensitive = true
+    }
   }
 
   stack {
     db.get user {
       field_name = "email"
       field_value = $input.email
-      output = ["id", "created_at", "name", "email", "password"]
     } as $user
   
     precondition ($user != null) {
@@ -35,7 +36,11 @@ query "auth/login" verb=POST {
       expiration = 86400
       id = $user.id
     } as $authToken
+  
+    var $user_out {
+      value = $user|unset:"password"
+    }
   }
 
-  response = {authToken: $authToken}
+  response = {authToken: $authToken, user: $user_out}
 }

@@ -1,20 +1,29 @@
-query "admin/tournament/{id}/upload-pdf" verb=POST {
+// Upload a bracket PDF and run the AI parse inline (ARCHITECTURE.md section 6:
+// POST /admin/tournaments/{id}/upload-pdf).
+// Stores the file via Xano file storage (storage.create_attachment, same mechanism as
+// the previous upload endpoint), creates an uploaded_document row, then calls
+// parse_bracket_pdf synchronously. On success the document becomes needs_review with
+// the extraction stored; on failure it becomes failed with the error message.
+query "admin/tournaments/{id}/upload-pdf" verb=POST {
   api_group = "admin"
   auth = "user"
 
   input {
+    // Tournament ID
     int id
-    text pdf_base64
+  
+    // The bracket PDF (multipart file field)
+    file? pdf_file
   }
 
   stack {
     function.run validate_admin {
       input = {user_id: $auth.id}
-    } as $admin_check
+    } as $admin
   
-    precondition ($input.pdf_base64 != null && $input.pdf_base64 != "") {
+    precondition ($input.pdf_file != null) {
       error_type = "inputerror"
-      error = "Missing pdf_base64."
+      error = "Missing pdf_file."
     }
   
     db.get tournament {
@@ -27,133 +36,98 @@ query "admin/tournament/{id}/upload-pdf" verb=POST {
       error = "Tournament not found."
     }
   
-    function.run parse_bracket_pdf {
-      input = {pdf_base64: $input.pdf_base64}
-    } as $parse_result
+    // Xano file storage: attachment metadata ({path, name, size, mime, ...})
+    storage.create_attachment {
+      value = $input.pdf_file
+      access = "public"
+      filename = "bracket-" ~ ($input.id|to_text) ~ ".pdf"
+    } as $attachment
   
-    var $saved_count {
-      value = 0
+    var $file_name {
+      value = $attachment|get:"name":"bracket.pdf"
     }
   
-    var $weights_created {
-      value = 0
+    var $file_size {
+      value = $attachment|get:"size":null
     }
   
-    db.query weight_class {
-      where = $db.weight_class.tournament_id == $input.id
-      return = {type: "list"}
-    } as $existing_weight_classes
+    db.add uploaded_document {
+      data = {
+        created_at       : now
+        uploaded_by      : $auth.id
+        file_name        : $file_name
+        file             : $attachment
+        file_size        : $file_size
+        processing_status: "processing"
+        tournament_id    : $input.id
+      }
+    } as $document
   
-    db.query wrestler {
-      where = $db.wrestler.tournament_id == $input.id
-      return = {type: "list"}
-    } as $existing_wrestlers
+    // Public URL consumed by parse_bracket_pdf (URL document source)
+    var $pdf_url {
+      value = "https://xhuf-7flt-jytp.n7d.xano.io" ~ $attachment.path
+    }
   
-    foreach ($parse_result.parsed) {
-      each as $weight_data {
-        conditional {
-          if ($weight_data.weight != null) {
-            var $found_wc {
-              value = null
-            }
-          
-            foreach ($existing_weight_classes) {
-              each as $wc {
-                conditional {
-                  if ($wc.weight == $weight_data.weight) {
-                    var.update $found_wc {
-                      value = $wc
-                    }
-                  }
-                }
-              }
-            }
-          
-            conditional {
-              if ($found_wc == null) {
-                db.add weight_class {
-                  data = {
-                    created_at   : now
-                    tournament_id: $input.id
-                    weight       : $weight_data.weight
-                    status       : "pending"
-                  }
-                } as $created_wc
-              
-                math.add $weights_created {
-                  value = 1
-                }
-              
-                var.update $found_wc {
-                  value = $created_wc
-                }
-              
-                var.update $existing_weight_classes {
-                  value = $existing_weight_classes|push:$created_wc
-                }
-              }
-            }
-          
-            foreach ($weight_data.wrestlers) {
-              each as $wrestler {
-                conditional {
-                  if ($wrestler.name != null && $wrestler.name != "") {
-                    var $existing_wrestler {
-                      value = null
-                    }
-                  
-                    foreach ($existing_wrestlers) {
-                      each as $ew {
-                        conditional {
-                          if ($ew.weight_class_id == $found_wc.id) {
-                            conditional {
-                              if ($ew.name == $wrestler.name) {
-                                var.update $existing_wrestler {
-                                  value = $ew
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  
-                    conditional {
-                      if ($existing_wrestler == null) {
-                        db.add wrestler {
-                          data = {
-                            created_at     : now
-                            tournament_id  : $input.id
-                            weight_class_id: $found_wc.id
-                            seed           : $wrestler.seed
-                            name           : $wrestler.name
-                            school         : $wrestler.school
-                          }
-                        } as $new_wrestler
-                      
-                        math.add $saved_count {
-                          value = 1
-                        }
-                      
-                        var.update $existing_wrestlers {
-                          value = $existing_wrestlers|push:$new_wrestler
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+    var $parse_failed {
+      value = false
+    }
+  
+    try_catch {
+      try {
+        function.run parse_bracket_pdf {
+          input = {pdf_url: $pdf_url}
+        } as $extraction_result
+      
+        db.edit uploaded_document {
+          field_name = "id"
+          field_value = $document.id
+          data = {
+            processing_status: "needs_review"
+            extraction_result: $extraction_result
           }
+        } as $document_parsed
+      }
+    
+      catch {
+        var.update $parse_failed {
+          value = true
         }
+      
+        db.edit uploaded_document {
+          field_name = "id"
+          field_value = $document.id
+          data = {
+            processing_status: "failed"
+            error_message    : $error.message
+          }
+        } as $document_failed
       }
     }
+  
+    // Re-fetch so the response reflects the final document state
+    db.get uploaded_document {
+      field_name = "id"
+      field_value = $document.id
+    } as $final_document
+  
+    function.run audit {
+      input = {
+        actor_id   : $auth.id
+        entity_type: "uploaded_document"
+        entity_id  : $document.id
+        action     : "pdf_uploaded"
+        new_value  : {
+        file_name        : $file_name
+        tournament_id    : $input.id
+        processing_status: $final_document.processing_status
+      }
+      }
+    } as $audit_row
   }
 
   response = {
-    success        : true
-    saved_wrestlers: $saved_count
-    weights_created: $weights_created
-    weights_parsed : $parse_result.parsed|count
+    document_id      : $document.id
+    processing_status: $final_document.processing_status
+    extraction_result: $final_document.extraction_result
   }
 }

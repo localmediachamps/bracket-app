@@ -10,9 +10,17 @@ query "auth/me" verb=GET {
     db.get user {
       field_name = "id"
       field_value = $auth.id
-      output = ["id", "created_at", "name", "email", "is_admin"]
     } as $user
+  
+    precondition ($user != null) {
+      error_type = "notfound"
+      error = "User not found."
+    }
+  
+    var $user_out {
+      value = $user|unset:"password"
+    }
   }
 
-  response = $user
+  response = $user_out
 }

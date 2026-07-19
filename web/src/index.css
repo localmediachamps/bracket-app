@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Mat (dark surfaces) ─────────────────────────────── */
+  --color-mat-950: #0a0a0b;
+  --color-mat-900: #101012;
+  --color-mat-850: #16161a;
+  --color-mat-800: #1d1d22;
+  --color-mat-750: #232329;
+  --color-mat-700: #26262d;
+  --color-mat-600: #34343d;
+  --color-mat-500: #484854;
+
+  /* ── Gold (champion accent) ──────────────────────────── */
+  --color-gold-200: #ffe9b3;
+  --color-gold-300: #ffd87a;
+  --color-gold-400: #f5c44f;
+  --color-gold-500: #e8ae2e;
+  --color-gold-600: #c08f1e;
+  --color-gold-700: #8f6a14;
+
+  /* ── Blood (losses, danger) ──────────────────────────── */
+  --color-blood-300: #ff8a7d;
+  --color-blood-400: #f0564a;
+  --color-blood-500: #d93a2e;
+  --color-blood-600: #b02a20;
+
+  /* ── Pin (wins, correct, live) ───────────────────────── */
+  --color-pin-300: #7fe3b5;
+  --color-pin-400: #3ecf8e;
+  --color-pin-500: #22b573;
+  --color-pin-600: #18915c;
+
+  /* ── Ink (warm text) ─────────────────────────────────── */
+  --color-ink-100: #f4f1ea;
+  --color-ink-200: #e3e0d6;
+  --color-ink-300: #c9c6bc;
+  --color-ink-400: #a8a599;
+  --color-ink-500: #8b887c;
+  --color-ink-600: #5c5a52;
+
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Black", "Archivo", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --shadow-glow: 0 0 40px -8px rgb(232 174 46 / 0.28);
+  --shadow-glow-sm: 0 0 20px -6px rgb(232 174 46 / 0.35);
+  --shadow-card: 0 8px 28px -12px rgb(0 0 0 / 0.55);
+
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-rise: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-marquee: marquee 32s linear infinite;
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.8); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-mat-950 text-ink-100 font-sans antialiased;
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -10%, rgb(232 174 46 / 0.055), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 110%, rgb(217 58 46 / 0.03), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ── Textures ─────────────────────────────────────────── */
+.bg-mat-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(255 255 255 / 0.035) 0px,
+    rgb(255 255 255 / 0.035) 2px,
+    transparent 2px,
+    transparent 9px
+  );
+}
+
+.bg-arena {
+  background-image: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    rgb(232 174 46 / 0.09),
+    transparent 65%
+  );
+}
+
+/* ── Gold shimmer text (champion moments) ─────────────── */
+.text-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--color-gold-500) 20%,
+    var(--color-gold-200) 40%,
+    var(--color-gold-500) 60%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: var(--animate-shimmer);
+}
+
+/* ── Scrollbars ───────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-mat-600) transparent;
+}
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-mat-600);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Focus ────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Utility: hide scrollbar but keep scroll ──────────── */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Selection ────────────────────────────────────────── */
+::selection {
+  background: rgb(232 174 46 / 0.35);
+  color: var(--color-ink-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

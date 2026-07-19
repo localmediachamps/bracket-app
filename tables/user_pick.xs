@@ -17,7 +17,13 @@ table user_pick {
     // set after scoring runs
     bool is_correct?
   
-    int points_earned?
+    decimal points_earned?
+  
+    // snapshot of scoring config value at pick time
+    decimal points_available?
+  
+    // pending | correct | incorrect | eliminated | void
+    text outcome_status?=pending
   }
 
   index = [

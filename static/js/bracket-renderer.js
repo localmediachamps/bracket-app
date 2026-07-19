@@ -1,11 +1,12 @@
-const CHAMP_ROUNDS = ['pigtail', 'champ_r1', 'champ_qf', 'champ_sf', 'champ_finals'];
-const CONS_ROUNDS  = ['cons_r1', 'cons_r2', 'cons_r3', 'cons_r4', 'cons_sf', 'cons_finals'];
+const CHAMP_ROUNDS = ['pigtail', 'champ_r1', 'champ_qf', 'champ_sf', 'champ_semis', 'champ_finals'];
+const CONS_ROUNDS  = ['cons_r1', 'cons_r2', 'cons_r3', 'cons_r4', 'cons_sf', 'cons_finals', 'champ_3rd'];
 
 const ROUND_LABELS = {
   pigtail:      'Pigtail',
   champ_r1:     'Round 1',
   champ_qf:     'Quarters',
   champ_sf:     'Semis',
+  champ_semis:  'Semis',
   champ_finals: 'Finals',
   champ_3rd:    '3rd Place',
   cons_r1:      'Cons R1',
@@ -43,14 +44,11 @@ function renderBracket(container, data, onPickClick) {
 
   const projected = buildProjectedMap(matches, picks_map);
 
-  const champMatches     = {};
-  const consMatches      = {};
-  const thirdPlaceMatches = [];
+  const champMatches = {};
+  const consMatches  = {};
 
   for (const m of matches) {
-    if (m.round_code === 'champ_3rd') {
-      thirdPlaceMatches.push(m);
-    } else if (CHAMP_ROUNDS.includes(m.round_code)) {
+    if (CHAMP_ROUNDS.includes(m.round_code)) {
       if (!champMatches[m.round_code]) champMatches[m.round_code] = [];
       champMatches[m.round_code].push(m);
     } else if (CONS_ROUNDS.includes(m.round_code)) {
@@ -89,19 +87,6 @@ function renderBracket(container, data, onPickClick) {
   champSection.appendChild(champRounds);
   container.appendChild(champSection);
 
-  // 3rd place — separate section below championship
-  if (thirdPlaceMatches.length > 0) {
-    thirdPlaceMatches.sort((a, b) => a.match_number - b.match_number);
-    const thirdSection = document.createElement('div');
-    thirdSection.className = 'bracket-section third-place-section';
-    thirdSection.innerHTML = '<div class="bracket-section-title">3rd Place Match</div>';
-    const thirdWrap = document.createElement('div');
-    thirdWrap.className = 'bracket-rounds';
-    thirdWrap.appendChild(buildRoundColumn('champ_3rd', thirdPlaceMatches, wrestlers_map, picks_map, projected, onPickClick));
-    thirdSection.appendChild(thirdWrap);
-    container.appendChild(thirdSection);
-  }
-
   // Consolation toggle + bracket
   const consToggle = document.createElement('button');
   consToggle.className = 'btn btn-secondary btn-sm cons-toggle';
@@ -132,11 +117,27 @@ function buildRoundColumn(round, roundMatches, wrestlers_map, picks_map, project
   col.className = 'bracket-round';
   if (round === 'pigtail') col.classList.add('pigtail-round');
   col.innerHTML = `<div class="round-label">${ROUND_LABELS[round] || round}</div>`;
+
   const matchesWrap = document.createElement('div');
   matchesWrap.className = 'round-matches';
-  for (const m of roundMatches) {
-    matchesWrap.appendChild(buildMatchCard(m, wrestlers_map, picks_map, projected, onPickClick));
+
+  // Group R1 into pairs so each pair visually feeds one QF match
+  if (round === 'champ_r1' && roundMatches.length >= 4) {
+    for (let i = 0; i < roundMatches.length; i += 2) {
+      const pair = document.createElement('div');
+      pair.className = 'match-pair';
+      pair.appendChild(buildMatchCard(roundMatches[i], wrestlers_map, picks_map, projected, onPickClick));
+      if (roundMatches[i + 1]) {
+        pair.appendChild(buildMatchCard(roundMatches[i + 1], wrestlers_map, picks_map, projected, onPickClick));
+      }
+      matchesWrap.appendChild(pair);
+    }
+  } else {
+    for (const m of roundMatches) {
+      matchesWrap.appendChild(buildMatchCard(m, wrestlers_map, picks_map, projected, onPickClick));
+    }
   }
+
   col.appendChild(matchesWrap);
   return col;
 }
@@ -159,19 +160,26 @@ function buildMatchCard(match, wrestlers_map, picks_map, projected, onPickClick)
   const pickedId = picks_map[match.id];
   const winnerId = match.actual_winner_wrestler_id;
   const done     = match.match_status === 'complete';
+  const hasPick  = pickedId != null;
 
   function slotClasses(wId, isProjected) {
     const classes = ['wrestler-slot'];
     if (!wId) { classes.push('tbd'); return classes.join(' '); }
     if (isProjected) { classes.push('projected'); return classes.join(' '); }
-    if (pickedId === wId) {
-      if (done && winnerId != null) {
-        classes.push(winnerId === wId ? 'correct' : 'incorrect');
+
+    if (done && winnerId != null) {
+      // Match complete — show actual result
+      if (winnerId === wId) {
+        classes.push('winner');
+        if (hasPick && pickedId === wId) classes.push('correct');
       } else {
-        classes.push('selected');
+        classes.push('eliminated');
+        if (hasPick && pickedId === wId) classes.push('incorrect');
       }
+    } else if (hasPick) {
+      // Pick made, match not yet complete
+      classes.push(pickedId === wId ? 'selected' : 'not-selected');
     }
-    if (done && winnerId === wId) classes.push('winner');
     return classes.join(' ');
   }
 
@@ -187,7 +195,6 @@ function buildMatchCard(match, wrestlers_map, picks_map, projected, onPickClick)
          data-display-id="${displayBottomId || ''}">${wrestlerLabel(bottomW)}</div>
   `;
 
-  // Click handlers — actual wrestlers use actual ID, projected use display ID
   card.querySelectorAll('.wrestler-slot:not(.tbd)').forEach(slot => {
     slot.addEventListener('click', () => {
       const actualId    = parseInt(slot.dataset.wrestlerId, 10);

@@ -135,15 +135,25 @@
   /* actual tournament winner — shown without pick overlay */
   font-weight: 600;
 }
-.wrestler-slot.projected {
+.wrestler-slot.not-selected {
+  opacity: 0.35;
   color: var(--text-muted);
+}
+.wrestler-slot.projected {
+  color: var(--text-primary);
   font-style: italic;
   cursor: pointer;
   opacity: 0.8;
 }
 .wrestler-slot.projected:hover {
   background: rgba(240,165,0,0.08);
-  color: var(--text-primary);
+}
+
+/* ── R1 match pair grouping ───────────────────────────────────────────────── */
+.match-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 /* 3rd place section */
