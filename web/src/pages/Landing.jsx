@@ -42,13 +42,13 @@ function buildBracketPaths() {
         const a = level[i]
         const b = level[i + 1]
         const mid = (a + b) / 2
-        const x1 = x + step
-        const x2 = x + step * 2
-        out.push({ d: `M ${x} ${a} H ${x1} V ${b} M ${x} ${b} H ${x1} M ${x1} ${mid} H ${x2}`, gold: i === 0 })
+        const xA = x + step
+        const xB = x + step * 2
+        out.push({ d: `M ${x} ${a} H ${xA} V ${b} M ${x} ${b} H ${xA} M ${xA} ${mid} H ${xB}`, gold: i === 0 })
         next.push(mid)
       }
       level = next
-      x = x2
+      x += step * 2
     }
     return { y: level[0], x }
   }
