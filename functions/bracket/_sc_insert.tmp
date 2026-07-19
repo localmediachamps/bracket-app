@@ -1,0 +1,28 @@
+
+    // ------------------------------------------------------------------
+    // CHECK: in full consolation every placement match has two slot sources
+    // ------------------------------------------------------------------
+    conditional {
+      if ($has_full_consolation) {
+        foreach ($matches) {
+          each as $m {
+            conditional {
+              if ($m.bracket_section == "placement") {
+                conditional {
+                  if (($m.top_source_type == null) || ($m.bottom_source_type == null)) {
+                    array.push $issues {
+                      value = {
+                        severity: "error"
+                        code    : "PLACEMENT_SOURCE_MISSING"
+                        message : "Placement match " ~ $m.round_code ~ " is missing a slot source."
+                        match_id: $m.id
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }

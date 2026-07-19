@@ -40,7 +40,7 @@ query "tournaments/{slugOrId}" verb=GET {
     }
   
     conditional {
-      if ($auth[""] != null && $auth.id != null) {
+      if ($auth.id != null) {
         db.get user {
           field_name = "id"
           field_value = $auth.id
@@ -79,7 +79,7 @@ query "tournaments/{slugOrId}" verb=GET {
     }
   
     conditional {
-      if ($auth[""] != null && $auth.id != null) {
+      if ($auth.id != null) {
         db.query user_bracket {
           where = $db.user_bracket.user_id == $auth.id && $db.user_bracket.tournament_id == $tournament.id
           return = {type: "single"}

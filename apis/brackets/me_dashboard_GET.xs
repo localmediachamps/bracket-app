@@ -9,7 +9,7 @@ query "me/dashboard" verb=GET {
   }
 
   stack {
-    precondition ($auth[""] != null) {
+    precondition ($auth.id != null) {
       error_type = "unauthorized"
       error = "Authentication required."
     }

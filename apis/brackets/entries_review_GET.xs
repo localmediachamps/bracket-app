@@ -11,7 +11,7 @@ query "entries/{id}/review" verb=GET {
   }
 
   stack {
-    precondition ($auth[""] != null) {
+    precondition ($auth.id != null) {
       error_type = "unauthorized"
       error = "Authentication required."
     }

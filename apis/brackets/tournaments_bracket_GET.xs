@@ -46,7 +46,7 @@ query "tournaments/{id}/bracket/{weightClassId}" verb=GET {
   
     conditional {
       if ($input.entry_id != null) {
-        precondition ($auth[""] != null && $auth.id != null) {
+        precondition ($auth.id != null) {
           error_type = "unauthorized"
           error = "Authentication is required to view entry picks."
         }

@@ -21,7 +21,7 @@ query "pickem-entries/{id}" verb=PUT {
   }
 
   stack {
-    precondition ($auth[""] != null) {
+    precondition ($auth.id != null) {
       error_type = "unauthorized"
       error = "Authentication required."
     }

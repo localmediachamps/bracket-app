@@ -31,7 +31,7 @@ query "groups/{id}" verb=GET {
     }
   
     conditional {
-      if ($can_view_members == false && $auth[""] != null && $auth.id != null) {
+      if ($can_view_members == false && $auth.id != null) {
         conditional {
           if ($group.owner_id == $auth.id) {
             var.update $can_view_members {

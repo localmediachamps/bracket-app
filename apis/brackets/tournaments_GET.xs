@@ -22,7 +22,7 @@ query tournaments verb=GET {
     }
   
     conditional {
-      if ($auth[""] != null && $auth.id != null) {
+      if ($auth.id != null) {
         db.get user {
           field_name = "id"
           field_value = $auth.id
