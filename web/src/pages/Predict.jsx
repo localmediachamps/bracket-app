@@ -221,12 +221,10 @@ export default function Predict() {
       try {
         const payload = [...snap].map(([bracket_match_id, wrestler_id]) => ({ bracket_match_id, wrestler_id }))
         const res = await api.savePicks(entryId, payload)
-        if (res?.cleared?.length) {
-          applyServerCleared(res.cleared)
-          toast.info(`${res.cleared.length} ${res.cleared.length === 1 ? 'pick is' : 'picks are'} no longer valid`, {
-            body: 'The server cleared picks whose wrestler can no longer reach that match.',
-          })
-        }
+        // No toast here — cascading clears are already visible in the
+        // bracket itself, and the user is typically clicking through picks
+        // quickly enough that a toast per save would just be noise.
+        if (res?.cleared?.length) applyServerCleared(res.cleared)
         markSaved(snap, res?.progress)
         setSaveState('saved')
       } catch (err) {
@@ -272,8 +270,10 @@ export default function Predict() {
   /* ── pick handlers ───────────────────────────────────────── */
   const handlePick = useCallback(
     (match, wrestlerId) => {
-      const cleared = applyPick(match, wrestlerId, matches, competitorsById)
-      if (cleared > 0) toast.info(`${cleared} downstream ${cleared === 1 ? 'pick' : 'picks'} cleared`)
+      // No toast on cascading clears — visible directly in the bracket as
+      // downstream matches revert to TBD, and toasting on every pick during
+      // a fast run through the bracket is more noise than signal.
+      applyPick(match, wrestlerId, matches, competitorsById)
     },
     [applyPick, matches, competitorsById]
   )

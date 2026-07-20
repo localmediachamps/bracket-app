@@ -31,27 +31,17 @@ export default function usePredictPicks() {
 
   const hasUnsaved = useCallback(() => dirtyRef.current.size > 0, [])
 
-  /** Merge one weight's bracketView response (matches[].user_pick + entry.progress). */
+  /**
+   * Merge one weight's bracketView response (entry.progress only). Does NOT
+   * touch pick state from matches[].user_pick — the bracket-view endpoint's
+   * entry_id personalization is currently disabled server-side (unrelated
+   * platform issue, see DEBUG_LOG.md), so user_pick is always null there.
+   * mergePickList (GET /entries/{id}) is the sole source of truth for picks;
+   * trusting user_pick here would delete real picks on every load.
+   */
   const mergeWeight = useCallback((data) => {
     if (!data) return
-    const next = new Map(picksRef.current)
-    let changed = false
-    for (const m of data.matches ?? []) {
-      const wid = m.is_bye ? null : (m.user_pick?.wrestler_id ?? null)
-      serverRef.current.set(m.id, wid)
-      if (dirtyRef.current.has(m.id)) continue
-      if (wid == null) {
-        if (next.delete(m.id)) changed = true
-      } else if (next.get(m.id) !== wid) {
-        next.set(m.id, wid)
-        changed = true
-      }
-    }
     if (data.entry?.progress) setBase(data.entry.progress)
-    if (changed) {
-      picksRef.current = next
-      setPicks(next)
-    }
   }, [])
 
   /** Merge the full pick list from GET /entries/{id} (covers unloaded weights). */
