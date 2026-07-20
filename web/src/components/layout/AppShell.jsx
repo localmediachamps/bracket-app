@@ -11,9 +11,9 @@ export function Logo({ className }) {
   return (
     <Link to="/" className={cn('group inline-flex items-center', className)}>
       <img
-        src="/branding/mat_savvy_logo_dark_landscape.svg"
+        src="/branding/mat_savvy_logo_dark_sq.svg"
         alt="Mat Savvy"
-        className="h-8 w-auto transition-transform group-hover:scale-[1.02]"
+        className="h-11 w-auto transition-transform group-hover:scale-[1.02]"
       />
     </Link>
   )
