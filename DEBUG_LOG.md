@@ -4,6 +4,44 @@ Running log of the current debugging session(s). Newest entries on top.
 
 ---
 
+## 2026-07-20 — Picks wouldn't save past round 1 + a pan/zoom crash
+
+### "Wrestler is not a current participant of this match"
+Round 1 picks saved fine; any cascaded pick (round 2+) failed. Cause:
+[entries_picks_PUT.xs](apis/brackets/entries_picks_PUT.xs) validated each
+pick against `bracket_match.actual_top_wrestler_id` /
+`actual_bottom_wrestler_id` directly — those only get populated once a real
+result is recorded (or immediately for round 1, which is seeded). For any
+match still downstream of an unplayed round, those fields are `0`/unset, so
+literally no cascaded pick could ever pass.
+
+Fixed by having the endpoint resolve participants itself instead of relying
+on the raw DB fields: for each weight class touched by the payload, fetch
+its full match graph and run the same bounded-fixpoint resolution the
+client already does in `bracketMath.js`'s `resolvePicks` (seed slots read
+straight from `actual_top/bottom_wrestler_id`; `match_winner`/`match_loser`
+slots resolve from the *payload's own picks* for the source match, 6 passes
+to let it cascade). Validates each pick against the resolved participant
+set instead of the raw fields. Verified against live data: a real round-1
+pick plus its cascaded round-2 pick both saved in one request
+(`{"saved":2,"cleared":[...]}`), where the old code would have rejected the
+second one outright.
+
+### Bracket crash: "Cannot read properties of null (reading 'ox')"
+Race condition in [usePanZoom.js](web/src/components/bracket/usePanZoom.js).
+`onPointerMove`'s `setT` updater read `drag.current.ox`/`.oy` *inside* the
+React state-updater callback, not at the point the guard clause ran. React
+can defer/batch that callback; if `pointerup` fired in between (nulling
+`drag.current`) before the queued updater actually executed, it crashed on
+the stale null. Fixed by snapshotting `drag.current`'s fields into local
+consts synchronously before calling `setT`, so the updater never re-reads
+the ref.
+
+### Status
+Both fixed and pushed/deployed.
+
+---
+
 ## 2026-07-20 — Auto-lock bug + bracket-view entry_id (platform tooling limits)
 
 ### `lock_tournaments` task re-locking reopened tournaments

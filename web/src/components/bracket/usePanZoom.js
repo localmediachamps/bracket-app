@@ -77,8 +77,14 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
         }
         return
       }
-      if (!drag.current || drag.current.id !== e.pointerId) return
-      setT((p) => ({ ...p, x: drag.current.ox + (e.clientX - drag.current.sx), y: drag.current.oy + (e.clientY - drag.current.sy) }))
+      const d = drag.current
+      if (!d || d.id !== e.pointerId) return
+      // Snapshot d's fields now — setT's updater can run after this handler
+      // returns (React may batch/defer it), by which point a pointerup
+      // could have already nulled out drag.current out from under it.
+      const nx = d.ox + (e.clientX - d.sx)
+      const ny = d.oy + (e.clientY - d.sy)
+      setT((p) => ({ ...p, x: nx, y: ny }))
     }
     const onPointerUp = (e) => {
       drag.current = null
