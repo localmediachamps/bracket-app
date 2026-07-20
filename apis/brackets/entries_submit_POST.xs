@@ -65,20 +65,6 @@ query "entries/{id}/submit" verb=POST {
       value = $missing|count
     }
   
-<<<<<<<
-    var $missing_word {
-      value = "matches"
-    }
-
-    conditional {
-      if ($missing_count == 1) {
-        var.update $missing_word {
-          value = "match"
-        }
-      }
-    }
-
-=======
     var $missing_word {
       value = "matches"
     }
@@ -91,7 +77,6 @@ query "entries/{id}/submit" verb=POST {
       }
     }
   
->>>>>>>
     precondition ($missing_count == 0) {
       error_type = "inputerror"
       error = $missing_count ~ " " ~ $missing_word ~ " still need picks before you can submit."
@@ -110,5 +95,4 @@ query "entries/{id}/submit" verb=POST {
   }
 
   response = {entry: $updated_entry, missing: []}
-  guid = "X1Ie5LLRGFZ8anqRhYpXRoSiPqU"
 }
