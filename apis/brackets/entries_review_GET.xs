@@ -138,7 +138,15 @@ query "entries/{id}/review" verb=GET {
         foreach ($picks) {
           each as $wp {
             var $pick_match {
-              value = $match_map|get:$wp.bracket_match_id
+              value = null
+            }
+          
+            conditional {
+              if ($match_map|has:$wp.bracket_match_id) {
+                var.update $pick_match {
+                  value = $match_map[$wp.bracket_match_id]
+                }
+              }
             }
           
             conditional {

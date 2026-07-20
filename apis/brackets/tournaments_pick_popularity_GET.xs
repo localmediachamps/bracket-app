@@ -99,7 +99,15 @@ query "tournaments/{id}/pick-popularity" verb=GET {
     foreach ($picks) {
       each as $p {
         var $match_counts {
-          value = $pick_counts|get:$p.bracket_match_id
+          value = null
+        }
+      
+        conditional {
+          if ($pick_counts|has:$p.bracket_match_id) {
+            var.update $match_counts {
+              value = $pick_counts[$p.bracket_match_id]
+            }
+          }
         }
       
         conditional {
@@ -111,7 +119,15 @@ query "tournaments/{id}/pick-popularity" verb=GET {
         }
       
         var $current {
-          value = $match_counts|get:$p.picked_wrestler_id
+          value = null
+        }
+      
+        conditional {
+          if ($match_counts|has:$p.picked_wrestler_id) {
+            var.update $current {
+              value = $match_counts[$p.picked_wrestler_id]
+            }
+          }
         }
       
         conditional {
@@ -146,7 +162,15 @@ query "tournaments/{id}/pick-popularity" verb=GET {
     foreach ($matches) {
       each as $m {
         var $m_counts {
-          value = $pick_counts|get:$m.id
+          value = null
+        }
+      
+        conditional {
+          if ($pick_counts|has:$m.id) {
+            var.update $m_counts {
+              value = $pick_counts[$m.id]
+            }
+          }
         }
       
         var $pick_rows {
@@ -173,10 +197,22 @@ query "tournaments/{id}/pick-popularity" verb=GET {
                   }
                 }
               
+                var $wrestler_name {
+                  value = null
+                }
+              
+                conditional {
+                  if ($wrestler_map|has:$pair.key) {
+                    var.update $wrestler_name {
+                      value = $wrestler_map[$pair.key]
+                    }
+                  }
+                }
+              
                 array.push $pick_rows {
                   value = {
                     wrestler_id: $pair.key|to_int
-                    wrestler   : $wrestler_map|get:$pair.key
+                    wrestler   : $wrestler_name
                     count      : $pair.value
                     pct        : $pct
                   }
@@ -199,12 +235,24 @@ query "tournaments/{id}/pick-popularity" verb=GET {
           }
         }
       
+        var $wc_weight {
+          value = null
+        }
+      
+        conditional {
+          if ($wc_map|has:$m.weight_class_id) {
+            var.update $wc_weight {
+              value = $wc_map[$m.weight_class_id]
+            }
+          }
+        }
+      
         conditional {
           if ($m.round_code == "champ_finals") {
             array.push $champion_rows {
               value = {
                 weight_class_id: $m.weight_class_id
-                weight         : $wc_map|get:$m.weight_class_id
+                weight         : $wc_weight
                 picks          : $pick_rows
               }
             }

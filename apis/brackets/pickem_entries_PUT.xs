@@ -119,8 +119,24 @@ query "pickem-entries/{id}" verb=PUT {
         }
       
         // Cost from seed costs with default fallback
+        var $seed_key {
+          value = $wrestler.seed|to_text
+        }
+      
         var $cost {
-          value = $config.seed_costs|get:($wrestler.seed|to_text)
+          value = null
+        }
+      
+        var $seed_costs_map {
+          value = $config.seed_costs
+        }
+      
+        conditional {
+          if ($seed_costs_map|has:$seed_key) {
+            var.update $cost {
+              value = $seed_costs_map[$seed_key]
+            }
+          }
         }
       
         conditional {

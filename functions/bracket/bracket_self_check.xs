@@ -185,7 +185,19 @@ function bracket_self_check {
             }
           
             var $wref_count {
-              value = ($slot_refs|get:$wref:0) + 1
+              value = 0
+            }
+          
+            conditional {
+              if ($slot_refs|has:$wref) {
+                var.update $wref_count {
+                  value = $slot_refs[$wref]
+                }
+              }
+            }
+          
+            math.add $wref_count {
+              value = 1
             }
           
             var.update $slot_refs {
@@ -281,7 +293,19 @@ function bracket_self_check {
             }
           
             var $lref_count {
-              value = ($slot_refs|get:$lref:0) + 1
+              value = 0
+            }
+          
+            conditional {
+              if ($slot_refs|has:$lref) {
+                var.update $lref_count {
+                  value = $slot_refs[$lref]
+                }
+              }
+            }
+          
+            math.add $lref_count {
+              value = 1
             }
           
             var.update $slot_refs {
@@ -472,7 +496,19 @@ function bracket_self_check {
             }
           
             var $tseed_count {
-              value = ($seed_usage|get:$tseed_key:0) + 1
+              value = 0
+            }
+          
+            conditional {
+              if ($seed_usage|has:$tseed_key) {
+                var.update $tseed_count {
+                  value = $seed_usage[$tseed_key]
+                }
+              }
+            }
+          
+            math.add $tseed_count {
+              value = 1
             }
           
             var.update $seed_usage {
@@ -488,7 +524,19 @@ function bracket_self_check {
             }
           
             var $bseed_count {
-              value = ($seed_usage|get:$bseed_key:0) + 1
+              value = 0
+            }
+          
+            conditional {
+              if ($seed_usage|has:$bseed_key) {
+                var.update $bseed_count {
+                  value = $seed_usage[$bseed_key]
+                }
+              }
+            }
+          
+            math.add $bseed_count {
+              value = 1
             }
           
             var.update $seed_usage {
@@ -506,7 +554,15 @@ function bracket_self_check {
         }
       
         var $wseed_count {
-          value = $seed_usage|get:$wseed_key:0
+          value = 0
+        }
+      
+        conditional {
+          if ($seed_usage|has:$wseed_key) {
+            var.update $wseed_count {
+              value = $seed_usage[$wseed_key]
+            }
+          }
         }
       
         conditional {

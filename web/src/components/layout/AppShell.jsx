@@ -9,15 +9,12 @@ import { cn } from '../../lib/utils'
 
 export function Logo({ className }) {
   return (
-    <Link to="/" className={cn('group inline-flex items-center gap-2.5', className)}>
+    <Link to="/" className={cn('group inline-flex items-center', className)}>
       <img
-        src="/branding/mat_savvy_logo_dark_sq.svg"
-        alt="Mat Savvy logo"
-        className="h-8 w-8 transition-transform group-hover:-rotate-6"
+        src="/branding/mat_savvy_logo_dark_landscape.svg"
+        alt="Mat Savvy"
+        className="h-9 w-auto transition-transform group-hover:scale-[1.02]"
       />
-      <span className="font-display text-lg uppercase tracking-tight text-ink-100">
-        Mat<span className="text-gold-500">Savvy</span>
-      </span>
     </Link>
   )
 }

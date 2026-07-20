@@ -132,14 +132,26 @@ function score_entry {
                   value = $bracket_cfg|get:"placement":{}
                 }
               
-                var.update $points_available {
-                  value = $placement_map|get:$match.round_code:null
+                conditional {
+                  if ($placement_map|has:$match.round_code) {
+                    var.update $points_available {
+                      value = $placement_map[$match.round_code]
+                    }
+                  }
                 }
               }
             
               else {
                 var $section_map {
-                  value = $bracket_cfg|get:$match.bracket_section:null
+                  value = null
+                }
+              
+                conditional {
+                  if ($bracket_cfg|has:$match.bracket_section) {
+                    var.update $section_map {
+                      value = $bracket_cfg[$match.bracket_section]
+                    }
+                  }
                 }
               
                 conditional {
@@ -148,8 +160,12 @@ function score_entry {
                       value = $match.round_number|to_text
                     }
                   
-                    var.update $points_available {
-                      value = $section_map|get:$round_key:null
+                    conditional {
+                      if ($section_map|has:$round_key) {
+                        var.update $points_available {
+                          value = $section_map[$round_key]
+                        }
+                      }
                     }
                   
                     // fallback: nearest defined lower round_number
@@ -185,8 +201,12 @@ function score_entry {
                               value = $best_lower|to_text
                             }
                           
-                            var.update $points_available {
-                              value = $section_map|get:$lower_key:null
+                            conditional {
+                              if ($section_map|has:$lower_key) {
+                                var.update $points_available {
+                                  value = $section_map[$lower_key]
+                                }
+                              }
                             }
                           }
                         }

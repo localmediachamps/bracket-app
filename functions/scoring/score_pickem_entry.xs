@@ -104,7 +104,15 @@ function score_pickem_entry {
                 conditional {
                   if ($m.is_bye != true && $m.actual_winner_wrestler_id == $pick.wrestler_id) {
                     var $wp {
-                      value = $win_points|get:$m.bracket_section:null
+                      value = null
+                    }
+                  
+                    conditional {
+                      if ($win_points|has:$m.bracket_section) {
+                        var.update $wp {
+                          value = $win_points[$m.bracket_section]
+                        }
+                      }
                     }
                   
                     conditional {
@@ -118,7 +126,15 @@ function score_pickem_entry {
                     conditional {
                       if ($m.victory_type != null) {
                         var $bp {
-                          value = $bonus_points|get:$m.victory_type:null
+                          value = null
+                        }
+                      
+                        conditional {
+                          if ($bonus_points|has:$m.victory_type) {
+                            var.update $bp {
+                              value = $bonus_points[$m.victory_type]
+                            }
+                          }
                         }
                       
                         conditional {
@@ -246,7 +262,15 @@ function score_pickem_entry {
             }
           
             var $pp {
-              value = $placement_points|get:$placement_key:null
+              value = null
+            }
+          
+            conditional {
+              if ($placement_points|has:$placement_key) {
+                var.update $pp {
+                  value = $placement_points[$placement_key]
+                }
+              }
             }
           
             conditional {

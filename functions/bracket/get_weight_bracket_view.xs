@@ -145,8 +145,15 @@ function get_weight_bracket_view {
             conditional {
               if ($ap_match != null) {
                 var $ap_counts {
-                  value = $pct_map
-                    |get:$ap.bracket_match_id:{top: 0, bottom: 0}
+                  value = {top: 0, bottom: 0}
+                }
+              
+                conditional {
+                  if ($pct_map|has:$ap.bracket_match_id) {
+                    var.update $ap_counts {
+                      value = $pct_map[$ap.bracket_match_id]
+                    }
+                  }
                 }
               
                 conditional {
@@ -208,9 +215,24 @@ function get_weight_bracket_view {
           }
         }
       
+        var $rc_count {
+          value = 0
+        }
+      
+        conditional {
+          if ($round_counts|has:$m.round_code) {
+            var.update $rc_count {
+              value = $round_counts[$m.round_code]
+            }
+          }
+        }
+      
+        math.add $rc_count {
+          value = 1
+        }
+      
         var.update $round_counts {
-          value = $round_counts
-            |set:$m.round_code:($round_counts|get:$m.round_code:0) + 1
+          value = $round_counts|set:$m.round_code:$rc_count
         }
       }
     }
@@ -222,9 +244,21 @@ function get_weight_bracket_view {
   
     foreach ($rounds) {
       each as $r {
+        var $rc_match_count {
+          value = 0
+        }
+      
+        conditional {
+          if ($round_counts|has:$r.code) {
+            var.update $rc_match_count {
+              value = $round_counts[$r.code]
+            }
+          }
+        }
+      
         array.push $rounds_final {
           value = $r
-            |set:"match_count":($round_counts|get:$r.code:0)
+            |set:"match_count":$rc_match_count
         }
       }
     }
@@ -375,7 +409,15 @@ function get_weight_bracket_view {
         conditional {
           if ($input.pick_percentages) {
             var $pp_counts {
-              value = $pct_map|get:$m.id:{top: 0, bottom: 0}
+              value = {top: 0, bottom: 0}
+            }
+          
+            conditional {
+              if ($pct_map|has:$m.id) {
+                var.update $pp_counts {
+                  value = $pct_map[$m.id]
+                }
+              }
             }
           
             var $pp_total {

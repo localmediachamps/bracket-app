@@ -111,8 +111,20 @@ query "entries/{id}/picks" verb=PUT {
           }
         
           elseif ($match.bracket_section == "placement") {
+            var $placement_cfg {
+              value = $config.bracket.placement
+            }
+          
             var $placement_points {
-              value = $config.bracket.placement|get:$match.round_code
+              value = null
+            }
+          
+            conditional {
+              if ($placement_cfg|has:$match.round_code) {
+                var.update $placement_points {
+                  value = $placement_cfg[$match.round_code]
+                }
+              }
             }
           
             conditional {
@@ -125,8 +137,20 @@ query "entries/{id}/picks" verb=PUT {
           }
         
           else {
+            var $bracket_cfg {
+              value = $config.bracket
+            }
+          
             var $section_map {
-              value = $config.bracket|get:$match.bracket_section
+              value = null
+            }
+          
+            conditional {
+              if ($bracket_cfg|has:$match.bracket_section) {
+                var.update $section_map {
+                  value = $bracket_cfg[$match.bracket_section]
+                }
+              }
             }
           
             conditional {
@@ -142,8 +166,20 @@ query "entries/{id}/picks" verb=PUT {
               
                 while ($resolved == null && $rn >= 1) {
                   each {
+                    var $rn_key {
+                      value = $rn|to_text
+                    }
+                  
                     var $candidate {
-                      value = $section_map|get:($rn|to_text)
+                      value = null
+                    }
+                  
+                    conditional {
+                      if ($section_map|has:$rn_key) {
+                        var.update $candidate {
+                          value = $section_map[$rn_key]
+                        }
+                      }
                     }
                   
                     conditional {
