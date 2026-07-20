@@ -12,11 +12,13 @@ After a user fully predicts the championship bracket, auto-generate a suggested 
 - **UI:** "Recommended" chips next to wrestlers in the pick'em builder; a "Generate Best Scenario" button pre-fills the roster (still fully editable).
 - **Known gap:** predicted points can only include placement + win points, not bonus points (fall/tech-fall/major), since victory type isn't part of a plain "who wins" bracket pick. Closing that gap needs historical per-wrestler bonus-point rates — see #2.
 
-## 2. TrackWrestling historical data integration
+## 2. TrackWrestling historical data integration (IN PROGRESS as of 2026-07-20)
 
-Scripts already exist (`scripts/trackwrestling/tw.py`, `twclient.py`) for pulling TrackWrestling data; scraping the last couple seasons per wrestler hasn't been executed yet.
+Status: actively being built, not just planned. The original `tw.py`/`twclient.py` tooling (per-event/per-team HTML scraping) turned out to be built against an outdated site structure. A better data source was found: a team's "Results per Wrestler" page returns a wrestler's entire season (every dual + tournament) in one JSON call, and the same page embeds the full team roster (every wrestler id) inline — so the whole crawl only needs one page load per team plus one call per wrestler, no manual id lookup.
 
-Once available, it unlocks:
+Built so far: `scripts/trackwrestling/twwrestlermatches.py` and `twroster.py` (parsers, validated against real captured data), plus new Xano tables `canonical_wrestler`, `canonical_team`, `wrestler_match_history`. Still needed: the actual fetcher (session/cookie handling — automatic bootstrap currently 406s, so a session token has to be grabbed manually from a browser for now) and the crawl orchestration tying it together. Full details in memory (`trackwrestling-historical-data-roadmap`) and in the docstrings at the top of the two parser modules.
+
+Once fully wired up, it unlocks:
 - Per-wrestler analytics (pin rate, tech-fall rate, etc.) — feeds #1's bonus-point estimate.
 - Hover-over wrestler card on bracket views → modal with last ~10 match results + link to full wrestler profile in a new tab.
 - Head-to-head surfacing: if two wrestlers in a matchup have faced each other before, show that history on the matchup card.
