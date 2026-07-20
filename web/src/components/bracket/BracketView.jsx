@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map as MapIcon } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { layoutBracket, connectorPath, resolvePicks, METRICS } from './bracketMath'
 import MatchCard from './MatchCard'
@@ -280,7 +280,7 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
               showMinimap ? 'bg-gold-500/20 text-gold-400' : 'bg-mat-850/80 text-ink-500 hover:text-ink-200'
             )}
           >
-            <Map size={11} /> Map
+            <MapIcon size={11} /> Map
           </button>
         </div>
       </div>
