@@ -43,7 +43,7 @@ export default function AdminTournament() {
 
   const tQ = useQuery({
     queryKey: ['admin', 'tournament', id],
-    queryFn: () => api.tournament(id),
+    queryFn: () => api.adminTournament(id),
   })
   const t = tQ.data
   const tournament = t?.tournament ?? t

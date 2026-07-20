@@ -84,6 +84,7 @@ export const api = {
 
   /* ── Admin ──────────────────────────────────────────── */
   adminTournaments: () => get(XANO_ADMIN, `/admin/tournaments`),
+  adminTournament: (id) => get(XANO_ADMIN, `/admin/tournaments/${id}`),
   adminCreateTournament: (payload) => post(XANO_ADMIN, `/admin/tournaments`, payload),
   adminUpdateTournament: (id, payload) => put(XANO_ADMIN, `/admin/tournaments/${id}`, payload),
   adminPublishTournament: (id) => post(XANO_ADMIN, `/admin/tournaments/${id}/publish`),

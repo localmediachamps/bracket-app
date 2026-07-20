@@ -22,7 +22,7 @@ export default function AdminBuilder() {
   const [pasteOpen, setPasteOpen] = useState(false)
   const [addWeightOpen, setAddWeightOpen] = useState(false)
 
-  const tQ = useQuery({ queryKey: ['admin', 'tournament', id], queryFn: () => api.tournament(id) })
+  const tQ = useQuery({ queryKey: ['admin', 'tournament', id], queryFn: () => api.adminTournament(id) })
   const tournament = tQ.data?.tournament ?? tQ.data
   const weights = useMemo(
     () =>
