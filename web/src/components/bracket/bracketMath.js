@@ -104,7 +104,10 @@ export function layoutBracket(matches) {
 
   /* ── Consolation band (mirrors championship vertical spread) ── */
   const consRounds = byRound(cons)
-  const bandTop = maxY + BAND_GAP
+  // Only offset past the championship band if one is actually present in
+  // this layout (BracketView now renders one section — champ/cons/placement
+  // — at a time) — otherwise this bakes in a pointless empty gap up top.
+  const bandTop = champ.length ? maxY + BAND_GAP : PAD
   if (consRounds.length) {
     consRounds.forEach(({ round, list }, colIdx) => {
       const x = PAD + colIdx * colW
@@ -115,7 +118,10 @@ export function layoutBracket(matches) {
           .map((id) => pos.get(id))
           .filter(Boolean)
           .map((p) => (p.band === 'championship' ? p.y : bandTop + HEADER_H))
-        const spread = champBottom - HEADER_H - PAD || 1
+        // Only cap to the championship band's height when one is actually
+        // present above — otherwise this went negative and collapsed every
+        // later consolation round onto the same y position.
+        const spread = champ.length ? (champBottom - HEADER_H - PAD || 1) : Infinity
         const target = ys.length
           ? bandTop + HEADER_H + Math.min(avg(ys) - HEADER_H - PAD, spread)
           : bandTop + HEADER_H + m.match_number * pitch

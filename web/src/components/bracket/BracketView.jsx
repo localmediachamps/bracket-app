@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map as MapIcon } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map as MapIcon, Check } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { layoutBracket, connectorPath, resolvePicks, METRICS } from './bracketMath'
 import MatchCard from './MatchCard'
@@ -23,13 +23,50 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
     [data?.competitors]
   )
 
-  const layout = useMemo(() => layoutBracket(matches), [matches])
-
-  // resolve picks through the graph (predict mode)
+  // resolve picks through the graph (predict mode) — over ALL matches, not
+  // just the active section, since consolation/placement resolution depends
+  // on championship picks cascading through
   const resolution = useMemo(() => {
     if (mode !== 'predict' || !picks) return null
     return resolvePicks(matches, picks, competitorsById)
   }, [matches, picks, competitorsById, mode])
+
+  // Section tabs: championship / consolation / placement, each its own
+  // focused close-up view rather than one long horizontal scroll. Only show
+  // tabs for sections that actually have matches (some templates skip
+  // consolation/placement entirely).
+  const sectionCounts = useMemo(() => {
+    const counts = { championship: 0, consolation: 0, placement: 0 }
+    for (const m of matches) {
+      if (counts[m.section] != null) counts[m.section]++
+    }
+    return counts
+  }, [matches])
+  const availableSections = SECTIONS.filter((s) => sectionCounts[s.key] > 0)
+  const [activeSection, setActiveSection] = useState('championship')
+  useEffect(() => {
+    if (sectionCounts[activeSection] > 0) return
+    const first = availableSections[0]?.key
+    if (first) setActiveSection(first)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionCounts])
+
+  const sectionMatches = useMemo(() => matches.filter((m) => m.section === activeSection), [matches, activeSection])
+  const layout = useMemo(() => layoutBracket(sectionMatches), [sectionMatches])
+
+  const sectionProgress = useMemo(() => {
+    if (mode !== 'predict' || !picks) return null
+    const out = {}
+    for (const s of SECTIONS) out[s.key] = { picked: 0, total: 0 }
+    for (const m of matches) {
+      if (m.is_bye) continue
+      const bucket = out[m.section]
+      if (!bucket) continue
+      bucket.total++
+      if (picks.has(m.id)) bucket.picked++
+    }
+    return out
+  }, [matches, picks, mode])
 
   // notify parent when picks were auto-cleared (stale downstream picks)
   useEffect(() => {
@@ -60,8 +97,36 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
 
   return (
     <div className={cn('relative', className)}>
-      {/* view toggle + zoom controls */}
-      <div className="mb-3 flex items-center justify-between gap-2">
+      {/* section tabs + view toggle */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        {availableSections.length > 1 ? (
+          <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1">
+            {availableSections.map((s) => {
+              const prog = sectionProgress?.[s.key]
+              const complete = prog && prog.total > 0 && prog.picked >= prog.total
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setActiveSection(s.key)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors',
+                    activeSection === s.key ? 'bg-mat-700 text-gold-400' : 'text-ink-500 hover:text-ink-200'
+                  )}
+                >
+                  {s.label}
+                  {prog && (
+                    <span className={cn('font-mono text-[10px] font-normal', complete ? 'text-pin-400' : 'text-ink-600')}>
+                      {complete ? <Check size={11} className="inline" /> : `${prog.picked}/${prog.total}`}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <span />
+        )}
         <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1">
           <ViewButton active={view === 'canvas'} onClick={() => setViewOverride('canvas')} icon={GitBranch} label="Bracket" />
           <ViewButton active={view === 'list'} onClick={() => setViewOverride('list')} icon={List} label="List" />
@@ -70,7 +135,7 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
 
       {view === 'canvas' ? (
         <CanvasView
-          matches={matches}
+          matches={sectionMatches}
           layout={layout}
           mode={mode}
           resolution={resolution}
@@ -80,11 +145,17 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
           data={data}
         />
       ) : (
-        <ListView matches={matches} mode={mode} resolution={resolution} picks={picks} onPick={onPick} data={data} />
+        <ListView matches={sectionMatches} mode={mode} resolution={resolution} picks={picks} onPick={onPick} data={data} />
       )}
     </div>
   )
 }
+
+const SECTIONS = [
+  { key: 'championship', label: 'Championship' },
+  { key: 'consolation', label: 'Consolation' },
+  { key: 'placement', label: 'Placement' },
+]
 
 function ViewButton({ active, onClick, icon: Icon, label }) {
   return (
@@ -112,7 +183,9 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
   // empty gap above the first visible match.
   useEffect(() => {
     const t = setTimeout(() => {
-      const firstCol = [...layout.pos.values()].filter((p) => p.col === 0 && p.band === 'championship')
+      // matches passed in are already scoped to one section (tab), so any
+      // col===0 entry is the right one regardless of which band it is
+      const firstCol = [...layout.pos.values()].filter((p) => p.col === 0)
       if (!firstCol.length) {
         pz.fit()
         return
@@ -128,8 +201,11 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
       })
     }, 60)
     return () => clearTimeout(t)
+    // layout is a new object on every tab switch (sectionMatches changes),
+    // so this re-focuses correctly when moving between championship/
+    // consolation/placement instead of keeping the old tab's transform
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout.width, layout.height])
+  }, [layout])
 
   const connectors = useMemo(() => {
     const out = []
@@ -206,18 +282,6 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
               </div>
             )
           })}
-
-          {/* consolation band label */}
-          {layout.consBandTop != null && (
-            <div
-              className="absolute flex items-center gap-3"
-              style={{ left: 0, top: layout.consBandTop - 44, width: layout.width }}
-            >
-              <span className="h-px flex-1 bg-mat-700" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-500">Consolation</span>
-              <span className="h-px flex-1 bg-mat-700" />
-            </div>
-          )}
 
           {/* SVG connectors */}
           <svg className="absolute left-0 top-0 pointer-events-none" width={layout.width} height={layout.height}>
