@@ -20,6 +20,29 @@ table user {
     text bio?
     text favorite_school? filters=trim
     timestamp updated_at?
+<<<<<<<
+
+    // Opt out of appearing on public tournament-wide leaderboards entirely
+    // (private group leaderboards are unaffected — those are visible only
+    // to people the user already shares a group with)
+    bool leaderboard_visible?=true
+
+    // Which name to show when visible on the public leaderboard
+    enum leaderboard_name_mode?=display_name {
+      values = ["display_name", "username"]
+    }
+=======
+  
+    // Opt out of appearing on public tournament-wide leaderboards entirely
+    // (private group leaderboards are unaffected — those are visible only
+    // to people the user already shares a group with)
+    bool leaderboard_visible?=true
+  
+    // Which name to show when visible on the public leaderboard
+    enum leaderboard_name_mode?="display_name" {
+      values = ["display_name", "username"]
+    }
+>>>>>>>
   }
 
   index = [
@@ -31,4 +54,5 @@ table user {
       field: [{name: "username", op: "asc"}]
     }
   ]
+  guid = "9muXwZ5q7RHlyup9X6JrIFuSlLI"
 }

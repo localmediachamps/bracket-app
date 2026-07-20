@@ -342,7 +342,7 @@ export default function Landing() {
             icon={GitBranch}
             title="Bracket Challenge"
             copy="Predict every match of every weight — first round through the finals, plus the consolation gauntlet. Winners advance through your bracket, and every correct call banks points."
-            chips={['61 matches per weight', 'Champion bonuses', 'Blood rounds count']}
+            chips={['Any bracket size', 'Full consolation support', 'Every round counts']}
             mock={<BracketMock />}
           />
           <PlayCard

@@ -47,6 +47,7 @@ export const api = {
   /* ── Public tournaments ─────────────────────────────── */
   tournaments: (params = {}) => get(XANO_APP, `/tournaments${qs(params)}`),
   tournament: (slugOrId) => get(XANO_APP, `/tournaments/${slugOrId}`),
+  myEntry: (tournamentId) => get(XANO_APP, `/tournaments/${tournamentId}/my-entry`),
   bracketView: (tournamentId, weightClassId, entryId, withPercents) =>
     get(XANO_APP, `/tournaments/${tournamentId}/bracket/${weightClassId}${qs({ entry_id: entryId, pick_percentages: withPercents || undefined })}`),
   leaderboard: (tournamentId, params = {}) => get(XANO_APP, `/tournaments/${tournamentId}/leaderboard${qs(params)}`),

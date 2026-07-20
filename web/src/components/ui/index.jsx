@@ -175,7 +175,7 @@ export function Switch({ checked, onChange, label, description }) {
 /* ── Tabs ─────────────────────────────────────────────── */
 export function Tabs({ tabs, active, onChange, className }) {
   return (
-    <div className={cn('flex gap-1 overflow-x-auto no-scrollbar border-b border-mat-700', className)} role="tablist">
+    <div className={cn('flex touch-pan-x gap-1 overflow-x-auto no-scrollbar border-b border-mat-700', className)} role="tablist">
       {tabs.map((t) => (
         <button
           key={t.key}

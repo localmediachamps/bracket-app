@@ -21,6 +21,12 @@ query "auth/me" verb=PATCH {
   
     // Favorite school
     text? favorite_school? filters=trim
+  
+    // Show up on public tournament-wide leaderboards at all
+    bool? leaderboard_visible?
+  
+    // Which name to show when visible: display_name or username
+    text? leaderboard_name_mode? filters=trim|lower
   }
 
   stack {
@@ -100,6 +106,29 @@ query "auth/me" verb=PATCH {
         var.update $payload {
           value = $payload
             |set:"favorite_school":$input.favorite_school
+        }
+      }
+    }
+  
+    conditional {
+      if ($input.leaderboard_visible != null) {
+        var.update $payload {
+          value = $payload
+            |set:"leaderboard_visible":$input.leaderboard_visible
+        }
+      }
+    }
+  
+    conditional {
+      if ($input.leaderboard_name_mode != null) {
+        precondition ($input.leaderboard_name_mode == "display_name" || $input.leaderboard_name_mode == "username") {
+          error_type = "inputerror"
+          error = "leaderboard_name_mode must be display_name or username."
+        }
+      
+        var.update $payload {
+          value = $payload
+            |set:"leaderboard_name_mode":$input.leaderboard_name_mode
         }
       }
     }

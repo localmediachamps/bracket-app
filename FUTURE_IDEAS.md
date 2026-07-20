@@ -22,3 +22,26 @@ Once available, it unlocks:
 - Head-to-head surfacing: if two wrestlers in a matchup have faced each other before, show that history on the matchup card.
 
 **Prerequisite (separate sub-project):** wrestler identity matching. PDF-imported bracket wrestlers need to be reconciled against the existing wrestler database (dedup/link to the same underlying wrestler record) before any historical record can reliably attach to the right person. This is its own scoped effort, distinct from the scraping work itself.
+
+## 3. Season-long platform + freemium model (target: fall college wrestling season launch)
+
+Big-picture business model and scope expansion, described 2026-07-20. Not scoped or started — this is a large effort (schedule ingestion, event data model, billing, season-aggregate scoring) that deserves its own planning pass with the Xano Development Planner when it's time to start.
+
+- **Full D1 schedule ingestion:** load every Division I college wrestling schedule for the season — dual meets, dual tournaments, and individual tournaments all become playable "events" on the platform, not just standalone tournaments like the current NCAA D1 championships test case.
+- **Schedule browser:** a new area of the app to view the full season schedule, filterable by team, or viewed as one overall calendar.
+- **Freemium access model:** free tier = pick/predict on ~2-3 events (enough to invite friends, try it out, or just play a single marquee event like nationals for free). Paid tier = a flat annual "season pass" unlocking every event for the whole season.
+- **Season-long leaderboard:** in addition to each individual event/tournament's own leaderboard, an aggregate season-wide leaderboard that rewards players for entering many events, not just one — the incentive structure for the paid season pass.
+
+This implies the current single-tournament-scoped data model (tournament → weight_class → bracket_match, one entry per tournament) will need to grow into a multi-event-per-season structure with per-user season aggregation, plus payment/subscription and entitlement gating (which events a given account can access). Keep this in mind for any architecture decisions made in the meantime — avoid baking in assumptions that only one tournament exists at a time.
+
+## 4. Fantasy-football-style head-to-head season league (builds on #3)
+
+A gameplay mode that doesn't exist elsewhere in wrestling, described 2026-07-20. Distinct from the individual-event bracket/pick'em modes we're building now — this is a season-long, roster-management game played within a private group/pool.
+
+- **Structure:** a group (pool) of players (e.g. 8), each drafting a roster with one starter per weight class. Head-to-head matchups pair two pool members against each other over a competitive window — likely 2 weeks at a time, since college wrestling events are infrequent compared to weekly team sports.
+- **Roster management:** starters must actually be competing during that window to score. Players can trade with other pool members, or drop a wrestler to a waiver wire and pick up someone else at that weight for the period — a dropped wrestler becomes available for another pool member to claim.
+- **Injury/bye handling:** a player can choose to leave an injured starter's spot scoring zero for a window rather than drop them, if the injury is short-term — but that wrestler remains on the waiver wire for others to pick up in the meantime.
+- **Data dependency:** requires the season schedule + wrestler records/availability data (see #2 and #3) so players can see, for each available wrestler, when they compete next and who they're likely facing.
+- **Scope:** regular-season-long fantasy flow, with a separate (not yet designed) postseason format.
+
+This is a substantial standalone game mode (roster/draft mechanics, waiver wire, trades, head-to-head weekly/biweekly scoring, matchup scheduling within a pool) layered on top of the season-platform infrastructure in #3 — plan it as its own effort once the season-platform data model (schedule + historical records) exists.

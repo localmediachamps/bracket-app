@@ -65,6 +65,16 @@ export default function TournamentHub() {
     staleTime: 30000,
   })
 
+  // Separate, auth-gated lookup for the current user's entry status — the
+  // main tournament query is public and its own my_entry personalization is
+  // disabled (see DEBUG_LOG.md), so this drives the CTA text instead.
+  const { data: myEntryData } = useQuery({
+    queryKey: ['tournament-my-entry', data?.id],
+    queryFn: () => api.myEntry(data.id),
+    enabled: !!user && !!data?.id,
+    staleTime: 10000,
+  })
+
   if (isLoading) return <HeaderSkeleton />
 
   if (isError) {
@@ -94,7 +104,7 @@ export default function TournamentHub() {
   const t = data ?? {}
   const weights = t.weight_classes ?? t.weights ?? []
   const modes = asModes(t.game_modes)
-  const myEntry = t.my_entry ?? null
+  const myEntry = myEntryData ?? t.my_entry ?? null
   const competitorCount =
     t.competitor_count ?? (weights.length ? weights.reduce((a, w) => a + (w.competitor_count ?? 0), 0) : null)
 
@@ -124,9 +134,14 @@ export default function TournamentHub() {
 
   const ctas = []
   if (t.status === 'open') {
+    const predictLabel = myEntry?.is_submitted || myEntry?.status === 'submitted'
+      ? 'View Your Submission'
+      : myEntry
+        ? 'Continue Picks'
+        : 'Make Your Picks'
     ctas.push(
       <Button key="predict" size="lg" onClick={goPredict}>
-        <GitBranch size={16} /> {myEntry ? 'Continue Picks' : 'Make Your Picks'}
+        <GitBranch size={16} /> {predictLabel}
       </Button>
     )
     if (modes.includes('pickem')) {
