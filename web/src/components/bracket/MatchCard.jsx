@@ -96,8 +96,9 @@ export default function MatchCard({ match, mode = 'readonly', resolved, pickedId
 }
 
 function Slot({ comp, slot, match, mode, interactive, picked, officialWinner, userPick, onPick, rounded }) {
-  const isWinnerOfficial = officialWinner != null && comp?.id === officialWinner
-  const isLoserOfficial = officialWinner != null && comp?.id != null && comp?.id !== officialWinner
+  // winner_competitor_id comes back as 0 (not null) until a result is entered
+  const isWinnerOfficial = !!officialWinner && comp?.id === officialWinner
+  const isLoserOfficial = !!officialWinner && comp?.id != null && comp?.id !== officialWinner
   const outcome = userPick?.outcome
   const showOutcome = (mode === 'results' || mode === 'readonly') && userPick && comp && userPick.wrestler_id === comp.id
 

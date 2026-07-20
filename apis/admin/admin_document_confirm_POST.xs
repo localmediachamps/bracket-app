@@ -27,7 +27,7 @@ query "admin/documents/{id}/confirm" verb=POST {
     date? start_date?
     timestamp? locks_at?
   
-    // Reviewed payload: [{weight, template?, wrestlers: [{seed, name, school, record?}]}]
+    // Reviewed payload: [{weight, template?, competitors: [{seed, name, school, record?}]}]
     json[] weights
   }
 
@@ -243,7 +243,7 @@ query "admin/documents/{id}/confirm" verb=POST {
         }
       
         var $wrestler_list {
-          value = $w_in|get:"wrestlers":null
+          value = $w_in|get:"competitors":null
         }
       
         conditional {
@@ -438,4 +438,5 @@ query "admin/documents/{id}/confirm" verb=POST {
     weights_created: $weights_created
     issues         : $issues
   }
+  guid = "pNpgpXfSlDJXMVL1DaynetaJa5U"
 }

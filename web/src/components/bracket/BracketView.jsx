@@ -104,8 +104,19 @@ function ViewButton({ active, onClick, icon: Icon, label }) {
 function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) {
   const pz = usePanZoom()
 
+  // Focus round 1 at a readable scale on load/reflow instead of zooming out
+  // to fit the entire graph (which makes cards too small to read or click).
   useEffect(() => {
-    const t = setTimeout(() => pz.fit(), 60)
+    const t = setTimeout(() => {
+      const firstCol = [...layout.pos.values()].filter((p) => p.col === 0 && p.band === 'championship')
+      if (!firstCol.length) {
+        pz.fit()
+        return
+      }
+      const minY = Math.min(...firstCol.map((p) => p.y))
+      const maxY = Math.max(...firstCol.map((p) => p.y + METRICS.MATCH_H))
+      pz.center(firstCol[0].x + METRICS.MATCH_W / 2, (minY + maxY) / 2, 0.95)
+    }, 60)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout.width, layout.height])
@@ -261,9 +272,14 @@ function IconBtn({ onClick, children, label }) {
 }
 
 function Minimap({ layout, matches, panZoom }) {
-  const W = 148
-  const scale = W / layout.width
-  const H = Math.max(36, layout.height * scale)
+  // Fit within a fixed compact box (letterboxed) instead of a fixed width
+  // stretched to the bracket's true aspect ratio — a tall bracket (championship
+  // + consolation bands stacked) would otherwise blow up the minimap's height.
+  const MAX_W = 160
+  const MAX_H = 96
+  const scale = Math.min(MAX_W / layout.width, MAX_H / layout.height)
+  const W = Math.max(48, layout.width * scale)
+  const H = Math.max(32, layout.height * scale)
   const [view, setView] = useState({ x: 0, y: 0, w: 60, h: 40 })
 
   useEffect(() => {

@@ -159,7 +159,7 @@ export function connectorPath(srcPos, dstPos, slot) {
   const dy = dstPos.y + (slot === 'bottom' ? MATCH_H * 0.74 : MATCH_H * 0.26)
   const midX = sx + (dx - sx) / 2
   return {
-    d: `M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${dy}, ${dx} ${dy}`,
+    d: `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${dy} L ${dx} ${dy}`,
     key: `${sx}-${sy}-${dx}-${dy}`,
   }
 }

@@ -57,7 +57,7 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
     }
 
     const onPointerDown = (e) => {
-      if (e.target.closest('button, a, input, [data-no-pan]')) return
+      if (e.target.closest('button, a, input, [data-no-pan="true"]')) return
       el.setPointerCapture(e.pointerId)
       drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: t.x, oy: t.y }
     }
