@@ -25,7 +25,7 @@ function reset_test_tournaments {
       value = []
     }
 
-    foreach ($doomed_tournaments) {
+    foreach ($doomed_tournaments.items) {
       each as $t {
         array.push $doomed_ids {
           value = $t.id
@@ -41,7 +41,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_weight_class
 
-    foreach ($rows_weight_class) {
+    foreach ($rows_weight_class.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -59,7 +59,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_bracket_match
 
-    foreach ($rows_bracket_match) {
+    foreach ($rows_bracket_match.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -77,7 +77,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_wrestler
 
-    foreach ($rows_wrestler) {
+    foreach ($rows_wrestler.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -95,7 +95,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_user_bracket
 
-    foreach ($rows_user_bracket) {
+    foreach ($rows_user_bracket.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -113,7 +113,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_user_pick
 
-    foreach ($rows_user_pick) {
+    foreach ($rows_user_pick.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -131,7 +131,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_pickem_entry
 
-    foreach ($rows_pickem_entry) {
+    foreach ($rows_pickem_entry.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -149,7 +149,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_pickem_pick
 
-    foreach ($rows_pickem_pick) {
+    foreach ($rows_pickem_pick.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -167,7 +167,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_uploaded_document
 
-    foreach ($rows_uploaded_document) {
+    foreach ($rows_uploaded_document.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -185,7 +185,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_ingestion_conflict
 
-    foreach ($rows_ingestion_conflict) {
+    foreach ($rows_ingestion_conflict.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -203,7 +203,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_match_result_history
 
-    foreach ($rows_match_result_history) {
+    foreach ($rows_match_result_history.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -221,7 +221,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_external_result_candidate
 
-    foreach ($rows_external_result_candidate) {
+    foreach ($rows_external_result_candidate.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -239,7 +239,7 @@ function reset_test_tournaments {
       return = {type: "list", paging: {page: 1, per_page: 5000}}
     } as $rows_results_source_config
 
-    foreach ($rows_results_source_config) {
+    foreach ($rows_results_source_config.items) {
       each as $r {
         conditional {
           if (!$input.dry_run) {
@@ -265,14 +265,14 @@ function reset_test_tournaments {
       value = 0
     }
 
-    foreach ($rows_fantasy_group) {
+    foreach ($rows_fantasy_group.items) {
       each as $g {
         db.query group_membership {
           where = $db.group_membership.group_id == $g.id
           return = {type: "list", paging: {page: 1, per_page: 5000}}
         } as $rows_membership
 
-        foreach ($rows_membership) {
+        foreach ($rows_membership.items) {
           each as $m {
             conditional {
               if (!$input.dry_run) {
@@ -286,7 +286,7 @@ function reset_test_tournaments {
         }
 
         math.add $membership_count {
-          value = ($rows_membership|count)
+          value = ($rows_membership.items|count)
         }
 
         conditional {
@@ -315,7 +315,7 @@ function reset_test_tournaments {
           return = {type: "list", paging: {page: 1, per_page: 5000}}
         } as $rows_audit
 
-        foreach ($rows_audit) {
+        foreach ($rows_audit.items) {
           each as $a {
             conditional {
               if (!$input.dry_run) {
@@ -329,7 +329,7 @@ function reset_test_tournaments {
         }
 
         math.add $audit_count {
-          value = ($rows_audit|count)
+          value = ($rows_audit.items|count)
         }
       }
     }
@@ -337,7 +337,7 @@ function reset_test_tournaments {
     // ------------------------------------------------------------------
     // Finally, the tournaments themselves
     // ------------------------------------------------------------------
-    foreach ($doomed_tournaments) {
+    foreach ($doomed_tournaments.items) {
       each as $t {
         conditional {
           if (!$input.dry_run) {
@@ -351,7 +351,7 @@ function reset_test_tournaments {
     }
 
     var $counts {
-      value = {weight_class: ($rows_weight_class|count), bracket_match: ($rows_bracket_match|count), wrestler: ($rows_wrestler|count), user_bracket: ($rows_user_bracket|count), user_pick: ($rows_user_pick|count), pickem_entry: ($rows_pickem_entry|count), pickem_pick: ($rows_pickem_pick|count), uploaded_document: ($rows_uploaded_document|count), ingestion_conflict: ($rows_ingestion_conflict|count), match_result_history: ($rows_match_result_history|count), external_result_candidate: ($rows_external_result_candidate|count), results_source_config: ($rows_results_source_config|count), fantasy_group: ($rows_fantasy_group|count), group_membership: $membership_count, audit_log: $audit_count, tournament: ($doomed_tournaments|count)}
+      value = {weight_class: ($rows_weight_class.items|count), bracket_match: ($rows_bracket_match.items|count), wrestler: ($rows_wrestler.items|count), user_bracket: ($rows_user_bracket.items|count), user_pick: ($rows_user_pick.items|count), pickem_entry: ($rows_pickem_entry.items|count), pickem_pick: ($rows_pickem_pick.items|count), uploaded_document: ($rows_uploaded_document.items|count), ingestion_conflict: ($rows_ingestion_conflict.items|count), match_result_history: ($rows_match_result_history.items|count), external_result_candidate: ($rows_external_result_candidate.items|count), results_source_config: ($rows_results_source_config.items|count), fantasy_group: ($rows_fantasy_group.items|count), group_membership: $membership_count, audit_log: $audit_count, tournament: ($doomed_tournaments.items|count)}
     }
   }
 
