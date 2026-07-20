@@ -199,7 +199,21 @@ function approve_candidate {
     }
   
     var $final_status {
-      value = $input.auto ? "auto_approved" : "approved"
+      value = null
+    }
+  
+    conditional {
+      if ($input.auto) {
+        var.update $final_status {
+          value = "auto_approved"
+        }
+      }
+    
+      else {
+        var.update $final_status {
+          value = "approved"
+        }
+      }
     }
   
     db.edit external_result_candidate {

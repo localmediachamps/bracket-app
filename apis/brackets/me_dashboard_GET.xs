@@ -180,11 +180,23 @@ query "me/dashboard" verb=GET {
               output = ["id", "name"]
             } as $gm_tournament
           
+            var $gm_tournament_name {
+              value = null
+            }
+          
+            conditional {
+              if ($gm_tournament != null) {
+                var.update $gm_tournament_name {
+                  value = $gm_tournament.name
+                }
+              }
+            }
+          
             array.push $group_rows {
               value = {
                 group          : $gm_group
                 role           : $gm.role
-                tournament_name: ($gm_tournament != null) ? $gm_tournament.name : null
+                tournament_name: $gm_tournament_name
               }
             }
           }

@@ -362,7 +362,7 @@ query "admin/tournaments" verb=POST {
             }
           
             var $c_school {
-              value = $c.school|first_notempty:""
+              value = ($c|get:"school":null)|first_notempty:""
             }
           
             var $c_normalized {
@@ -377,10 +377,10 @@ query "admin/tournaments" verb=POST {
                 seed           : $cseed
                 name           : $c.name
                 school         : $c_school
-                record         : $c.record
+                record         : $c|get:"record":null
                 normalized_name: $c_normalized
                 source_raw     : null
-                withdrawn      : false
+                withdrawn      : ($c|get:"withdrawn":null)|first_notnull:false
               }
             } as $new_wrestler
           }

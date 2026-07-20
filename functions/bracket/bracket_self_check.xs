@@ -9,7 +9,10 @@
 //   - every seed 1..C appears exactly once as a seed-sourced slot
 //   - bye matches are stored complete
 //   - placement matches exist (place_3 always; place_5/place_7 in full consolation)
+//   - in full consolation every placement match has two slot sources
 //   - total match count matches the template expectation when derivable
+//     (64 for ncaa_33: 32 champ-side incl. pigtail + 1 cons pigtail +
+//     28 consolation + 3 placements; 30/14/126/4 for field_16/8/64/4)
 // Validate the match graph of a generated bracket; returns {valid, issues}
 function bracket_self_check {
   input {
@@ -178,7 +181,7 @@ function bracket_self_check {
             }
           
             var $wref {
-              value = $m.winner_advances_to_match_id ~ "|" ~ $wslot
+              value = $m.winner_advances_to_match_id ~ "__" ~ $wslot
             }
           
             var $wref_count {
@@ -274,7 +277,7 @@ function bracket_self_check {
             }
           
             var $lref {
-              value = $m.loser_drops_to_match_id ~ "|" ~ $lslot
+              value = $m.loser_drops_to_match_id ~ "__" ~ $lslot
             }
           
             var $lref_count {
@@ -610,6 +613,34 @@ function bracket_self_check {
     }
   
     // ------------------------------------------------------------------
+    // CHECK: in full consolation every placement match has two slot sources
+    // ------------------------------------------------------------------
+    conditional {
+      if ($has_full_consolation) {
+        foreach ($matches) {
+          each as $m {
+            conditional {
+              if ($m.bracket_section == "placement") {
+                conditional {
+                  if (($m.top_source_type == null) || ($m.bottom_source_type == null)) {
+                    array.push $issues {
+                      value = {
+                        severity: "error"
+                        code    : "PLACEMENT_SOURCE_MISSING"
+                        message : "Placement match " ~ $m.round_code ~ " is missing a slot source."
+                        match_id: $m.id
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  
+    // ------------------------------------------------------------------
     // CHECK: expected match count (when template parameters are derivable)
     // ------------------------------------------------------------------
     conditional {
@@ -666,43 +697,70 @@ function bracket_self_check {
           }
         }
       
-        // Consolation match expectation for full consolation by size
+        // Consolation match expectation for full consolation by size.
+        // Includes one consolation pigtail per championship pigtail.
         var $cons_expected {
           value = 0
         }
       
         conditional {
           if ($k_rounds == 3) {
+            // N=8: cons_r1 (2, Blood Round) + Consolation Finals (2)
             var.update $cons_expected {
-              value = 3
+              value = 4 + $pigtail_count
             }
           }
         
           elseif ($k_rounds >= 4) {
-            // cons_r1 + cons_r2 (N/4 each) plus the final cons round (2)
+            // cons_r1 (N/4) + Consolation Semis (2) + Consolation Finals (2)
             var.update $cons_expected {
-              value = ($n_size / 2) + 2
+              value = (($n_size / 4)|to_int) + (4 + $pigtail_count)
             }
           
-            // Intermediate staggered rounds for champ rounds k = 3..K-2
-            var $stagger_rounds {
+            // drop-in rounds for champ rounds k = 2..K-2 (N/2^k matches each)
+            var $drop_round_count {
+              value = $k_rounds - 3
+            }
+          
+            conditional {
+              if ($drop_round_count > 0) {
+                for ($drop_round_count) {
+                  each as $didx {
+                    var $d_k {
+                      value = $didx + 2
+                    }
+                  
+                    var $d_size {
+                      value = ($n_size / (2|pow:$d_k))|to_int
+                    }
+                  
+                    math.add $cons_expected {
+                      value = $d_size
+                    }
+                  }
+                }
+              }
+            }
+          
+            // pairing rounds after drop-ins for champ rounds k = 2..K-3
+            var $pair_round_count {
               value = $k_rounds - 4
             }
           
             conditional {
-              if ($stagger_rounds > 0) {
-                for ($stagger_rounds) {
-                  each as $sidx {
-                    var $s_k {
-                      value = $sidx + 3
+              if ($pair_round_count > 0) {
+                for ($pair_round_count) {
+                  each as $pidx {
+                    var $p_k {
+                      value = $pidx + 2
                     }
                   
-                    var $s_size {
-                      value = ($n_size / (2|pow:$s_k))|to_int
+                    var $p_size {
+                      value = ($n_size / (2|pow:($p_k + 1)))|to_int
                     }
                   
-                    var.update $cons_expected {
-                      value = $cons_expected + (2 * $s_size)
+                    math.add $cons_expected {
+                      value = $p_size
                     }
                   }
                 }

@@ -37,7 +37,7 @@ query "admin/weights/{id}/generate-bracket" verb=POST {
     }
   
     db.query bracket_match {
-      where = $db.bracket_match.weight_class_id == $input.id && ($db.bracket_match.match_status == "complete" || $db.bracket_match.match_status == "corrected")
+      where = $db.bracket_match.weight_class_id == $input.id && $db.bracket_match.is_bye == false && ($db.bracket_match.match_status == "complete" || $db.bracket_match.match_status == "corrected")
       return = {type: "count"}
     } as $completed_matches
   

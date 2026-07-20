@@ -97,7 +97,7 @@ export default function Register() {
   return (
     <AuthLayout
       quote="Champions are picked long before the whistle. Pick yours."
-      attribution="— Takedown scouting report"
+      attribution="— Mat Savvy scouting report"
       title="Join the mat"
       sub="One account. Every tournament. Eternal bragging rights."
       footer={

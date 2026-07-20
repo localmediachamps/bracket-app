@@ -132,9 +132,32 @@ Routing edges are denormalized onto each match as `winner_advances_to_match_id` 
 
 Generator function `bracket_generate(weight_class_id, template)` deletes existing matches for the weight class and rebuilds. Templates:
 
-### `ncaa_33` (default; the existing validated 61-match structure)
-33 seeds. Pigtail (32v33) → feeds champ_r1 match 1 (vs seed 1). Championship: r1(16) → r2[round of 16](8) → r3[QF](4) → r4[SF](2) → finals(1). Consolation (follow-the-leader): cons_r1(8: r1 losers paired within quarter) → cons_r2(8: cons_r1 winners vs champ_r2 losers) → cons_r3(4) → cons_r4["Blood Round"](4: cons_r3 winners vs champ QF losers) → cons_r5["Consolation Semis"](2) → place_5 (cons_r5 winners), place_7 (cons_r5 losers). place_3 = champ SF losers. Total 61 matches.
-Seed positions (standard bracket order, generated not hardcoded): start `[1,2]`; repeatedly replace each `s` with `s, (2B+1-s)` until size B. For B=32 this yields the NCAA pairings (1v32, 16v17, 8v25, …). Pigtail winner occupies seed-position 32.
+### `ncaa_33` (default; the real 2026 NCAA structure — 64 matches)
+33 seeds. Pigtail (32v33) → feeds champ_r1 match 1 (vs seed 1); pigtail loser → cons pigtail (251). Championship: r1(16) → r2(8) → QF(4) → SF(2) → finals(1). Seed positions are the canonical official order (bouts 11–26: (1,32),(16,17),(9,24),(8,25),(5,28),(12,21),(13,20),(4,29),(3,30),(14,19),(11,22),(6,27),(7,26),(10,23),(15,18),(2,31)); later rounds pair adjacent matches.
+Consolation (follow-the-leader, verified against the official completed bracket):
+- cons_pigtail: L(pigtail) vs L(champ R1 mirror match #9); winner takes the mirror loser's cons_r1 #5 slot.
+- cons_r1(8): adjacent R1-loser pairs, R-cycle **straight**.
+- cons_r2(8): cons_r1 winners vs champ R2 losers, R-cycle **full flip** (#1 ↔ champ R2 #8).
+- cons_r3(4): adjacent cons_r2 winners.
+- cons_r4 "Blood Round"(4): cons_r3 winners vs champ QF losers, **flip-within-halves** (qf2, qf1, qf4, qf3).
+- cons_r5 "Consolation Semis"(2): adjacent blood winners.
+- cons_r6 "Consolation Finals"(2): cons_r5 winners vs champ SF losers, **full flip** (SF#2, SF#1).
+- place_3 = W(cons_r6)×2; place_5 = L(cons_r6)×2; place_7 = L(cons_r5)×2.
+
+### The R-cycle (general drop-order rule, all sizes up to 256)
+The drop order of a champ round's losers into consolation depends only on the round's match count:
+- 128 matches (R256): **straight** (1,2,…,128)
+- 64 (R128): **full flip** (64,…,1)
+- 32 (R64): **swap halves, preserve order** (17..32, 1..16)
+- 16 (R32): **straight**
+- 8 (R16): **full flip**
+- 4 (R8/QF): **flip within halves** (2,1,4,3)
+- 2 (R4/SF): **full flip**
+Pairing within a consolation round is adjacent in the resulting order. Consolation-internal rounds (no champ drop) pair winners straight.
+
+### Generic: `field_N` with N ∈ {4,8,16,32,64} championship + consolation mode `none|full`
+- Competitors C ≤ N seeded 1..C. Byes = N − C (top seeds; bye matches auto-complete). Pigtails when C = N + P (P ≥ 1): pigtail j pairs seeds (N−P+j) vs (N+j), winner takes seed-position (N−P+j), loser drops to a cons pigtail against the mirror match loser (mirror = match the pigtail feeds + N/4, wrapped).
+- `full` consolation scales the ncaa_33 pattern with the R-cycle above. Match totals (full consolation): N=8 → 14, N=16 → 30, N=32 (C=32) → 62, ncaa_33 → 64, N=64 → 126. N=4 or `none`: championship + place_3.
 
 ### Generic: `field_N` with N ∈ {4,8,16,32,64} championship + consolation mode `none|full`
 - Competitors C ≤ N seeded 1..C. Byes = N − C (top seeds get byes: seed s has bye if paired slot seed > C).

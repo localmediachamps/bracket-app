@@ -62,7 +62,15 @@ query "users/{id}/profile" verb=GET {
     }
   
     var $avg_accuracy {
-      value = ($total_scored > 0) ? (($total_correct / $total_scored)|round:3) : null
+      value = null
+    }
+  
+    conditional {
+      if ($total_scored > 0) {
+        var.update $avg_accuracy {
+          value = (($total_correct / $total_scored)|round:3)
+        }
+      }
     }
   
     db.query user_bracket {
@@ -72,7 +80,21 @@ query "users/{id}/profile" verb=GET {
     } as $best_entry
   
     var $best_rank {
-      value = ($best_entry != null) ? $best_entry.rank : null
+      value = null
+    }
+  
+    conditional {
+      if (($best_entry != null)) {
+        var.update $best_rank {
+          value = $best_entry.rank
+        }
+      }
+    
+      else {
+        var.update $best_rank {
+          value = null
+        }
+      }
     }
   
     // Recent finishes: last 5 ranked entries with tournament names
@@ -94,16 +116,34 @@ query "users/{id}/profile" verb=GET {
           output = ["id", "name", "slug", "year"]
         } as $finish_tournament
       
-        array.push $recent_finishes {
-          value = ```
-            {
-              tournament_id  : $finish.tournament_id
-              tournament_name: ($finish_tournament != null) ? $finish_tournament.name : null
-              tournament_slug: ($finish_tournament != null) ? $finish_tournament.slug : null
-              rank           : $finish.rank
-              total_points   : $finish.total_points
+        var $ft_name {
+          value = null
+        }
+      
+        var $ft_slug {
+          value = null
+        }
+      
+        conditional {
+          if ($finish_tournament != null) {
+            var.update $ft_name {
+              value = $finish_tournament.name
             }
-            ```
+          
+            var.update $ft_slug {
+              value = $finish_tournament.slug
+            }
+          }
+        }
+      
+        array.push $recent_finishes {
+          value = {
+            tournament_id  : $finish.tournament_id
+            tournament_name: $ft_name
+            tournament_slug: $ft_slug
+            rank           : $finish.rank
+            total_points   : $finish.total_points
+          }
         }
       }
     }

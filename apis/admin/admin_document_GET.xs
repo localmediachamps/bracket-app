@@ -71,12 +71,12 @@ query "admin/documents/{id}" verb=GET {
               each as $wr {
                 // Wrestlers missing school
                 conditional {
-                  if ($wr.school == null || $wr.school == "") {
+                  if (($wr|get:"school":null) == null || ($wr|get:"school":null) == "") {
                     array.push $issues {
                       value = {
                         type   : "missing_school"
                         weight : $w.weight
-                        name   : $wr.name
+                        name   : $wr|get:"name":null
                         message: "Wrestler is missing a school."
                       }
                     }
@@ -85,9 +85,9 @@ query "admin/documents/{id}" verb=GET {
               
                 // Duplicate names within the weight (case-insensitive)
                 conditional {
-                  if ($wr.name != null && $wr.name != "") {
+                  if (($wr|get:"name":null) != null && ($wr|get:"name":null) != "") {
                     var $lower_name {
-                      value = $wr.name|to_lower
+                      value = ($wr|get:"name":null)|to_lower
                     }
                   
                     conditional {
@@ -96,7 +96,7 @@ query "admin/documents/{id}" verb=GET {
                           value = {
                             type   : "duplicate_name"
                             weight : $w.weight
-                            name   : $wr.name
+                            name   : $wr|get:"name":null
                             message: "Duplicate wrestler name in this weight."
                           }
                         }
@@ -113,15 +113,15 @@ query "admin/documents/{id}" verb=GET {
               
                 // Duplicate seeds within the weight
                 conditional {
-                  if ($wr.seed != null) {
+                  if (($wr|get:"seed":null) != null) {
                     conditional {
-                      if ($seeds|some:$$ == $wr.seed) {
+                      if ($seeds|some:$$ == ($wr|get:"seed":null)) {
                         array.push $issues {
                           value = {
                             type   : "duplicate_seed"
                             weight : $w.weight
-                            seed   : $wr.seed
-                            name   : $wr.name
+                            seed   : $wr|get:"seed":null
+                            name   : $wr|get:"name":null
                             message: "Duplicate seed in this weight."
                           }
                         }
@@ -129,7 +129,7 @@ query "admin/documents/{id}" verb=GET {
                     
                       else {
                         array.push $seeds {
-                          value = $wr.seed
+                          value = $wr|get:"seed":null
                         }
                       }
                     }

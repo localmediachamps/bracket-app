@@ -1,5 +1,5 @@
 /**
- * TAKEDOWN API client — speaks to Xano per docs/build/ARCHITECTURE.md §6.
+ * Mat Savvy API client — speaks to Xano per docs/build/ARCHITECTURE.md §6.
  * All functions return parsed JSON or throw Error(message).
  */
 import { useAuthStore } from './store'

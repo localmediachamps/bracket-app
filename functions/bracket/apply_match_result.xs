@@ -280,8 +280,18 @@ function apply_match_result {
       
         conditional {
           if ($input.match_status != "cancelled") {
-            var.update $loser_wrestler_id {
-              value = ($input.winner_wrestler_id == $top_participant) ? $bottom_participant : $top_participant
+            conditional {
+              if (($input.winner_wrestler_id == $top_participant)) {
+                var.update $loser_wrestler_id {
+                  value = $bottom_participant
+                }
+              }
+            
+              else {
+                var.update $loser_wrestler_id {
+                  value = $top_participant
+                }
+              }
             }
           }
         }
@@ -310,11 +320,39 @@ function apply_match_result {
       
         // 1) Match row + history first
         var $change_type {
-          value = $is_correction ? "corrected" : "entered"
+          value = null
+        }
+      
+        conditional {
+          if ($is_correction) {
+            var.update $change_type {
+              value = "corrected"
+            }
+          }
+        
+          else {
+            var.update $change_type {
+              value = "entered"
+            }
+          }
         }
       
         var $audit_action {
-          value = $is_correction ? "result_corrected" : "result_entered"
+          value = null
+        }
+      
+        conditional {
+          if ($is_correction) {
+            var.update $audit_action {
+              value = "result_corrected"
+            }
+          }
+        
+          else {
+            var.update $audit_action {
+              value = "result_entered"
+            }
+          }
         }
       
         db.edit bracket_match {
@@ -446,7 +484,21 @@ function apply_match_result {
                 conditional {
                   if (($dest_top != null) && ($dest_bottom != null)) {
                     var $dest_empty_source {
-                      value = ($dest_top == null) ? $dest_match.top_source_type : $dest_match.bottom_source_type
+                      value = null
+                    }
+                  
+                    conditional {
+                      if (($dest_top == null)) {
+                        var.update $dest_empty_source {
+                          value = $dest_match.top_source_type
+                        }
+                      }
+                    
+                      else {
+                        var.update $dest_empty_source {
+                          value = $dest_match.bottom_source_type
+                        }
+                      }
                     }
                   
                     // Single participant whose other slot has no source at all:
@@ -454,7 +506,21 @@ function apply_match_result {
                     conditional {
                       if ($dest_empty_source == null) {
                         var $dest_bye_winner {
-                          value = ($dest_top != null) ? $dest_top : $dest_bottom
+                          value = null
+                        }
+                      
+                        conditional {
+                          if (($dest_top != null)) {
+                            var.update $dest_bye_winner {
+                              value = $dest_top
+                            }
+                          }
+                        
+                          else {
+                            var.update $dest_bye_winner {
+                              value = $dest_bottom
+                            }
+                          }
                         }
                       
                         db.edit bracket_match {

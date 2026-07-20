@@ -16,33 +16,13 @@ query tournaments verb=GET {
   }
 
   stack {
-    // Admin detection (optional auth on this public endpoint)
-    var $is_admin {
-      value = false
-    }
-  
+    // Public statuses only. Admins use GET /admin/tournaments for the full list —
+    // reading the user table's is_admin field from a public endpoint is denied
+    // by Xano (ACCESS_DENIED), so no admin branch lives here.
     conditional {
-      if ($auth.id != null) {
-        db.get user {
-          field_name = "id"
-          field_value = $auth.id
-          output = ["id", "is_admin"]
-        } as $requester
-      
-        conditional {
-          if ($requester != null && $requester.is_admin) {
-            var.update $is_admin {
-              value = true
-            }
-          }
-        }
-      }
-    }
-  
-    conditional {
-      if ($is_admin) {
+      if ($input.q != null && $input.q != "") {
         db.query tournament {
-          where = $db.tournament.status ==? $input.status && $db.tournament.name includes? $input.q
+          where = $db.tournament.status != "draft" && $db.tournament.status != "importing" && $db.tournament.status != "needs_review" && $db.tournament.status != "cancelled" && $db.tournament.status != "archived" && $db.tournament.status ==? $input.status && $db.tournament.name includes? $input.q
           sort = {tournament.year: "desc"}
           return = {
             type  : "list"
@@ -53,7 +33,7 @@ query tournaments verb=GET {
     
       else {
         db.query tournament {
-          where = $db.tournament.status != "draft" && $db.tournament.status != "importing" && $db.tournament.status != "needs_review" && $db.tournament.status != "cancelled" && $db.tournament.status != "archived" && $db.tournament.status ==? $input.status && $db.tournament.name includes? $input.q
+          where = $db.tournament.status != "draft" && $db.tournament.status != "importing" && $db.tournament.status != "needs_review" && $db.tournament.status != "cancelled" && $db.tournament.status != "archived" && $db.tournament.status ==? $input.status
           sort = {tournament.year: "desc"}
           return = {
             type  : "list"

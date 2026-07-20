@@ -47,7 +47,7 @@ query "admin/weights/{id}/competitors" verb=PUT {
     }
   
     db.query bracket_match {
-      where = $db.bracket_match.weight_class_id == $input.id && ($db.bracket_match.match_status == "complete" || $db.bracket_match.match_status == "corrected")
+      where = $db.bracket_match.weight_class_id == $input.id && $db.bracket_match.is_bye == false && ($db.bracket_match.match_status == "complete" || $db.bracket_match.match_status == "corrected")
       return = {type: "count"}
     } as $completed_matches
   
@@ -143,7 +143,7 @@ query "admin/weights/{id}/competitors" verb=PUT {
             }
           
             var $c_school {
-              value = $c.school|first_notempty:""
+              value = ($c|get:"school":null)|first_notempty:""
             }
           
             var $c_normalized {
@@ -151,7 +151,7 @@ query "admin/weights/{id}/competitors" verb=PUT {
             }
           
             var $c_withdrawn {
-              value = $c.withdrawn|first_notnull:false
+              value = ($c|get:"withdrawn":null)|first_notnull:false
             }
           
             db.add wrestler {
@@ -162,7 +162,7 @@ query "admin/weights/{id}/competitors" verb=PUT {
                 seed           : $insert_seed
                 name           : $c.name
                 school         : $c_school
-                record         : $c.record
+                record         : $c|get:"record":null
                 normalized_name: $c_normalized
                 source_raw     : null
                 withdrawn      : $c_withdrawn

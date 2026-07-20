@@ -66,8 +66,8 @@ function parse_bracket_pdf {
   
     var $request_body {
       value = {}
-        |set:"model":"claude-opus-4-6"
-        |set:"max_tokens":8192
+        |set:"model":"claude-sonnet-5"
+        |set:"max_tokens":16000
         |set:"system":"You are a data extraction assistant. You extract wrestling bracket data from PDF documents. Return only valid JSON with no additional text, markdown formatting, or explanation."
         |set:"messages":$messages
     }
@@ -80,16 +80,26 @@ function parse_bracket_pdf {
         |push:"x-api-key: " ~ $env.anthropicAPIkey
         |push:"anthropic-version: 2023-06-01"
         |push:"content-type: application/json"
-      timeout = 120
+      timeout = 300
     } as $api_response
   
     var $http_status {
       value = $api_response|get:"response.status":null
     }
   
+    // SECURITY: never log the full api_response — it contains the request
+    // headers (including the API key). Only surface the response error.
+    var $api_error_safe {
+      value = $api_response|get:"response.error":null
+    }
+  
+    var $api_error_text {
+      value = ($api_error_safe|json_encode)|first_notnull:("HTTP status " ~ ($http_status|to_text))
+    }
+  
     precondition ($http_status != null && $http_status < 400) {
       error_type = "inputerror"
-      error = "Claude HTTP error. Full response: " ~ ($api_response|json_encode)
+      error = "Claude API request failed: " ~ $api_error_text
     }
   
     var $content_text {
@@ -99,7 +109,7 @@ function parse_bracket_pdf {
   
     precondition ($content_text != null && $content_text != "") {
       error_type = "inputerror"
-      error = "Claude API returned no content. Full response: " ~ ($api_response|json_encode)
+      error = "Claude API returned no content."
     }
   
     // Strip markdown code fences if Claude wrapped the JSON

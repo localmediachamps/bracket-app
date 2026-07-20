@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, Swords } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button } from '../ui'
@@ -9,12 +9,14 @@ import { cn } from '../../lib/utils'
 
 export function Logo({ className }) {
   return (
-    <Link to="/" className={cn('group inline-flex items-center gap-2', className)}>
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500 text-mat-950 transition-transform group-hover:-rotate-6">
-        <Swords size={18} strokeWidth={2.5} />
-      </span>
+    <Link to="/" className={cn('group inline-flex items-center gap-2.5', className)}>
+      <img
+        src="/branding/mat_savvy_logo_dark_sq.svg"
+        alt="Mat Savvy logo"
+        className="h-8 w-8 transition-transform group-hover:-rotate-6"
+      />
       <span className="font-display text-lg uppercase tracking-tight text-ink-100">
-        Take<span className="text-gold-500">down</span>
+        Mat<span className="text-gold-500">Savvy</span>
       </span>
     </Link>
   )
@@ -150,7 +152,7 @@ export default function AppShell() {
 
       <footer className="hidden border-t border-mat-800 py-6 md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 text-xs text-ink-600">
-          <span className="font-display uppercase tracking-wide">Takedown</span>
+          <span className="font-display uppercase tracking-wide">Mat Savvy</span>
           <span>Built for wrestling fans · {new Date().getFullYear()}</span>
         </div>
       </footer>

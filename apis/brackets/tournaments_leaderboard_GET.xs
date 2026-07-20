@@ -63,11 +63,33 @@ query "tournaments/{id}/leaderboard" verb=GET {
             } as $row_user
           
             var $rank_change {
-              value = ($row.prev_rank != null && $row.rank != null) ? ($row.prev_rank - $row.rank) : null
+              value = null
+            }
+          
+            conditional {
+              if (($row.prev_rank != null && $row.rank != null)) {
+                var.update $rank_change {
+                  value = ($row.prev_rank - $row.rank)
+                }
+              }
+            
+              else {
+                var.update $rank_change {
+                  value = null
+                }
+              }
             }
           
             var $accuracy {
-              value = ($row.scored_pick_count > 0) ? (($row.correct_pick_count / $row.scored_pick_count)|round:3) : null
+              value = null
+            }
+          
+            conditional {
+              if ($row.scored_pick_count > 0) {
+                var.update $accuracy {
+                  value = (($row.correct_pick_count / $row.scored_pick_count)|round:3)
+                }
+              }
             }
           
             array.push $items {
@@ -103,7 +125,21 @@ query "tournaments/{id}/leaderboard" verb=GET {
             } as $prow_user
           
             var $prank_change {
-              value = ($prow.prev_rank != null && $prow.rank != null) ? ($prow.prev_rank - $prow.rank) : null
+              value = null
+            }
+          
+            conditional {
+              if (($prow.prev_rank != null && $prow.rank != null)) {
+                var.update $prank_change {
+                  value = ($prow.prev_rank - $prow.rank)
+                }
+              }
+            
+              else {
+                var.update $prank_change {
+                  value = null
+                }
+              }
             }
           
             array.push $items {

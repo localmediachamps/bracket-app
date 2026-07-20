@@ -336,7 +336,7 @@ query "admin/documents/{id}/confirm" verb=POST {
             }
           
             var $wr_school {
-              value = $wr.school|first_notempty:""
+              value = ($wr|get:"school":null)|first_notempty:""
             }
           
             var $wr_normalized {
@@ -351,7 +351,7 @@ query "admin/documents/{id}/confirm" verb=POST {
                 seed           : $insert_seed
                 name           : $wr.name
                 school         : $wr_school
-                record         : $wr.record
+                record         : $wr|get:"record":null
                 normalized_name: $wr_normalized
                 source_raw     : null
                 withdrawn      : false

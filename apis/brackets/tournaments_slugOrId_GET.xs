@@ -34,31 +34,9 @@ query "tournaments/{slugOrId}" verb=GET {
       error = "Tournament not found."
     }
   
-    // Admin detection (optional auth on this public endpoint)
-    var $is_admin {
-      value = false
-    }
-  
-    conditional {
-      if ($auth.id != null) {
-        db.get user {
-          field_name = "id"
-          field_value = $auth.id
-          output = ["id", "is_admin"]
-        } as $requester
-      
-        conditional {
-          if ($requester != null && $requester.is_admin) {
-            var.update $is_admin {
-              value = true
-            }
-          }
-        }
-      }
-    }
-  
-    // Restricted statuses are admin-only (archived stays reachable by direct link)
-    precondition ($is_admin || ($tournament.status != "draft" && $tournament.status != "importing" && $tournament.status != "needs_review" && $tournament.status != "cancelled")) {
+    // Restricted statuses are never returned by this public endpoint — admins
+    // use the admin endpoints instead (reading is_admin publicly is denied).
+    precondition ($tournament.status != "draft" && $tournament.status != "importing" && $tournament.status != "needs_review" && $tournament.status != "cancelled") {
       error_type = "notfound"
       error = "Tournament not found."
     }

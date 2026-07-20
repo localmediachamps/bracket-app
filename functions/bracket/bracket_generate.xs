@@ -7,19 +7,23 @@
 //   optional bracket_size override, optional consolation (full|none).
 // 
 //   Structure (ARCHITECTURE.md sections 2-3):
-//     - Seed positions: start [1,2]; expand each s -> s, 2B+1-s until size N.
-//       champ_r1 match i pairs positions[2i-2] vs positions[2i-1]; later champ
-//       rounds pair adjacent feeding matches (pods of 4 seeds).
+//     - Seed positions: canonical official-bracket order (generated, not
+//       hardcoded - see the c_firsts recursion below); champ_r1 match i pairs
+//       positions[2i-2] vs positions[2i-1]; later champ rounds pair adjacent
+//       feeding matches (pods of 4 seeds).
 //     - Pigtails: when C = N + P, pigtail j pairs seeds (N-P+j) vs (N+j),
 //       winner occupies seed position (N-P+j) in champ_r1.
 //     - Championship: champ_r1..champ_r(K-1), champ_finals (K = log2 N).
-//     - Consolation full (K>=3): champ r1 losers -> cons_r1 (adjacent pairs);
-//       champ round-k losers (2<=k<=K-3) drop into cons_r(2k-2) FULLY REVERSED
-//       vs the previous cons round's winners; pairing rounds cons_r(2k-1) pair
-//       adjacent winners of cons_r(2k-2); QF losers -> Blood Round cons_r(2K-6)
-//       PAIR-SWAPPED (blood #1 vs L(qf #2), #2 vs L(qf #1), ...); Consolation
-//       Semis cons_r(2K-5) pair adjacent blood winners; Consolation Finals
-//       (the 581/582 matches) = W(semis) vs L(champ SF) CROSS-HALF.
+//     - Consolation full (K>=3): champ losers drop into consolation in the
+//       verified R-cycle order, which depends only on the dropping champ
+//       round's match count: R256 straight, R128 full flip, R64 swap halves
+//       preserving order, R32 straight, R16 full flip, R8 flip within halves
+//       (2,1,4,3), R4 full flip (champ r1 -> cons_r1; champ round k ->
+//       cons_r(2k-2) vs the previous cons round's winners; QF lands on the
+//       Blood Round cons_r(2K-6)). Pairing rounds cons_r(2k-1) pair adjacent
+//       winners of cons_r(2k-2); Consolation Semis cons_r(2K-5) pair adjacent
+//       blood winners; Consolation Finals (the 581/582 matches) = W(semis)
+//       vs L(champ SF) CROSS-HALF.
 //     - Consolation Finals round code: cons_r2 for K=3 (the cons semis double
 //       as the 581/582 matches for N=8), cons_r6 for K=4/5, cons_r8 for K=6.
 //     - place_3 = W(cons finals) vs W(cons finals); place_5 = the losers;
@@ -284,8 +288,18 @@ function bracket_generate {
       
         conditional {
           if ($n_half == 4) {
-            var.update $rpos {
-              value = (($ri|modulus:2) == 1) ? ($ri + 1) : ($ri - 1)
+            conditional {
+              if ((($ri|modulus:2) == 1)) {
+                var.update $rpos {
+                  value = ($ri + 1)
+                }
+              }
+            
+              else {
+                var.update $rpos {
+                  value = ($ri - 1)
+                }
+              }
             }
           }
         
@@ -321,7 +335,21 @@ function bracket_generate {
         }
       
         var $r_cons_slot {
-          value = (($rpos|modulus:2) == 1) ? "top" : "bottom"
+          value = null
+        }
+      
+        conditional {
+          if ((($rpos|modulus:2) == 1)) {
+            var.update $r_cons_slot {
+              value = "top"
+            }
+          }
+        
+          else {
+            var.update $r_cons_slot {
+              value = "bottom"
+            }
+          }
         }
       
         var.update $r1_cons_mn_of {
@@ -374,36 +402,82 @@ function bracket_generate {
     }
   
     // ------------------------------------------------------------------
-    // Seed positions: start [1,2]; expand s -> s, 2B+1-s until size N
-    // ------------------------------------------------------------------
-    var $positions {
+    // Seed positions in canonical (official bracket) order. Built from the
+    // pair-first-element list c: c(4) = [1,2]; to double the size, each x in
+    // c expands to (x, n+1-x) at odd indexes and (n+1-x, x) at even indexes.
+    // The position list then pairs every first-element x with N+1-x.
+    // For N=32 this yields 1,32,16,17,9,24,8,25,5,28,12,21,13,20,4,29,3,30,
+    // 14,19,11,22,6,27,7,26,10,23,15,18,2,31 - the official bout order.
+    var $c_firsts {
       value = [1, 2]
     }
   
-    while (($positions|count) < $n_size) {
+    var $c_size {
+      value = 4
+    }
+  
+    while ($c_size < $n_size) {
       each {
-        var $next_base {
-          value = ($positions|count) * 2
-        }
-      
-        var $next_positions {
+        var $next_c {
           value = []
         }
       
-        foreach ($positions) {
-          each as $pos {
-            array.push $next_positions {
-              value = $pos
+        var $cidx {
+          value = 0
+        }
+      
+        foreach ($c_firsts) {
+          each as $cx {
+            var.update $cidx {
+              value = $cidx + 1
             }
           
-            array.push $next_positions {
-              value = $next_base + 1 - $pos
+            conditional {
+              if (($cidx|modulus:2) == 1) {
+                array.push $next_c {
+                  value = $cx
+                }
+              
+                array.push $next_c {
+                  value = ($c_size + 1) - $cx
+                }
+              }
+            
+              else {
+                array.push $next_c {
+                  value = ($c_size + 1) - $cx
+                }
+              
+                array.push $next_c {
+                  value = $cx
+                }
+              }
             }
           }
         }
       
-        var.update $positions {
-          value = $next_positions
+        var.update $c_firsts {
+          value = $next_c
+        }
+      
+        var.update $c_size {
+          value = $c_size * 2
+        }
+      }
+    }
+  
+    var $positions {
+      value = []
+    }
+  
+    foreach ($c_firsts) {
+      each as $fx {
+        array.push $positions {
+          value = $fx
+        }
+      
+        array.push $positions {
+          value = ($n_size + 1) - $fx
         }
       }
     }
@@ -458,7 +532,21 @@ function bracket_generate {
             }
           
             var $pig_slot {
-              value = (($pos_index|modulus:2) == 0) ? "top" : "bottom"
+              value = null
+            }
+          
+            conditional {
+              if ((($pos_index|modulus:2) == 0)) {
+                var.update $pig_slot {
+                  value = "top"
+                }
+              }
+            
+              else {
+                var.update $pig_slot {
+                  value = "bottom"
+                }
+              }
             }
           
             var.update $pigtail_pos {
@@ -487,11 +575,11 @@ function bracket_generate {
             }
           
             var.update $mirror_map {
-              value = $mirror_map|set:$pig_match_number:$pj
+              value = $mirror_map|set:$mirror_mn:$pj
             }
           
             var $cons_pig_key {
-              value = $cons_mn ~ "|" ~ $cons_slot
+              value = $cons_mn ~ "__" ~ $cons_slot
             }
           
             var.update $cons_pig_slot_map {
@@ -587,7 +675,21 @@ function bracket_generate {
         }
       
         var $round_code {
-          value = ($k == $k_rounds) ? "champ_finals" : ("champ_r" ~ $k)
+          value = null
+        }
+      
+        conditional {
+          if (($k == $k_rounds)) {
+            var.update $round_code {
+              value = "champ_finals"
+            }
+          }
+        
+          else {
+            var.update $round_code {
+              value = ("champ_r" ~ $k)
+            }
+          }
         }
       
         // Round label: named by distance to the final when close
@@ -668,7 +770,21 @@ function bracket_generate {
             }
           
             var $slot_of_i {
-              value = $is_odd ? "top" : "bottom"
+              value = null
+            }
+          
+            conditional {
+              if ($is_odd) {
+                var.update $slot_of_i {
+                  value = "top"
+                }
+              }
+            
+              else {
+                var.update $slot_of_i {
+                  value = "bottom"
+                }
+              }
             }
           
             var $ceil_half_i {
@@ -719,12 +835,20 @@ function bracket_generate {
             conditional {
               if ($k == 1) {
                 // Seed-sourced slots (with pigtail override)
+                var $top_pos_idx {
+                  value = (2 * $i) - 2
+                }
+              
+                var $bottom_pos_idx {
+                  value = (2 * $i) - 1
+                }
+              
                 var $top_seed_pos {
-                  value = $positions[(2 * $i) - 2]
+                  value = $positions[$top_pos_idx]
                 }
               
                 var $bottom_seed_pos {
-                  value = $positions[(2 * $i) - 1]
+                  value = $positions[$bottom_pos_idx]
                 }
               
                 conditional {
@@ -847,8 +971,18 @@ function bracket_generate {
           
             conditional {
               if ($k < $k_rounds) {
-                var.update $wrc {
-                  value = (($k + 1) == $k_rounds) ? "champ_finals" : ("champ_r" ~ ($k + 1))
+                conditional {
+                  if ((($k + 1) == $k_rounds)) {
+                    var.update $wrc {
+                      value = "champ_finals"
+                    }
+                  }
+                
+                  else {
+                    var.update $wrc {
+                      value = ("champ_r" ~ ($k + 1))
+                    }
+                  }
                 }
               
                 var.update $wmn {
@@ -906,8 +1040,18 @@ function bracket_generate {
                           value = 1
                         }
                       
-                        var.update $lsl {
-                          value = ($i == 1) ? "top" : "bottom"
+                        conditional {
+                          if (($i == 1)) {
+                            var.update $lsl {
+                              value = "top"
+                            }
+                          }
+                        
+                          else {
+                            var.update $lsl {
+                              value = "bottom"
+                            }
+                          }
                         }
                       }
                     }
@@ -968,8 +1112,18 @@ function bracket_generate {
                       
                         conditional {
                           if ($round_match_count == 4) {
-                            var.update $lmn {
-                              value = $is_odd ? ($i + 1) : ($i - 1)
+                            conditional {
+                              if ($is_odd) {
+                                var.update $lmn {
+                                  value = ($i + 1)
+                                }
+                              }
+                            
+                              else {
+                                var.update $lmn {
+                                  value = ($i - 1)
+                                }
+                              }
                             }
                           }
                         
@@ -1079,11 +1233,27 @@ function bracket_generate {
           }
         }
       
-        // cons_r1: adjacent champ_r1 loser pairs, with pigtail-affected
-        // slots replaced by the consolation pigtail winner. Winners feed
-        // cons_r2 (for K=3, cons_r2 IS the Consolation Finals).
+        // cons_r1: champ_r1 losers in the R-cycle order for champ r1's
+        // match count (paired adjacently in the resulting order), with
+        // pigtail-affected slots replaced by the consolation pigtail
+        // winner. Winners feed cons_r2 (for K=3, cons_r2 IS the
+        // Consolation Finals).
         var $cons_r1_label {
-          value = ($k_rounds == 3) ? "Blood Round" : "Consolation R1"
+          value = null
+        }
+      
+        conditional {
+          if (($k_rounds == 3)) {
+            var.update $cons_r1_label {
+              value = "Blood Round"
+            }
+          }
+        
+          else {
+            var.update $cons_r1_label {
+              value = "Consolation R1"
+            }
+          }
         }
       
         for ($n_quarter) {
@@ -1100,8 +1270,12 @@ function bracket_generate {
               value = "champ_r1"
             }
           
+            var $cr1_tmn_idx {
+              value = (2 * $ck1) - 1
+            }
+          
             var $cr1_tmn {
-              value = $r1_match_at_pos[(2 * $ck1) - 1]
+              value = $r1_match_at_pos[$cr1_tmn_idx]
             }
           
             var $cr1_bt {
@@ -1112,12 +1286,16 @@ function bracket_generate {
               value = "champ_r1"
             }
           
+            var $cr1_bmn_idx {
+              value = 2 * $ck1
+            }
+          
             var $cr1_bmn {
-              value = $r1_match_at_pos[2 * $ck1]
+              value = $r1_match_at_pos[$cr1_bmn_idx]
             }
           
             var $pig_top_key {
-              value = $ck1 ~ "|top"
+              value = $ck1 ~ "__top"
             }
           
             conditional {
@@ -1137,7 +1315,7 @@ function bracket_generate {
             }
           
             var $pig_bottom_key {
-              value = $ck1 ~ "|bottom"
+              value = $ck1 ~ "__bottom"
             }
           
             conditional {
@@ -1179,8 +1357,18 @@ function bracket_generate {
                   value = 1
                 }
               
-                var.update $cr1_lsl {
-                  value = ($ck1 == 1) ? "top" : "bottom"
+                conditional {
+                  if (($ck1 == 1)) {
+                    var.update $cr1_lsl {
+                      value = "top"
+                    }
+                  }
+                
+                  else {
+                    var.update $cr1_lsl {
+                      value = "bottom"
+                    }
+                  }
                 }
               }
             }
@@ -1244,17 +1432,59 @@ function bracket_generate {
                 }
               
                 var $drop_label {
-                  value = $is_blood ? "Blood Round" : ("Consolation R" ~ $drop_code_num)
+                  value = null
+                }
+              
+                conditional {
+                  if ($is_blood) {
+                    var.update $drop_label {
+                      value = "Blood Round"
+                    }
+                  }
+                
+                  else {
+                    var.update $drop_label {
+                      value = ("Consolation R" ~ $drop_code_num)
+                    }
+                  }
                 }
               
                 var $prev_cons_code {
-                  value = ($ck == 2) ? "cons_r1" : ("cons_r" ~ ((2 * $ck) - 3))
+                  value = null
+                }
+              
+                conditional {
+                  if (($ck == 2)) {
+                    var.update $prev_cons_code {
+                      value = "cons_r1"
+                    }
+                  }
+                
+                  else {
+                    var.update $prev_cons_code {
+                      value = ("cons_r" ~ ((2 * $ck) - 3))
+                    }
+                  }
                 }
               
                 // drop-in winners feed the next pairing round, or the
                 // Consolation Semis when this drop-in is the Blood Round
                 var $drop_wrc {
-                  value = $is_blood ? $semis_code : ("cons_r" ~ ((2 * $ck) - 1))
+                  value = null
+                }
+              
+                conditional {
+                  if ($is_blood) {
+                    var.update $drop_wrc {
+                      value = $semis_code
+                    }
+                  }
+                
+                  else {
+                    var.update $drop_wrc {
+                      value = ("cons_r" ~ ((2 * $ck) - 1))
+                    }
+                  }
                 }
               
                 for ($drop_count) {
@@ -1267,14 +1497,17 @@ function bracket_generate {
                       value = ($j|modulus:2) == 1
                     }
                   
-                    // bottom source: champ round-ck loser, fully reversed,
-                    // or pair-swapped on the Blood Round
+                    // bottom source: champ round-ck loser. The drop ORDER
+                    // depends only on the champ round's match count (the
+                    // R-cycle, an involution): 4 = flip within halves
+                    // (2,1,4,3); 8 = full flip; 16 = straight;
+                    // 32 = swap halves preserving order.
                     var $drop_bmn {
                       value = 0
                     }
                   
                     conditional {
-                      if ($is_blood) {
+                      if ($drop_count == 4) {
                         conditional {
                           if ($j_is_odd) {
                             var.update $drop_bmn {
@@ -1290,9 +1523,31 @@ function bracket_generate {
                         }
                       }
                     
+                      elseif ($drop_count == 8) {
+                        var.update $drop_bmn {
+                          value = 9 - $j
+                        }
+                      }
+                    
+                      elseif ($drop_count == 32) {
+                        conditional {
+                          if ($j <= 16) {
+                            var.update $drop_bmn {
+                              value = $j + 16
+                            }
+                          }
+                        
+                          else {
+                            var.update $drop_bmn {
+                              value = $j - 16
+                            }
+                          }
+                        }
+                      }
+                    
                       else {
                         var.update $drop_bmn {
-                          value = ($drop_count - $j) + 1
+                          value = $j
                         }
                       }
                     }
@@ -1395,33 +1650,49 @@ function bracket_generate {
                   value = $sidx + 1
                 }
               
-                array.push $descriptors {
-                  value = ```
-                    {
-                      rc : $semis_code
-                      rn : $semis_rn
-                      rl : "Consolation Semis"
-                      mn : $si
-                      sec: "consolation"
-                      dor: (10000 + ($semis_rn * 100)) + $si
-                      tt : "match_winner"
-                      ts : null
-                      trc: $blood_code
-                      tmn: (2 * $si) - 1
-                      bt : "match_winner"
-                      bs : null
-                      brc: $blood_code
-                      bmn: 2 * $si
-                      wrc: $cons_finals_code
-                      wmn: $si
-                      wsl: "top"
-                      lrc: "place_7"
-                      lmn: 1
-                      lsl: ($si == 1) ? "top" : "bottom"
-                      tw : null
-                      bw : null
+                var $cs_slot {
+                  value = null
+                }
+              
+                conditional {
+                  if ($si == 1) {
+                    var.update $cs_slot {
+                      value = "top"
                     }
-                    ```
+                  }
+                
+                  else {
+                    var.update $cs_slot {
+                      value = "bottom"
+                    }
+                  }
+                }
+              
+                array.push $descriptors {
+                  value = {
+                    rc : $semis_code
+                    rn : $semis_rn
+                    rl : "Consolation Semis"
+                    mn : $si
+                    sec: "consolation"
+                    dor: (10000 + ($semis_rn * 100)) + $si
+                    tt : "match_winner"
+                    ts : null
+                    trc: $blood_code
+                    tmn: (2 * $si) - 1
+                    bt : "match_winner"
+                    bs : null
+                    brc: $blood_code
+                    bmn: 2 * $si
+                    wrc: $cons_finals_code
+                    wmn: $si
+                    wsl: "top"
+                    lrc: "place_7"
+                    lmn: 1
+                    lsl: $cs_slot
+                    tw : null
+                    bw : null
+                  }
                 }
               }
             }
@@ -1432,7 +1703,21 @@ function bracket_generate {
         // round (cons_r1 for K=3, Consolation Semis for K>=4) vs champ SF
         // losers, cross-half. Winners -> place_3; losers -> place_5.
         var $cf_feed_code {
-          value = ($k_rounds == 3) ? "cons_r1" : $semis_code
+          value = null
+        }
+      
+        conditional {
+          if (($k_rounds == 3)) {
+            var.update $cf_feed_code {
+              value = "cons_r1"
+            }
+          }
+        
+          else {
+            var.update $cf_feed_code {
+              value = $semis_code
+            }
+          }
         }
       
         for (2) {
@@ -1441,33 +1726,49 @@ function bracket_generate {
               value = $fidx + 1
             }
           
-            array.push $descriptors {
-              value = ```
-                {
-                  rc : $cons_finals_code
-                  rn : $cons_finals_rn
-                  rl : "Consolation Finals"
-                  mn : $fi
-                  sec: "consolation"
-                  dor: (10000 + ($cons_finals_rn * 100)) + $fi
-                  tt : "match_winner"
-                  ts : null
-                  trc: $cf_feed_code
-                  tmn: $fi
-                  bt : "match_loser"
-                  bs : null
-                  brc: "champ_r" ~ $k_minus_1
-                  bmn: 3 - $fi
-                  wrc: "place_3"
-                  wmn: 1
-                  wsl: ($fi == 1) ? "top" : "bottom"
-                  lrc: "place_5"
-                  lmn: 1
-                  lsl: ($fi == 1) ? "top" : "bottom"
-                  tw : null
-                  bw : null
+            var $cf_slot {
+              value = null
+            }
+          
+            conditional {
+              if ($fi == 1) {
+                var.update $cf_slot {
+                  value = "top"
                 }
-                ```
+              }
+            
+              else {
+                var.update $cf_slot {
+                  value = "bottom"
+                }
+              }
+            }
+          
+            array.push $descriptors {
+              value = {
+                rc : $cons_finals_code
+                rn : $cons_finals_rn
+                rl : "Consolation Finals"
+                mn : $fi
+                sec: "consolation"
+                dor: (10000 + ($cons_finals_rn * 100)) + $fi
+                tt : "match_winner"
+                ts : null
+                trc: $cf_feed_code
+                tmn: $fi
+                bt : "match_loser"
+                bs : null
+                brc: "champ_r" ~ $k_minus_1
+                bmn: 3 - $fi
+                wrc: "place_3"
+                wmn: 1
+                wsl: $cf_slot
+                lrc: "place_5"
+                lmn: 1
+                lsl: $cf_slot
+                tw : null
+                bw : null
+              }
             }
           }
         }
@@ -1559,7 +1860,21 @@ function bracket_generate {
         // place_7 = losers of the two matches feeding the Consolation Finals'
         // top slots (Consolation Semis for K>=4, cons_r1 for K=3)
         var $place7_feed_code {
-          value = ($k_rounds == 3) ? "cons_r1" : $semis_code
+          value = null
+        }
+      
+        conditional {
+          if (($k_rounds == 3)) {
+            var.update $place7_feed_code {
+              value = "cons_r1"
+            }
+          }
+        
+          else {
+            var.update $place7_feed_code {
+              value = $semis_code
+            }
+          }
         }
       
         array.push $descriptors {
@@ -1625,7 +1940,7 @@ function bracket_generate {
         } as $new_match
       
         var $dkey {
-          value = $d.rc ~ "|" ~ $d.mn
+          value = $d.rc ~ "__" ~ $d.mn
         }
       
         var.update $id_map {
@@ -1640,7 +1955,7 @@ function bracket_generate {
     foreach ($descriptors) {
       each as $d {
         var $self_key {
-          value = $d.rc ~ "|" ~ $d.mn
+          value = $d.rc ~ "__" ~ $d.mn
         }
       
         var $self_id {
@@ -1654,7 +1969,7 @@ function bracket_generate {
         conditional {
           if ($d.trc != null) {
             var $top_source_key {
-              value = $d.trc ~ "|" ~ $d.tmn
+              value = $d.trc ~ "__" ~ $d.tmn
             }
           
             var.update $top_source_id {
@@ -1670,7 +1985,7 @@ function bracket_generate {
         conditional {
           if ($d.brc != null) {
             var $bottom_source_key {
-              value = $d.brc ~ "|" ~ $d.bmn
+              value = $d.brc ~ "__" ~ $d.bmn
             }
           
             var.update $bottom_source_id {
@@ -1686,7 +2001,7 @@ function bracket_generate {
         conditional {
           if ($d.wrc != null) {
             var $winner_dest_key {
-              value = $d.wrc ~ "|" ~ $d.wmn
+              value = $d.wrc ~ "__" ~ $d.wmn
             }
           
             var.update $winner_dest_id {
@@ -1702,7 +2017,7 @@ function bracket_generate {
         conditional {
           if ($d.lrc != null) {
             var $loser_dest_key {
-              value = $d.lrc ~ "|" ~ $d.lmn
+              value = $d.lrc ~ "__" ~ $d.lmn
             }
           
             var.update $loser_dest_id {
@@ -1738,7 +2053,7 @@ function bracket_generate {
         conditional {
           if ($d.sec == "championship") {
             var $bye_key {
-              value = $d.rc ~ "|" ~ $d.mn
+              value = $d.rc ~ "__" ~ $d.mn
             }
           
             var $bye_match_id {
@@ -1786,7 +2101,7 @@ function bracket_generate {
                     
                       else {
                         var $top_dead_key {
-                          value = $d.trc ~ "|" ~ $d.tmn
+                          value = $d.trc ~ "__" ~ $d.tmn
                         }
                       
                         conditional {
@@ -1827,7 +2142,7 @@ function bracket_generate {
                     
                       else {
                         var $bottom_dead_key {
-                          value = $d.brc ~ "|" ~ $d.bmn
+                          value = $d.brc ~ "__" ~ $d.bmn
                         }
                       
                         conditional {
@@ -1875,7 +2190,21 @@ function bracket_generate {
                 
                   elseif ($only_top || $only_bottom) {
                     var $bye_winner_id {
-                      value = $only_top ? $cur_top : $cur_bottom
+                      value = null
+                    }
+                  
+                    conditional {
+                      if ($only_top) {
+                        var.update $bye_winner_id {
+                          value = $cur_top
+                        }
+                      }
+                    
+                      else {
+                        var.update $bye_winner_id {
+                          value = $cur_bottom
+                        }
+                      }
                     }
                   
                     db.edit bracket_match {
@@ -1943,10 +2272,10 @@ function bracket_generate {
         issues         : $check.issues
         match_id_map   : {
           total        : $descriptors|count
-          champ_finals : $id_map["champ_finals|1"]
-          place_3      : $id_map["place_3|1"]
-          place_5      : $id_map["place_5|1"]
-          place_7      : $id_map["place_7|1"]
+          champ_finals : $id_map["champ_finals__1"]
+          place_3      : $id_map["place_3__1"]
+          place_5      : $id_map["place_5__1"]
+          place_7      : $id_map["place_7__1"]
         }
       }
     }

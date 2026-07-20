@@ -61,7 +61,7 @@ export default function Login() {
       sub="Back for another round? Your bracket missed you."
       footer={
         <span>
-          New to Takedown?{' '}
+          New to Mat Savvy?{' '}
           <Link to="/register" className="font-bold text-gold-500 hover:text-gold-300">
             Create an account
           </Link>

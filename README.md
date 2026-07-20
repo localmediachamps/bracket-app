@@ -1,6 +1,6 @@
-# TAKEDOWN — Fantasy Wrestling Brackets
+# Mat Savvy — Fantasy Wrestling Brackets
 
-Predict every match. Own every round. A fantasy platform for NCAA-style wrestling tournaments:
+Predict. Pick. Win. A fantasy platform for NCAA-style wrestling tournaments:
 
 - **Bracket Challenge** — predict the winner of all 61 matches in all 10 weight classes (March-Madness-style scoring, configurable per round).
 - **Pick'em Showdown** — salary-cap game: pick one wrestler per weight with a 1000-point budget.
