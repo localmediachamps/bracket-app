@@ -153,7 +153,7 @@ export default function TournamentHub() {
   const tabs = [
     { key: 'bracket', label: 'Bracket', icon: <GitBranch size={15} /> },
     { key: 'leaderboard', label: 'Leaderboard', icon: <Trophy size={15} /> },
-    { key: 'picks', label: 'Picks %', icon: <Percent size={15} /> },
+    { key: 'picks', label: 'Picks', icon: <Percent size={15} /> },
     { key: 'results', label: 'Results', icon: <CheckCircle2 size={15} /> },
     { key: 'groups', label: 'Groups', icon: <Users size={15} />, count: t.group_count || undefined },
   ]

@@ -37,7 +37,12 @@ export function Card({ className, children, hover, ...props }) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-mat-700 bg-mat-850 shadow-card',
+        // min-w-0 keeps this safe as a flex/grid item: without it, a long
+        // unbreakable string in a truncated descendant can force this card
+        // (and its grid track) wider than the viewport even though the
+        // descendant itself renders truncated — flex/grid items default to
+        // min-width:auto (content-based), not min-width:0.
+        'min-w-0 rounded-xl border border-mat-700 bg-mat-850 shadow-card',
         hover && 'transition-all duration-200 hover:border-gold-500/40 hover:-translate-y-0.5 hover:shadow-glow',
         className
       )}

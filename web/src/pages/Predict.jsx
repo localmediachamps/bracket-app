@@ -232,8 +232,10 @@ export default function Predict() {
           setSaveState('retrying')
           retryTimer.current = setTimeout(() => doSaveRef.current?.(1), 1600)
         } else {
+          // No toast here either — the "Save failed" status pill already
+          // surfaces this, and a failing autosave retries on every
+          // subsequent pick, which would otherwise stack up duplicate toasts.
           setSaveState('error')
-          toast.error("Couldn't save your picks", { body: err.message })
         }
       } finally {
         inFlight.current = false

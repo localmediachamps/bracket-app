@@ -29,12 +29,12 @@ export default function TournamentCard({ tournament: t, index = 0 }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.06, 0.36), ease: [0.22, 1, 0.36, 1] }}
-      className="h-full"
+      className="h-full min-w-0"
     >
-      <Link to={href} className="group block h-full" aria-label={`View ${t.name}`}>
-        <Card hover className="flex h-full flex-col p-5">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="font-display text-base uppercase leading-tight tracking-wide text-ink-100 transition-colors group-hover:text-gold-300">
+      <Link to={href} className="group block h-full min-w-0" aria-label={`View ${t.name}`}>
+        <Card hover className="flex h-full min-w-0 flex-col p-5">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <h3 className="min-w-0 break-words font-display text-base uppercase leading-tight tracking-wide text-ink-100 transition-colors group-hover:text-gold-300">
               {t.name}
             </h3>
             <StatusPill status={t.status} className="shrink-0" />

@@ -85,7 +85,7 @@ export default function Dashboard() {
       <motion.header variants={rise} className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl uppercase tracking-tight text-ink-100 sm:text-4xl">
-            Mat time, <span className="text-gold-400">{name}</span>
+            Welcome, <span className="text-gold-400">{name}</span>
           </h1>
           <p className="mt-1.5 text-sm text-ink-500">
             {entries.length ? `You're in ${plural(entries.length, 'bracket')} — keep climbing.` : 'Your corner of the arena.'}
@@ -285,8 +285,8 @@ function EntryCard({ entry }) {
   const slug = t.slug ?? t.id
 
   return (
-    <motion.div variants={rise} className="h-full">
-      <Card hover className="flex h-full flex-col p-5">
+    <motion.div variants={rise} className="h-full min-w-0">
+      <Card hover className="flex h-full min-w-0 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Link to={`/tournaments/${slug}`} className="block truncate font-display text-sm uppercase tracking-wide text-ink-100 hover:text-gold-300">
@@ -368,10 +368,10 @@ function PickemCard({ entry }) {
   const t = tournamentOf(entry)
   const slug = t.slug ?? t.id
   return (
-    <motion.div variants={rise} className="h-full">
-      <Card hover className="flex h-full flex-col p-4">
+    <motion.div variants={rise} className="h-full min-w-0">
+      <Card hover className="flex h-full min-w-0 flex-col p-4">
         <div className="flex items-center justify-between gap-2">
-          <Link to={`/tournaments/${slug}`} className="truncate text-sm font-bold text-ink-100 hover:text-gold-300">
+          <Link to={`/tournaments/${slug}`} className="min-w-0 truncate text-sm font-bold text-ink-100 hover:text-gold-300">
             {t.name}
           </Link>
           <StatusPill status={entry.status} />
