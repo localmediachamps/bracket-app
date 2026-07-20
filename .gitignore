@@ -14,5 +14,11 @@ web/dist-check-*/
 __pycache__/
 *.pyc
 
+# Saved browser captures for reverse-engineering scraper endpoints - these
+# embed live twSessionId/USER_SESSIONID values, never commit (see
+# scripts/trackwrestling/README.md's "Legal & politeness" section)
+trackwrestling_scraping_bundle/*.html
+trackwrestling_scraping_bundle/*.har
+
 # Vercel local
 .vercel/
