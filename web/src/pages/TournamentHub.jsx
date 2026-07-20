@@ -127,6 +127,14 @@ export default function TournamentHub() {
 
   const goPredict = () => navigate(`/tournaments/${t.slug ?? slug}/predict`)
   const goPickem = () => navigate(`/tournaments/${t.slug ?? slug}/pickem`)
+  const isSubmitted = myEntry?.is_submitted || myEntry?.status === 'submitted'
+  const goReviewOrPredict = () => {
+    if (isSubmitted && myEntry?.id) {
+      navigate(`/entries/${myEntry.id}/review`)
+    } else {
+      goPredict()
+    }
+  }
   const viewBracket = () => {
     setTab('bracket')
     tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -134,13 +142,9 @@ export default function TournamentHub() {
 
   const ctas = []
   if (t.status === 'open') {
-    const predictLabel = myEntry?.is_submitted || myEntry?.status === 'submitted'
-      ? 'View Your Submission'
-      : myEntry
-        ? 'Continue Picks'
-        : 'Make Your Picks'
+    const predictLabel = isSubmitted ? 'View Your Submission' : myEntry ? 'Continue Picks' : 'Make Your Picks'
     ctas.push(
-      <Button key="predict" size="lg" onClick={goPredict}>
+      <Button key="predict" size="lg" onClick={goReviewOrPredict}>
         <GitBranch size={16} /> {predictLabel}
       </Button>
     )

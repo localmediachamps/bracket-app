@@ -59,9 +59,36 @@ query "tournaments/{id}/leaderboard" verb=GET {
             db.get user {
               field_name = "id"
               field_value = $row.user_id
-              output = ["id", "username", "display_name", "avatar_url"]
+              output = ["id", "username", "display_name", "avatar_url", "leaderboard_visible", "leaderboard_name_mode"]
             } as $row_user
-          
+
+            // Opted out of the public leaderboard entirely — skip this row.
+            // NOTE: $total above still counts this ranked entry (it's the
+            // total ranked-row count from the query, computed before this
+            // per-row visibility check), so it may slightly overstate the
+            // visible total. Acceptable for a first pass.
+            conditional {
+              if ($row_user.leaderboard_visible == false) {
+                continue
+              }
+            }
+
+            var $row_label {
+              value = $row_user.display_name|first_notempty:$row_user.username
+            }
+
+            conditional {
+              if ($row_user.leaderboard_name_mode == "username") {
+                var.update $row_label {
+                  value = $row_user.username|first_notempty:$row_user.display_name
+                }
+              }
+            }
+
+            var.update $row_user {
+              value = $row_user|set:"display_name":$row_label|unset:"leaderboard_visible"|unset:"leaderboard_name_mode"
+            }
+
             var $rank_change {
               value = null
             }
@@ -121,9 +148,31 @@ query "tournaments/{id}/leaderboard" verb=GET {
             db.get user {
               field_name = "id"
               field_value = $prow.user_id
-              output = ["id", "username", "display_name", "avatar_url"]
+              output = ["id", "username", "display_name", "avatar_url", "leaderboard_visible", "leaderboard_name_mode"]
             } as $prow_user
-          
+
+            conditional {
+              if ($prow_user.leaderboard_visible == false) {
+                continue
+              }
+            }
+
+            var $prow_label {
+              value = $prow_user.display_name|first_notempty:$prow_user.username
+            }
+
+            conditional {
+              if ($prow_user.leaderboard_name_mode == "username") {
+                var.update $prow_label {
+                  value = $prow_user.username|first_notempty:$prow_user.display_name
+                }
+              }
+            }
+
+            var.update $prow_user {
+              value = $prow_user|set:"display_name":$prow_label|unset:"leaderboard_visible"|unset:"leaderboard_name_mode"
+            }
+
             var $prank_change {
               value = null
             }
@@ -160,4 +209,5 @@ query "tournaments/{id}/leaderboard" verb=GET {
     page : $input.page
     per  : $input.per
   }
+  guid = "c_khnogovA6mAWloRyPvMvdjVkA"
 }

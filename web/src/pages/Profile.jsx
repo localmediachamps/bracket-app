@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { AlertTriangle, Award, BarChart3, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
-import { Avatar, Badge, Button, Card, EmptyState, Input, Skeleton, Stat, Tabs, Textarea } from '../components/ui'
+import { Avatar, Badge, Button, Card, EmptyState, Input, Select, Skeleton, Stat, Switch, Tabs, Textarea } from '../components/ui'
 import { cn, formatPoints, pct } from '../lib/utils'
 import Donut from '../components/profile/Donut'
 import { HBarList } from '../components/profile/HBar'
@@ -62,6 +62,8 @@ function EditTab() {
         avatar_url: me.avatar_url ?? '',
         favorite_school: me.favorite_school ?? '',
         bio: me.bio ?? '',
+        leaderboard_visible: me.leaderboard_visible ?? true,
+        leaderboard_name_mode: me.leaderboard_name_mode ?? 'display_name',
       })
     }
   }, [me, form])
@@ -107,7 +109,9 @@ function EditTab() {
     form.username !== (me.username ?? '') ||
     form.avatar_url !== (me.avatar_url ?? '') ||
     form.favorite_school !== (me.favorite_school ?? '') ||
-    form.bio !== (me.bio ?? '')
+    form.bio !== (me.bio ?? '') ||
+    form.leaderboard_visible !== (me.leaderboard_visible ?? true) ||
+    form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name')
 
   const submit = (e) => {
     e?.preventDefault()
@@ -117,6 +121,8 @@ function EditTab() {
       avatar_url: form.avatar_url.trim() || null,
       favorite_school: form.favorite_school.trim() || null,
       bio: form.bio.trim() || null,
+      leaderboard_visible: form.leaderboard_visible,
+      leaderboard_name_mode: form.leaderboard_name_mode,
     })
   }
 
@@ -156,6 +162,26 @@ function EditTab() {
       </motion.div>
       <motion.div variants={rise}>
         <Textarea label="Bio" value={form.bio} onChange={set('bio')} rows={3} maxLength={280} placeholder="Been picking upsets since '97." />
+      </motion.div>
+
+      <motion.div variants={rise} className="space-y-3">
+        <span className="block text-xs font-bold uppercase tracking-wider text-ink-500">Public leaderboard</span>
+        <Switch
+          checked={form.leaderboard_visible}
+          onChange={(v) => setForm((f) => ({ ...f, leaderboard_visible: v }))}
+          label="Show up on public leaderboards"
+          description="Turn this off to keep your entries out of any tournament's public leaderboard. Private group leaderboards aren't affected."
+        />
+        {form.leaderboard_visible && (
+          <Select
+            label="Name shown on the leaderboard"
+            value={form.leaderboard_name_mode}
+            onChange={(e) => setForm((f) => ({ ...f, leaderboard_name_mode: e.target.value }))}
+          >
+            <option value="display_name">Display name ({form.display_name || 'not set'})</option>
+            <option value="username">Username (@{form.username || 'not set'})</option>
+          </Select>
+        )}
       </motion.div>
 
       <motion.div variants={rise} className="flex justify-end">
