@@ -39,64 +39,21 @@ query "tournaments/{id}/bracket/{weightClassId}" verb=GET {
       error = "Weight class not found for this tournament."
     }
   
-    // entry_id requires authentication plus ownership (or admin)
+    // KNOWN ISSUE: entry_id-based personalization is disabled. Every path
+    // tried to verify entry ownership (db.get/db.query on user_bracket/user
+    // inline in this query; delegating to a function.run) hit
+    // ERROR_CODE_ACCESS_DENIED or "Function does not exist" for references
+    // that work perfectly fine standalone (via `xano function run`) — even a
+    // brand-new function's own function.run calls to other existing
+    // functions failed to resolve via the CLI. This looks like an active
+    // platform/tooling issue independent of the code itself; not something
+    // fixable by further XanoScript edits today. The core predict/pick flow
+    // does not depend on this — picks are tracked client-side via a separate
+    // /entries/{id} fetch (usePredictPicks), not via this endpoint's
+    // entry_id param — so disabling this is low-impact: only the optional
+    // "your pick" annotation on each match card in results mode is affected.
     var $verified_entry_id {
       value = null
-    }
-  
-    conditional {
-      if ($input.entry_id != null) {
-        precondition ($auth.id != null) {
-          error_type = "unauthorized"
-          error = "Authentication is required to view entry picks."
-        }
-      
-        db.get user_bracket {
-          field_name = "id"
-          field_value = $input.entry_id
-        } as $entry
-      
-        precondition ($entry != null) {
-          error_type = "notfound"
-          error = "Entry not found."
-        }
-      
-        precondition ($entry.tournament_id == $input.id) {
-          error_type = "inputerror"
-          error = "Entry does not belong to this tournament."
-        }
-      
-        var $entry_is_admin {
-          value = false
-        }
-      
-        conditional {
-          if ($entry.user_id != $auth.id) {
-            db.get user {
-              field_name = "id"
-              field_value = $auth.id
-              output = ["id", "is_admin"]
-            } as $admin_check
-          
-            conditional {
-              if ($admin_check != null && $admin_check.is_admin) {
-                var.update $entry_is_admin {
-                  value = true
-                }
-              }
-            }
-          }
-        }
-      
-        precondition ($entry.user_id == $auth.id || $entry_is_admin) {
-          error_type = "accessdenied"
-          error = "You do not own this entry."
-        }
-      
-        var.update $verified_entry_id {
-          value = $entry.id
-        }
-      }
     }
   
     // Pick percentages gated to locked/live/completed or the explicit reveal flag
@@ -123,4 +80,5 @@ query "tournaments/{id}/bracket/{weightClassId}" verb=GET {
   }
 
   response = $view
+  guid = "_G4Nez_lhdP42fmJCQwCcOfcOOM"
 }

@@ -252,8 +252,8 @@ export default function Landing() {
             transition={{ duration: 0.55, delay: 0.25 }}
             className="mt-6 max-w-xl text-base text-ink-400 sm:text-lg"
           >
-            Champions, blood rounds, buzzer-beater upsets. Call all 61 matches per weight and prove
-            you know the mat better than anyone.
+            Wrestling fantasy perfected. Predict every match or build a pick-em team, and prove you
+            know the mat better than anyone.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}

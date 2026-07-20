@@ -12,9 +12,11 @@ task lock_tournaments {
       value = now
     }
   
-    // Open tournaments whose prediction deadline has passed (null locks_at excluded by SQL comparison semantics)
+    // Open tournaments whose prediction deadline has passed. locks_at comes
+    // back as 0 (not null) when unset, so exclude 0 explicitly — otherwise
+    // any open tournament without a deadline gets locked on the next run.
     db.query tournament {
-      where = $db.tournament.status == "open" && $db.tournament.locks_at <= $now
+      where = $db.tournament.status == "open" && $db.tournament.locks_at > 0 && $db.tournament.locks_at <= $now
       return = {type: "list"}
     } as $expired_tournaments
   

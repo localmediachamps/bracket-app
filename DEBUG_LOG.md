@@ -4,7 +4,76 @@ Running log of the current debugging session(s). Newest entries on top.
 
 ---
 
-## 2026-07-20 — Bracket view UI/UX pass (frontend, not yet deployed)
+## 2026-07-20 — Auto-lock bug + bracket-view entry_id (platform tooling limits)
+
+### `lock_tournaments` task re-locking reopened tournaments
+User reopened `test4` (Admin → Reopen) to test the predict flow; it kept
+flipping back to `locked` within a few minutes on its own.
+[tasks/lock_tournaments.xs](tasks/lock_tournaments.xs) runs every 5 minutes
+and locks any tournament where `status == "open" && locks_at <= now`.
+`locks_at` comes back as `0` (not `null`) when never set — same "int
+defaults to 0" pattern as `bracket_match`'s winner fields earlier — so
+`0 <= now` is always true and every open tournament without an explicit
+deadline gets locked on the very next run. Fixed: added `locks_at > 0` to
+the where clause. Pushed live.
+
+### `tournaments/{id}/bracket/{weightClassId}` — entry_id personalization
+Once `/predict` became reachable, loading any bracket there (which passes
+`entry_id`) 403'd. Traced to the entry-ownership check
+(`db.get`/`db.query user_bracket`, then `db.get`/`db.query user` for an
+admin bypass) — same "stale reference inside this one query object" class of
+bug as `tournaments_slugOrId_GET.xs`, confirmed by elimination (bare
+`db.query user_bracket` alone still 403'd; removing the `user` admin-check
+block alone didn't help either).
+
+Went further than earlier: extracted the ownership check into a new
+function, [functions/bracket/verify_entry_ownership.xs](functions/bracket/verify_entry_ownership.xs)
+— confirmed working perfectly standalone via `xano function run`. But
+calling it via `function.run` from *within the query* still 403'd. Tried
+consolidating the query's entire stack into one new function,
+[functions/bracket/get_tournament_bracket_view.xs](functions/bracket/get_tournament_bracket_view.xs)
+(so the query itself becomes a single-statement wrapper) — this hit a
+**different, worse problem**: the brand-new function's own
+`function.run get_weight_bracket_view` / `function.run verify_entry_ownership`
+calls failed with `"Function does not exist: function:<id>"`, using the
+*correct* IDs, for functions confirmed working standalone. Re-saving via
+`function edit` didn't fix it. This means newly-created functions'
+cross-function references may not resolve via the CLI's `function create` /
+`workspace push` path at all — a tooling limitation beyond a code fix today.
+
+**Resolution**: disabled `entry_id` handling on
+[tournaments_bracket_GET.xs](apis/brackets/tournaments_bracket_GET.xs)
+entirely (`$verified_entry_id` always stays `null`) rather than continuing
+to fight broken cross-references. Low impact: the actual predict/pick flow
+doesn't depend on this parameter — picks are tracked client-side via a
+separate `/entries/{id}` fetch (`usePredictPicks`) and saved through
+`savePicks`, not through this bracket-view endpoint. Only casualty: the
+per-match "your pick was right/wrong" annotation in results mode won't show
+until this is revisited (likely needs to be done through Xano's dashboard UI
+directly, where the visual function picker presumably binds references
+correctly, rather than via CLI-authored XanoScript text).
+
+`verify_entry_ownership.xs` and `get_tournament_bracket_view.xs` are left in
+the repo (both valid, the former genuinely working standalone) as a
+starting point for whoever picks this back up.
+
+### Status
+Both fixed and pushed live — reopening a tournament sticks now, and the
+bracket view loads whether or not `entry_id` is passed.
+
+---
+
+## 2026-07-20 — Bracket view UI/UX pass, round 2
+
+- Initial zoom was centering round 1 horizontally instead of aligning it to
+  the left edge (`pz.center` → `pz.setTransform` with an explicit left-pad
+  offset instead of a centered point).
+- Minimap converted from always-visible to a toggle button (hidden by
+  default) in the top bar next to the pan/zoom hint, since its true aspect
+  ratio (tall — championship + consolation bands stacked) made it dominate
+  the bottom-left corner.
+
+## 2026-07-20 — Bracket view UI/UX pass, round 1 (frontend, not yet deployed)
 
 Once the bracket actually started rendering with real data, several UI bugs
 surfaced. All fixed in `web/src/components/bracket/`:

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { ZoomIn, ZoomOut, Maximize, List, GitBranch } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { layoutBracket, connectorPath, resolvePicks, METRICS } from './bracketMath'
 import MatchCard from './MatchCard'
@@ -103,19 +103,28 @@ function ViewButton({ active, onClick, icon: Icon, label }) {
 /* ── Canvas (pan/zoom graph view) ─────────────────────── */
 function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) {
   const pz = usePanZoom()
+  const [showMinimap, setShowMinimap] = useState(false)
 
   // Focus round 1 at a readable scale on load/reflow instead of zooming out
   // to fit the entire graph (which makes cards too small to read or click).
+  // Aligned to the left edge (not centered) so round 1 reads left-to-right.
   useEffect(() => {
     const t = setTimeout(() => {
+      const c = pz.containerRef.current
       const firstCol = [...layout.pos.values()].filter((p) => p.col === 0 && p.band === 'championship')
-      if (!firstCol.length) {
+      if (!c || !firstCol.length) {
         pz.fit()
         return
       }
       const minY = Math.min(...firstCol.map((p) => p.y))
       const maxY = Math.max(...firstCol.map((p) => p.y + METRICS.MATCH_H))
-      pz.center(firstCol[0].x + METRICS.MATCH_W / 2, (minY + maxY) / 2, 0.95)
+      const scale = 0.95
+      const leftPad = 24
+      pz.setTransform({
+        scale,
+        x: leftPad - firstCol[0].x * scale,
+        y: c.clientHeight / 2 - ((minY + maxY) / 2) * scale,
+      })
     }, 60)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -250,13 +259,29 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
           <IconBtn onClick={() => pz.fit()} label="Fit to screen"><Maximize size={15} /></IconBtn>
         </div>
 
-        {/* minimap (desktop) */}
-        <div className="absolute bottom-3 left-3 z-10 hidden md:block">
-          <Minimap layout={layout} matches={matches} panZoom={pz} />
-        </div>
+        {/* minimap (desktop) — hidden by default, toggled from the top bar */}
+        {showMinimap && (
+          <div className="absolute bottom-3 left-3 z-10 hidden md:block">
+            <Minimap layout={layout} matches={matches} panZoom={pz} />
+          </div>
+        )}
 
-        <div className="pointer-events-none absolute left-3 top-3 z-10 hidden rounded bg-mat-850/80 px-2 py-1 text-[10px] font-semibold text-ink-500 md:block">
-          Drag to pan · Ctrl+scroll to zoom
+        {/* top bar: pan hint + minimap toggle */}
+        <div className="pointer-events-none absolute left-3 top-3 z-10 hidden items-center gap-2 md:flex">
+          <span className="rounded bg-mat-850/80 px-2 py-1 text-[10px] font-semibold text-ink-500">
+            Drag to pan · Ctrl+scroll to zoom
+          </span>
+          <button
+            type="button"
+            data-no-pan="true"
+            onClick={() => setShowMinimap((v) => !v)}
+            className={cn(
+              'pointer-events-auto flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold transition-colors',
+              showMinimap ? 'bg-gold-500/20 text-gold-400' : 'bg-mat-850/80 text-ink-500 hover:text-ink-200'
+            )}
+          >
+            <Map size={11} /> Map
+          </button>
         </div>
       </div>
     </div>
