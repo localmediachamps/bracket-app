@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { AlertTriangle, ArrowLeft, Lock, RotateCcw, Send, Timer } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Lock, RotateCcw, Send, Sparkles, Timer } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
 import { Button, Card, Countdown, EmptyState, Input, Skeleton, StatusPill } from '../components/ui'
@@ -14,6 +14,8 @@ import SeedCostLegend from '../components/pickem/SeedCostLegend'
 import ScoringExplainer from '../components/pickem/ScoringExplainer'
 import PickemSubmitModal from '../components/pickem/PickemSubmitModal'
 import SaveStateIndicator from '../components/pickem/SaveStateIndicator'
+import BestScenarioCard from '../components/pickem/BestScenarioCard'
+import { projectWrestlerPoints, solveBestScenario } from '../components/pickem/recommender'
 
 const CLOSED_STATUSES = ['locked', 'live', 'completed']
 
@@ -206,6 +208,62 @@ export default function Pickem() {
     unsavedRef.current = true
     setUnsaved(true)
   }, [])
+
+  /* ── best-scenario recommender ───────────────────────────── */
+  // Needs the user's OWN championship-bracket predictions (a separate entry
+  // from this pick'em one) to project fantasy points per wrestler.
+  const myBracketEntryQuery = useQuery({
+    queryKey: ['tournament-my-entry', tournament?.id],
+    queryFn: () => api.myEntry(tournament.id),
+    enabled: !!tournament?.id,
+    staleTime: 10000,
+  })
+  const bracketEntryId = myBracketEntryQuery.data?.id ?? null
+  const bracketDetailQuery = useQuery({
+    queryKey: ['entry', bracketEntryId],
+    queryFn: () => api.entry(bracketEntryId),
+    enabled: !!bracketEntryId,
+    staleTime: 10000,
+  })
+  const bracketPicksMap = useMemo(() => {
+    const m = new Map()
+    for (const p of bracketDetailQuery.data?.picks ?? []) {
+      if (p.bracket_match_id != null && p.wrestler_id != null) m.set(p.bracket_match_id, p.wrestler_id)
+    }
+    return m
+  }, [bracketDetailQuery.data])
+
+  const weightsLoaded = weightClasses.length > 0 && weightQueries.every((q) => q.data)
+  const bestScenario = useMemo(() => {
+    if (!weightsLoaded || bracketPicksMap.size === 0) return null
+    const groups = weightClasses.map((wc, i) => {
+      const data = weightQueries[i]?.data
+      const matches = data?.matches ?? []
+      const comps = data?.competitors ?? []
+      const compById = new Map(comps.map((c) => [c.id, c]))
+      const projections = projectWrestlerPoints(matches, bracketPicksMap, compById, config.scoring)
+      return {
+        key: wc.id,
+        options: comps.map((c) => ({ id: c.id, cost: costOf(c), points: projections.get(c.id)?.points ?? 0 })),
+      }
+    })
+    const solved = solveBestScenario(groups, config.budget)
+    return { ...solved, groups }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weightsLoaded, bracketPicksMap, weightClasses, config.scoring, config.budget])
+
+  const applyBestScenario = useCallback(() => {
+    if (!bestScenario?.selections?.size) return
+    const next = {}
+    for (const [wcId, wrestlerId] of bestScenario.selections) {
+      if (wrestlerId != null) next[wcId] = wrestlerId
+    }
+    setPicks(next)
+    picksRef.current = next
+    markDirty()
+    toast.success('Best Scenario applied', { body: 'Your roster is filled in — feel free to tweak it before submitting.' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bestScenario, markDirty])
 
   const selectWrestler = useCallback(
     (wcId, wrestler) => {
@@ -518,6 +576,15 @@ export default function Pickem() {
 
         {/* ── sidebar ── */}
         <div className="space-y-4">
+          {!readOnly && (
+            <BestScenarioCard
+              bestScenario={bestScenario}
+              hasBracketPicks={bracketPicksMap.size > 0}
+              budget={config.budget}
+              onApply={applyBestScenario}
+              disabled={!bestScenario?.selections?.size}
+            />
+          )}
           <SeedCostLegend seedCosts={config.seed_costs} />
           <ScoringExplainer scoring={config.scoring} />
         </div>
@@ -536,6 +603,7 @@ export default function Pickem() {
         picks={picks}
         weightClasses={weightClasses}
         seedCosts={config.seed_costs}
+        recommendedId={pickerWc ? bestScenario?.selections?.get(pickerWc.id) ?? null : null}
         onSelect={(w) => pickerWc && selectWrestler(pickerWc.id, w)}
       />
 

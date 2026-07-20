@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { AlertTriangle, Check, Search } from 'lucide-react'
+import { AlertTriangle, Check, Search, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { Badge, Button, Modal, Skeleton } from '../ui'
 
@@ -26,6 +26,7 @@ export default function WrestlerPicker({
   picks,
   weightClasses,
   seedCosts,
+  recommendedId,
   onSelect,
 }) {
   const [q, setQ] = useState('')
@@ -118,7 +119,17 @@ export default function WrestlerPicker({
                   {w.seed ?? '–'}
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block truncate text-sm font-semibold text-ink-100">{w.name}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="block truncate text-sm font-semibold text-ink-100">{w.name}</span>
+                    {recommendedId != null && w.id === recommendedId && (
+                      <span
+                        className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-gold-500/40 bg-gold-500/12 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold-400"
+                        title="Best Scenario's pick for this weight class"
+                      >
+                        <Sparkles size={9} /> Recommended
+                      </span>
+                    )}
+                  </span>
                   <span className="block truncate text-[11px] text-ink-500">
                     {w.school}
                     {w.record ? ` · ${w.record}` : ''}
