@@ -52,7 +52,15 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionCounts])
 
-  const sectionMatches = useMemo(() => matches.filter((m) => m.section === activeSection), [matches, activeSection])
+  // Consolation tab also carries the placement matches (3rd/5th/7th) as an
+  // inline column, since they route directly off the consolation bracket —
+  // showing them disconnected in a separate tab loses that visual thread.
+  const sectionMatches = useMemo(() => {
+    if (activeSection === 'consolation') {
+      return matches.filter((m) => m.section === 'consolation' || m.section === 'placement')
+    }
+    return matches.filter((m) => m.section === activeSection)
+  }, [matches, activeSection])
   const layout = useMemo(() => layoutBracket(sectionMatches), [sectionMatches])
 
   const sectionProgress = useMemo(() => {
@@ -214,21 +222,34 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
 
   const connectors = useMemo(() => {
     const out = []
+    // group connectors by column gap (src col → dst col) and spread each
+    // group's elbow lanes across the gap instead of stacking them all on
+    // the same midpoint — see connectorPath's `lane` param.
+    const gapCounts = new Map()
+    const laneOf = (srcCol, dstCol) => {
+      const key = `${srcCol}-${dstCol}`
+      const n = gapCounts.get(key) ?? 0
+      gapCounts.set(key, n + 1)
+      const lanes = [0.5, 0.3, 0.7, 0.4, 0.6]
+      return lanes[n % lanes.length]
+    }
     for (const m of matches) {
       const src = layout.pos.get(m.id)
       if (!src) continue
       if (m.winner_dest?.match_id && layout.pos.get(m.winner_dest.match_id)) {
+        const dst = layout.pos.get(m.winner_dest.match_id)
         out.push({
           key: `w${m.id}`,
-          ...connectorPath(src, layout.pos.get(m.winner_dest.match_id), m.winner_dest.slot),
+          ...connectorPath(src, dst, m.winner_dest.slot, laneOf(src.col, dst.col)),
           kind: 'winner',
           srcId: m.id,
         })
       }
       if (m.loser_dest?.match_id && layout.pos.get(m.loser_dest.match_id)) {
+        const dst = layout.pos.get(m.loser_dest.match_id)
         out.push({
           key: `l${m.id}`,
-          ...connectorPath(src, layout.pos.get(m.loser_dest.match_id), m.loser_dest.slot),
+          ...connectorPath(src, dst, m.loser_dest.slot, laneOf(src.col, dst.col)),
           kind: 'loser',
           srcId: m.id,
         })
@@ -270,12 +291,16 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
           {/* column headers */}
           {layout.columns.map((col) => {
             const r = roundForColumn(col)
-            const label = col.band === 'placement' ? 'Placement' : r?.label ?? `Round ${col.round}`
+            const label = col.band === 'placement' ? 'Placement Matches' : r?.label ?? `Round ${col.round}`
             return (
               <div
                 key={col.key}
                 className="absolute flex items-center gap-2"
-                style={{ left: col.x, top: col.band === 'consolation' ? (layout.consBandTop ?? 0) : 0, width: METRICS.MATCH_W }}
+                style={{
+                  left: col.x,
+                  top: (col.band === 'consolation' || col.band === 'placement') ? (layout.consBandTop ?? 0) : 0,
+                  width: METRICS.MATCH_W,
+                }}
               >
                 <span className={cn(
                   'text-[10px] font-bold uppercase tracking-[0.14em]',

@@ -86,22 +86,6 @@ export function layoutBracket(matches) {
   const champBottom = Math.max(0, ...[...pos.values()].map((p) => p.y + MATCH_H))
   maxY = champBottom
 
-  /* ── Placement column (right of championship) ── */
-  if (place.length) {
-    const colIdx = champRounds.length
-    const x = PAD + colIdx * colW
-    columns.push({ key: 'place', x, band: 'placement', matches: place.length })
-    const items = place.map((m) => {
-      const srcs = slotSourceIds(m)
-      const ys = srcs.map((id) => pos.get(id)?.y).filter((v) => v !== undefined)
-      const fallback = HEADER_H + PAD + (place.indexOf(m)) * pitch * 2
-      return { id: m.id, target: ys.length ? avg(ys) : fallback }
-    }).sort((a, b) => a.target - b.target)
-    const ys = resolveColumn(items, pitch * 1.6)
-    for (const m of place) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'placement' })
-    maxY = Math.max(maxY, ...place.map((m) => pos.get(m.id).y + MATCH_H))
-  }
-
   /* ── Consolation band ──────────────────────────────────
    * Positioned by bout number (match_number), same as championship round 1
    * — NOT clustered near the average position of each match's feeders.
@@ -110,7 +94,11 @@ export function layoutBracket(matches) {
    * source-position clustering produced far-jumping, chaotic-looking
    * connector lines. Bout number order is how real printed brackets lay
    * this out and reads cleanly regardless of which earlier bout feeds in.
+   * Uses a slightly taller pitch than championship — more cards funnel
+   * through fewer rows here (blood round, etc.), so extra breathing room
+   * keeps connector lines from visually overlapping each other.
    */
+  const consPitch = MATCH_H + ROW_GAP * 1.7
   const consRounds = byRound(cons)
   // Only offset past the championship band if one is actually present in
   // this layout (BracketView now renders one section — champ/cons/placement
@@ -121,13 +109,34 @@ export function layoutBracket(matches) {
       const x = PAD + colIdx * colW
       columns.push({ key: `k${round}`, x, band: 'consolation', matches: list.length, round })
       list.forEach((m, i) => {
-        pos.set(m.id, { x, y: bandTop + HEADER_H + i * pitch, col: colIdx, band: 'consolation' })
+        pos.set(m.id, { x, y: bandTop + HEADER_H + i * consPitch, col: colIdx, band: 'consolation' })
       })
     })
     maxY = Math.max(maxY, ...cons.flatMap((m) => [pos.get(m.id)?.y ?? 0]).map((y) => y + MATCH_H))
   }
 
-  const maxCol = Math.max(champRounds.length + (place.length ? 1 : 0), consRounds.length)
+  /* ── Placement column ── appended one column past whichever band is
+   * active in this view (championship when viewing the full bracket,
+   * consolation when viewing the consolation tab — that's where place_3/
+   * 5/7 route from, so they read as "one more column" rather than a
+   * disconnected table). */
+  if (place.length) {
+    const colIdx = champRounds.length + consRounds.length
+    const x = PAD + colIdx * colW
+    const top = consRounds.length ? bandTop : PAD
+    columns.push({ key: 'place', x, band: 'placement', matches: place.length })
+    const items = place.map((m) => {
+      const srcs = slotSourceIds(m)
+      const ys = srcs.map((id) => pos.get(id)?.y).filter((v) => v !== undefined)
+      const fallback = top + HEADER_H + (place.indexOf(m)) * consPitch * 1.6
+      return { id: m.id, target: ys.length ? avg(ys) : fallback }
+    }).sort((a, b) => a.target - b.target)
+    const ys = resolveColumn(items, consPitch * 1.6)
+    for (const m of place) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'placement' })
+    maxY = Math.max(maxY, ...place.map((m) => pos.get(m.id).y + MATCH_H))
+  }
+
+  const maxCol = champRounds.length + consRounds.length + (place.length ? 1 : 0)
   return {
     pos,
     columns,
@@ -151,13 +160,19 @@ export function slotSourceIds(match) {
 }
 
 /* ── Connector paths ──────────────────────────────────── */
-export function connectorPath(srcPos, dstPos, slot) {
+// `lane` (0..1) shifts the elbow's vertical segment across the column gap
+// instead of always sitting at the exact midpoint. When several connectors
+// share the same column gap — common in the consolation "R-cycle" shuffle,
+// where sources and destinations aren't row-aligned — a single shared
+// midpoint stacks their vertical segments on top of each other. Spreading
+// lanes across the gap keeps lines visually distinct.
+export function connectorPath(srcPos, dstPos, slot, lane = 0.5) {
   const { MATCH_W, MATCH_H } = METRICS
   const sx = srcPos.x + MATCH_W
   const sy = srcPos.y + MATCH_H / 2
   const dx = dstPos.x
   const dy = dstPos.y + (slot === 'bottom' ? MATCH_H * 0.74 : MATCH_H * 0.26)
-  const midX = sx + (dx - sx) / 2
+  const midX = sx + (dx - sx) * lane
   return {
     d: `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${dy} L ${dx} ${dy}`,
     key: `${sx}-${sy}-${dx}-${dy}`,

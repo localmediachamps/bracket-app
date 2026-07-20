@@ -625,30 +625,7 @@ function bracket_generate {
             }
           
             array.push $descriptors {
-              value = {
-                rc : "pigtail"
-                rn : 0
-                rl : "Pigtail"
-                mn : $pj
-                sec: "championship"
-                dor: $pj
-                tt : "seed"
-                ts : $pig_position
-                trc: null
-                tmn: null
-                bt : "seed"
-                bs : $pig_seed_bottom
-                brc: null
-                bmn: null
-                wrc: "champ_r1"
-                wmn: $pig_match_number
-                wsl: $pig_slot
-                lrc: $pig_lrc
-                lmn: $pig_lmn
-                lsl: $pig_lsl
-                tw : $seed_map[$pig_position]
-                bw : $seed_map[$pig_seed_bottom]
-              }
+              value = {rc: "pigtail", rn: 0, rl: "Pigtail", mn: $pj, sec: "championship", dor: $pj, tt: "seed", ts: $pig_position, trc: null, tmn: null, bt: "seed", bs: $pig_seed_bottom, brc: null, bmn: null, wrc: "champ_r1", wmn: $pig_match_number, wsl: $pig_slot, lrc: $pig_lrc, lmn: $pig_lmn, lsl: $pig_lsl, tw: $seed_map[$pig_position], bw: $seed_map[$pig_seed_bottom]}
             }
           }
         }
@@ -1201,30 +1178,7 @@ function bracket_generate {
         foreach ($cons_pig_list) {
           each as $cp {
             array.push $descriptors {
-              value = {
-                rc : "cons_pigtail"
-                rn : 0
-                rl : "Consolation Pigtail"
-                mn : $cp.j
-                sec: "consolation"
-                dor: 10000 + $cp.j
-                tt : "match_loser"
-                ts : null
-                trc: "pigtail"
-                tmn: $cp.j
-                bt : "match_loser"
-                bs : null
-                brc: "champ_r1"
-                bmn: $cp.mirror
-                wrc: "cons_r1"
-                wmn: $cp.cmn
-                wsl: $cp.csl
-                lrc: null
-                lmn: null
-                lsl: null
-                tw : null
-                bw : null
-              }
+              value = {rc: "cons_pigtail", rn: 0, rl: "Consolation Pigtail", mn: $cp.j, sec: "consolation", dor: 10000 + $cp.j, tt: "match_loser", ts: null, trc: "pigtail", tmn: $cp.j, bt: "match_loser", bs: null, brc: "champ_r1", bmn: $cp.mirror, wrc: "cons_r1", wmn: $cp.cmn, wsl: $cp.csl, lrc: null, lmn: null, lsl: null, tw: null, bw: null}
             }
           }
         }
@@ -1549,30 +1503,7 @@ function bracket_generate {
                     }
                   
                     array.push $descriptors {
-                      value = {
-                        rc : $drop_code
-                        rn : $drop_code_num
-                        rl : $drop_label
-                        mn : $j
-                        sec: "consolation"
-                        dor: (10000 + ($drop_code_num * 100)) + $j
-                        tt : "match_winner"
-                        ts : null
-                        trc: $prev_cons_code
-                        tmn: $j
-                        bt : "match_loser"
-                        bs : null
-                        brc: "champ_r" ~ $ck
-                        bmn: $drop_bmn
-                        wrc: $drop_wrc
-                        wmn: (($j + 1) / 2)|floor
-                        wsl: $j_is_odd ? "top" : "bottom"
-                        lrc: null
-                        lmn: null
-                        lsl: null
-                        tw : null
-                        bw : null
-                      }
+                      value = {rc: $drop_code, rn: $drop_code_num, rl: $drop_label, mn: $j, sec: "consolation", dor: (10000 + ($drop_code_num * 100)) + $j, tt: "match_winner", ts: null, trc: $prev_cons_code, tmn: $j, bt: "match_loser", bs: null, brc: "champ_r" ~ $ck, bmn: $drop_bmn, wrc: $drop_wrc, wmn: (($j + 1) / 2)|floor, wsl: $j_is_odd ? "top" : "bottom", lrc: null, lmn: null, lsl: null, tw: null, bw: null}
                     }
                   }
                 }
@@ -1666,7 +1597,7 @@ function bracket_generate {
                   value = {
                     rc : $semis_code
                     rn : $semis_rn
-                    rl : "Consolation Semis"
+                    rl : "Consolation Quarterfinal"
                     mn : $si
                     sec: "consolation"
                     dor: (10000 + ($semis_rn * 100)) + $si
@@ -1742,7 +1673,7 @@ function bracket_generate {
               value = {
                 rc : $cons_finals_code
                 rn : $cons_finals_rn
-                rl : "Consolation Finals"
+                rl : "Consolation Semis"
                 mn : $fi
                 sec: "consolation"
                 dor: (10000 + ($cons_finals_rn * 100)) + $fi
