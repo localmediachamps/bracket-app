@@ -3,6 +3,7 @@ import { ZoomIn, ZoomOut, Maximize, List, GitBranch, Map as MapIcon, Check } fro
 import { cn } from '../../lib/utils'
 import { layoutBracket, connectorPath, resolvePicks, METRICS } from './bracketMath'
 import MatchCard from './MatchCard'
+import PlacementTable from './PlacementTable'
 import usePanZoom from './usePanZoom'
 
 /**
@@ -127,13 +128,17 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
         ) : (
           <span />
         )}
-        <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1">
-          <ViewButton active={view === 'canvas'} onClick={() => setViewOverride('canvas')} icon={GitBranch} label="Bracket" />
-          <ViewButton active={view === 'list'} onClick={() => setViewOverride('list')} icon={List} label="List" />
-        </div>
+        {activeSection !== 'placement' && (
+          <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1">
+            <ViewButton active={view === 'canvas'} onClick={() => setViewOverride('canvas')} icon={GitBranch} label="Bracket" />
+            <ViewButton active={view === 'list'} onClick={() => setViewOverride('list')} icon={List} label="List" />
+          </div>
+        )}
       </div>
 
-      {view === 'canvas' ? (
+      {activeSection === 'placement' ? (
+        <PlacementTable matches={matches} resolution={resolution} picks={picks} mode={mode} />
+      ) : view === 'canvas' ? (
         <CanvasView
           matches={sectionMatches}
           layout={layout}

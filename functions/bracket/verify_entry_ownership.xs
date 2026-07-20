@@ -5,10 +5,10 @@ function verify_entry_ownership {
   input {
     // user_bracket id to verify
     int entry_id
-
+  
     // Tournament the entry must belong to
     int tournament_id
-
+  
     // Requesting user's id
     int user_id
   }
@@ -18,17 +18,17 @@ function verify_entry_ownership {
       field_name = "id"
       field_value = $input.entry_id
     } as $entry
-
+  
     precondition ($entry != null) {
       error_type = "notfound"
       error = "Entry not found."
     }
-
+  
     precondition ($entry.tournament_id == $input.tournament_id) {
       error_type = "inputerror"
       error = "Entry does not belong to this tournament."
     }
-
+  
     precondition ($entry.user_id == $input.user_id) {
       error_type = "accessdenied"
       error = "You do not own this entry."
@@ -36,4 +36,5 @@ function verify_entry_ownership {
   }
 
   response = $entry
+  guid = "DVPOmn_N3ZoP4L4nj7dO9Blzu2I"
 }

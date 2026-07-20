@@ -12,11 +12,11 @@ query "tournaments/{slugOrId}" verb=GET {
     var $is_numeric {
       value = "/^[0-9]+$/"|regex_matches:$input.slugOrId
     }
-
+  
     var $numeric_id {
       value = $input.slugOrId|to_int
     }
-
+  
     conditional {
       if ($is_numeric) {
         db.query tournament {
@@ -39,13 +39,13 @@ query "tournaments/{slugOrId}" verb=GET {
       error_type = "notfound"
       error = "Tournament not found."
     }
-
+  
     db.query weight_class {
       where = $db.weight_class.tournament_id == $tournament.id
       sort = {weight_class.display_order: "asc"}
       return = {type: "list"}
     } as $weight_classes
-
+  
     // KNOWN ISSUE: personalization (my_entry/my_pickem_entry), the top-5
     // leaderboard, and group_count are hardcoded below instead of queried.
     // This workspace's user_bracket/pickem_entry/fantasy_group table
@@ -64,15 +64,15 @@ query "tournaments/{slugOrId}" verb=GET {
     var $my_entry {
       value = null
     }
-
+  
     var $my_pickem_entry {
       value = null
     }
-
+  
     var $leaderboard_top5 {
       value = []
     }
-
+  
     var $group_count {
       value = 0
     }

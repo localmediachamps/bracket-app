@@ -102,7 +102,15 @@ export function layoutBracket(matches) {
     maxY = Math.max(maxY, ...place.map((m) => pos.get(m.id).y + MATCH_H))
   }
 
-  /* ── Consolation band (mirrors championship vertical spread) ── */
+  /* ── Consolation band ──────────────────────────────────
+   * Positioned by bout number (match_number), same as championship round 1
+   * — NOT clustered near the average position of each match's feeders.
+   * NCAA consolation rounds route through a deliberate "R-cycle" shuffle
+   * (see bracket_generate's docs), not simple adjacent-pair merging, so
+   * source-position clustering produced far-jumping, chaotic-looking
+   * connector lines. Bout number order is how real printed brackets lay
+   * this out and reads cleanly regardless of which earlier bout feeds in.
+   */
   const consRounds = byRound(cons)
   // Only offset past the championship band if one is actually present in
   // this layout (BracketView now renders one section — champ/cons/placement
@@ -112,23 +120,9 @@ export function layoutBracket(matches) {
     consRounds.forEach(({ round, list }, colIdx) => {
       const x = PAD + colIdx * colW
       columns.push({ key: `k${round}`, x, band: 'consolation', matches: list.length, round })
-      const items = list.map((m) => {
-        const srcs = slotSourceIds(m)
-        const ys = srcs
-          .map((id) => pos.get(id))
-          .filter(Boolean)
-          .map((p) => (p.band === 'championship' ? p.y : bandTop + HEADER_H))
-        // Only cap to the championship band's height when one is actually
-        // present above — otherwise this went negative and collapsed every
-        // later consolation round onto the same y position.
-        const spread = champ.length ? (champBottom - HEADER_H - PAD || 1) : Infinity
-        const target = ys.length
-          ? bandTop + HEADER_H + Math.min(avg(ys) - HEADER_H - PAD, spread)
-          : bandTop + HEADER_H + m.match_number * pitch
-        return { id: m.id, target }
-      }).sort((a, b) => a.target - b.target)
-      const ys = resolveColumn(items, pitch)
-      for (const m of list) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'consolation' })
+      list.forEach((m, i) => {
+        pos.set(m.id, { x, y: bandTop + HEADER_H + i * pitch, col: colIdx, band: 'consolation' })
+      })
     })
     maxY = Math.max(maxY, ...cons.flatMap((m) => [pos.get(m.id)?.y ?? 0]).map((y) => y + MATCH_H))
   }
