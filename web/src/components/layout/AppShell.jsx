@@ -13,7 +13,7 @@ export function Logo({ className }) {
       <img
         src="/branding/mat_savvy_logo_text_dark.png"
         alt="Mat Savvy"
-        className="h-9 w-auto transition-transform group-hover:scale-[1.02]"
+        className="h-6 w-auto transition-transform group-hover:scale-[1.02]"
       />
     </Link>
   )
