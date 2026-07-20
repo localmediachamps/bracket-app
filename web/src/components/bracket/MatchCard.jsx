@@ -151,7 +151,9 @@ function Slot({ comp, slot, match, mode, interactive, picked, officialWinner, us
   )
 
   const cls = cn(
-    'flex w-full items-center gap-2 px-2 py-0',
+    // text-left overrides the browser default center alignment on <button>
+    // (interactive/predict mode) so it matches the plain <div> readonly view
+    'flex w-full items-center gap-2 px-2 py-0 text-left',
     rounded === 'top' ? 'h-[38px] rounded-t-lg' : 'h-[38px] rounded-b-lg',
     picked && 'bg-gold-500/10',
     interactive && 'cursor-pointer hover:bg-gold-500/8 active:bg-gold-500/15',

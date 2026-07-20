@@ -107,23 +107,24 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
 
   // Focus round 1 at a readable scale on load/reflow instead of zooming out
   // to fit the entire graph (which makes cards too small to read or click).
-  // Aligned to the left edge (not centered) so round 1 reads left-to-right.
+  // Anchored to the top-left corner (not centered) — round 1 is usually
+  // taller than the viewport, and vertically centering it leaves a large
+  // empty gap above the first visible match.
   useEffect(() => {
     const t = setTimeout(() => {
-      const c = pz.containerRef.current
       const firstCol = [...layout.pos.values()].filter((p) => p.col === 0 && p.band === 'championship')
-      if (!c || !firstCol.length) {
+      if (!firstCol.length) {
         pz.fit()
         return
       }
-      const minY = Math.min(...firstCol.map((p) => p.y))
-      const maxY = Math.max(...firstCol.map((p) => p.y + METRICS.MATCH_H))
       const scale = 0.95
-      const leftPad = 24
+      const pad = 24
       pz.setTransform({
         scale,
-        x: leftPad - firstCol[0].x * scale,
-        y: c.clientHeight / 2 - ((minY + maxY) / 2) * scale,
+        x: pad - firstCol[0].x * scale,
+        // anchor to content y=0 (the column header), not the first match —
+        // otherwise the round labels render above the visible viewport
+        y: pad,
       })
     }, 60)
     return () => clearTimeout(t)
@@ -261,7 +262,7 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
 
         {/* minimap (desktop) — hidden by default, toggled from the top bar */}
         {showMinimap && (
-          <div className="absolute bottom-3 left-3 z-10 hidden md:block">
+          <div className="absolute right-3 top-3 z-10 hidden md:block">
             <Minimap layout={layout} matches={matches} panZoom={pz} />
           </div>
         )}
@@ -300,8 +301,9 @@ function Minimap({ layout, matches, panZoom }) {
   // Fit within a fixed compact box (letterboxed) instead of a fixed width
   // stretched to the bracket's true aspect ratio — a tall bracket (championship
   // + consolation bands stacked) would otherwise blow up the minimap's height.
-  const MAX_W = 160
-  const MAX_H = 96
+  // Sized generously since it's opt-in (hidden unless toggled on).
+  const MAX_W = 280
+  const MAX_H = 200
   const scale = Math.min(MAX_W / layout.width, MAX_H / layout.height)
   const W = Math.max(48, layout.width * scale)
   const H = Math.max(32, layout.height * scale)
