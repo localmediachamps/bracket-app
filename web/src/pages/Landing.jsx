@@ -499,14 +499,14 @@ export default function Landing() {
             icon={Swords}
             eyebrow="The deep game"
             title="Season-Long Fantasy League"
-            copy="Form a league with your friends, draft your starting rosters, and compete in a season-long fantasy experience featuring weekly head-to-head matchups, marquee tournaments, and postseason championship play. Make trades, work the waiver wire, and manage your league with full commissioner controls."
+            copy="Form a league with your friends, draft your starting rosters, and compete in a season-long fantasy experience featuring weekly head-to-head matchups, marquee tournament showdowns, and a postseason that actually counts. Make trades, work the waiver wire, and manage your league with full commissioner controls."
             steps={[
               'Form a league and invite your friends, then snake draft the entire D1 field to build your roster',
               'Every week, set your active lineup and face another league member head-to-head',
-              'A few marquee tournaments during the season have the whole league playing the same event at once',
-              'Bowl season and the NCAA finals decide the champion',
+              'Marquee tournaments become their own pick\'em or bracket showdown — rosters step aside for the week, and the commissioner sets what it\'s worth',
+              'Your roster rolls straight through conference week and the NCAA tournament — waiver in anyone who didn\'t qualify — and those weeks count extra toward the league title',
             ]}
-            chips={['Snake draft', 'Weekly head-to-head', 'Everyone-plays tournaments', 'Bowl season & NCAAs']}
+            chips={['Snake draft', 'Weekly head-to-head', 'Marquee pick\'em/bracket weeks', 'Weighted postseason']}
             mock={<FantasyMock />}
             cta="Start a league"
             ctaHref={token ? '/leagues' : '/register'}
