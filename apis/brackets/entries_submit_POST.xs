@@ -36,7 +36,7 @@ query "entries/{id}/submit" verb=POST {
     conditional {
       if ($entry.is_submitted != true) {
         function.run check_submission_cap {
-          input = {user_id: $auth.id}
+          input = {user_id: $auth.id, tournament_id: $entry.tournament_id}
         } as $cap
 
         precondition ($cap.allowed) {
@@ -110,4 +110,5 @@ query "entries/{id}/submit" verb=POST {
   }
 
   response = {entry: $updated_entry, missing: []}
+  guid = "X1Ie5LLRGFZ8anqRhYpXRoSiPqU"
 }

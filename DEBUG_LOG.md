@@ -4,6 +4,56 @@ Running log of the current debugging session(s). Newest entries on top.
 
 ---
 
+## 2026-07-21 — Entry review still showed no picks (real entry) + Dashboard "Review" went to /entries/undefined/review
+
+Two distinct bugs reported together via screenshots.
+
+### Dashboard: broken entry links, and the "finish your picks" nudge never fires
+`me/dashboard`'s rows are shaped `{entry, tournament, progress, rank}` - the
+raw `user_bracket`/`pickem_entry` fields (`id`, `status`, `total_points`,
+`possible_points`) live under `.entry`, not on the row itself (`rank` is the
+one exception, genuinely top-level). `Dashboard.jsx`'s `EntryCard`,
+`PickemCard`, and the top-level `draftEntries = entries.filter(e =>
+e.status === 'draft')` all read `entry.id`/`entry.status`/`entry.total_points`
+directly on the row - always `undefined`, since real data lives one level
+deeper. Silent failure mode: `undefined !== 'draft'` happens to evaluate the
+same as `'submitted' !== 'draft'`, so cards still *looked* plausible (points
+showed as 0 via the `?? 0` fallback, the Review button rendered instead of
+Continue-picks) - only the `id`-dependent link (`/entries/${entry.id}/review`
+→ `/entries/undefined/review`) and the `draftEntries` filter (always empty,
+so the "Action needed: finish your picks" section never appears for anyone)
+were visibly broken enough to notice. Fixed by adding an `entryOf(e) = e.entry
+?? e` accessor (mirroring the existing `tournamentOf`/`progressOf` pattern)
+and using it everywhere the raw entry fields are read, while leaving `rank`
+reads on the row directly.
+
+### Entry review: real entry (id=3, real picks) still showed the empty seeded bracket
+The `entries/{id}/bracket/{weightClassId}` endpoint built earlier today
+worked in its own live test (entry id=6) - but that test entry had *zero*
+picks, so the pick-merge code path itself was never actually exercised, only
+the ownership-check path. Reproduced properly this time: saved a real pick
+via `PUT /entries/6/picks`, then confirmed via a temporary raw `db.query
+user_pick` added straight into `entries_bracket_GET.xs` that the pick really
+existed with the right `user_bracket_id`/`tournament_id` - but
+`get_weight_bracket_view`'s own internal merge still returned no `user_pick`
+key on the match. Root cause: an earlier diagnostic push of
+`entries_bracket_GET.xs` alone (without its dependency chain) had converted
+its `function.run get_weight_bracket_view` call and its `user_bracket`/
+`user_pick` table references into placeholders - the exact same "Unresolved
+References become placeholders" failure mode documented earlier today,
+just recurring because a diagnostic edit got pushed scoped-only again.
+Re-pushing with the full dependency chain (function + all 6 referenced
+tables) fixed it immediately, confirmed live: the pick now shows up as
+`"user_pick":{"wrestler_id":493,"outcome":"pending",...}` on the match.
+
+**Recurring lesson, worth internalizing rather than re-learning each time**:
+*any* push of a query/function that references tables or other functions,
+even a one-line diagnostic tweak, must include the full dependency chain in
+that same `-i` list - there is no such thing as a "just this one file, it's
+only a temporary change" scoped push in this codebase.
+
+---
+
 ## 2026-07-21 — Stripe billing scaffolding: real syntax discoveries
 
 Building `apis/billing/` (checkout/webhook/portal) turned up several things

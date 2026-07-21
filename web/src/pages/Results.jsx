@@ -116,8 +116,6 @@ function MatchRow({ m }) {
         placement && (placement.isChampionship ? 'bg-gold-500/[0.06] border-l-2 border-l-gold-500' : 'bg-gold-500/[0.03] border-l-2 border-l-gold-500/40')
       )}
     >
-      <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-500">{formatDate(m.occurred_at)}</td>
-      <td className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">{m.weight_class || '—'}</td>
       <td className="px-4 py-3">
         <div className="text-sm text-ink-100">
           <span className="font-bold text-pin-400">{m.winner_name_raw}</span>
@@ -142,12 +140,14 @@ function MatchRow({ m }) {
         </div>
         {m.round_label && !placement && <div className="mt-1 text-[11px] uppercase tracking-wider text-ink-500">{m.round_label}</div>}
       </td>
+      <td className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">{m.weight_class || '—'}</td>
       <td className="px-4 py-3 text-sm text-ink-400">
         {m.event_name}
         {m.extraction_confidence != null && m.extraction_confidence < 1 && (
           <Badge color="gold" className="ml-2">Unverified</Badge>
         )}
       </td>
+      <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-500">{formatDate(m.occurred_at)}</td>
     </tr>
   )
 }
@@ -567,11 +567,11 @@ export default function Results() {
                 <table className="w-full min-w-[720px] border-collapse">
                   <thead>
                     <tr className="border-b border-mat-700 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500">
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Weight</th>
-                      <th className="px-4 py-3">Matchup</th>
+                      <th className="w-[46%] px-4 py-3">Matchup</th>
                       <th className="px-4 py-3">Result</th>
+                      <th className="w-20 px-4 py-3">Weight</th>
                       <th className="px-4 py-3">Event</th>
+                      <th className="whitespace-nowrap px-4 py-3">Date</th>
                     </tr>
                   </thead>
                   <tbody>

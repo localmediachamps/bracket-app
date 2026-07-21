@@ -33,4 +33,5 @@ table pickem_pick {
       field: [{name: "pickem_entry_id", op: "asc"}]
     }
   ]
+  guid = "YBgrnX0xL9ZnE19BN9LkRaVjjtQ"
 }

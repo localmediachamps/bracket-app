@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Award, BarChart3, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound, Upload } from 'lucide-react'
+import { AlertTriangle, Award, BarChart3, Crown, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound, Upload } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
 import { Avatar, Badge, Button, Card, EmptyState, Input, Select, Skeleton, Stat, Switch, Tabs, Textarea } from '../components/ui'
@@ -52,6 +53,17 @@ function EditTab() {
     queryKey: ['me'],
     queryFn: api.me,
   })
+
+  // Return trip from Stripe Checkout (success_url points here) - show a
+  // toast and refresh billing status once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') === 'success') {
+      toast.success('Welcome to the annual plan!', { body: 'It may take a few seconds for your account to update.' })
+      qc.invalidateQueries({ queryKey: ['billing', 'status'] })
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [qc])
 
   const [form, setForm] = useState(null)
   useEffect(() => {
@@ -212,7 +224,64 @@ function EditTab() {
           <Save size={15} /> Save changes
         </Button>
       </motion.div>
+
+      <motion.div variants={rise}>
+        <BillingCard />
+      </motion.div>
     </motion.form>
+  )
+}
+
+/* ── Billing card ────────────────────────────────────────── */
+function BillingCard() {
+  const { data: status, isLoading } = useQuery({
+    queryKey: ['billing', 'status'],
+    queryFn: api.billingStatus,
+  })
+
+  const portalMutation = useMutation({
+    mutationFn: () => api.billingPortal(window.location.origin + '/profile'),
+    onSuccess: (res) => {
+      window.location.href = res.portal_url
+    },
+    onError: (err) => toast.error('Could not open billing portal', { body: err.message }),
+  })
+
+  if (isLoading) return <Skeleton className="h-32 w-full" />
+
+  const isAnnual = status?.plan === 'annual'
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-display text-sm uppercase tracking-wide text-ink-100">Billing</h3>
+          <p className="mt-1 text-sm text-ink-400">
+            {isAnnual ? (
+              <>
+                <span className="font-semibold text-gold-400">Annual plan</span> — unlimited entries and fantasy leagues.
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-ink-200">Free plan</span> —{' '}
+                {status?.submissions_used ?? 0} / {status?.submissions_limit ?? 3} tournament entries used.
+              </>
+            )}
+          </p>
+        </div>
+        {isAnnual ? (
+          <Button variant="secondary" size="sm" onClick={() => portalMutation.mutate()} loading={portalMutation.isPending}>
+            Manage billing
+          </Button>
+        ) : (
+          <Link to="/pricing">
+            <Button size="sm">
+              <Crown size={14} /> Upgrade
+            </Button>
+          </Link>
+        )}
+      </div>
+    </Card>
   )
 }
 

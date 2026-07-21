@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu, Crown } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button, Modal } from '../ui'
@@ -104,6 +104,7 @@ export default function AppShell() {
                         <p className="truncate text-xs text-ink-500">@{user?.username || user?.email}</p>
                       </div>
                       <MenuLink to="/profile" icon={UserIcon}>Profile</MenuLink>
+                      <MenuLink to="/pricing" icon={Crown}>Pricing</MenuLink>
                       {user?.is_admin && <MenuLink to="/admin" icon={Shield}>Admin</MenuLink>}
                       <button
                         onClick={() => { logout(); navigate('/') }}
@@ -206,6 +207,19 @@ export default function AppShell() {
                 Profile
               </NavLink>
             )}
+            <NavLink
+              to="/pricing"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                  isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                )
+              }
+            >
+              <Crown size={17} />
+              Pricing
+            </NavLink>
             {user?.is_admin && (
               <NavLink
                 to="/admin"

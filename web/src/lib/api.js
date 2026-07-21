@@ -8,6 +8,7 @@ export const XANO_AUTH = 'https://xhuf-7flt-jytp.n7d.xano.io/api:47V6PWBN'
 export const XANO_APP = 'https://xhuf-7flt-jytp.n7d.xano.io/api:17Ryya5W'
 export const XANO_ADMIN = 'https://xhuf-7flt-jytp.n7d.xano.io/api:PBpa1T2y'
 export const XANO_LEAGUE = 'https://xhuf-7flt-jytp.n7d.xano.io/api:league'
+export const XANO_BILLING = 'https://xhuf-7flt-jytp.n7d.xano.io/api:M18VHDCS'
 
 async function apiFetch(base, path, options = {}) {
   const token = useAuthStore.getState().token
@@ -195,6 +196,11 @@ export const api = {
   cancelTrade: (tradeId) => post(XANO_LEAGUE, `/leagues/trade/cancel`, { trade_id: tradeId }),
 
   leagueResultsAnalystAsk: (leagueId, message) => post(XANO_LEAGUE, `/leagues/results-analyst`, { league_id: leagueId, message }),
+
+  /* ── Billing ──────────────────────────────────────────── */
+  billingStatus: () => get(XANO_BILLING, '/billing/status'),
+  billingCheckout: (successUrl, cancelUrl) => post(XANO_BILLING, '/billing/checkout', { success_url: successUrl, cancel_url: cancelUrl }),
+  billingPortal: (returnUrl) => post(XANO_BILLING, '/billing/portal', { return_url: returnUrl }),
 }
 
 function qs(params) {

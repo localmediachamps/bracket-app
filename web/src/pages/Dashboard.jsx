@@ -21,6 +21,11 @@ const rise = {
 }
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 
+// me/dashboard's rows are shaped {entry, tournament, progress, rank} - the
+// raw user_bracket/pickem_entry fields (id, status, total_points,
+// possible_points) live under .entry, not on the row itself. rank is the
+// one exception, already top-level on the row.
+const entryOf = (e) => e.entry ?? e
 const tournamentOf = (e) => e.tournament ?? {}
 const progressOf = (e) => {
   const p = e.progress ?? {}
@@ -55,7 +60,7 @@ export default function Dashboard() {
   const pickemEntries = data?.pickem_entries ?? []
   const groups = data?.groups ?? []
   const deadlines = data?.upcoming_deadlines ?? []
-  const draftEntries = entries.filter((e) => e.status === 'draft')
+  const draftEntries = entries.filter((e) => entryOf(e).status === 'draft')
   const notifs = notifData?.items ?? notifData?.notifications ?? (Array.isArray(notifData) ? notifData : [])
 
   if (isLoading) return <DashboardSkeleton />
@@ -111,7 +116,7 @@ export default function Dashboard() {
               const t = tournamentOf(e)
               const prog = progressOf(e)
               return (
-                <Card key={`draft-${e.id}`} className="flex items-center gap-4 border-gold-500/40 bg-gold-500/[0.05] p-4">
+                <Card key={`draft-${entryOf(e).id}`} className="flex items-center gap-4 border-gold-500/40 bg-gold-500/[0.05] p-4">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/15 text-gold-400">
                     <PencilLine size={18} />
                   </span>
@@ -175,7 +180,7 @@ export default function Dashboard() {
         ) : (
           <motion.div variants={stagger} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {entries.map((e) => (
-              <EntryCard key={e.id} entry={e} />
+              <EntryCard key={entryOf(e).id} entry={e} />
             ))}
           </motion.div>
         )}
@@ -198,7 +203,7 @@ export default function Dashboard() {
         ) : (
           <motion.div variants={stagger} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {pickemEntries.map((p) => (
-              <PickemCard key={p.id} entry={p} />
+              <PickemCard key={entryOf(p).id} entry={p} />
             ))}
           </motion.div>
         )}
@@ -274,14 +279,15 @@ export default function Dashboard() {
 }
 
 /* ── Entry rich card ──────────────────────────────────── */
-function EntryCard({ entry }) {
-  const t = tournamentOf(entry)
-  const prog = progressOf(entry)
+function EntryCard({ entry: row }) {
+  const entry = entryOf(row)
+  const t = tournamentOf(row)
+  const prog = progressOf(row)
   const isDraft = entry.status === 'draft'
   const points = entry.total_points ?? 0
   const possible = entry.possible_points ?? 0
   const ceil = points + possible
-  const totalEntries = entry.entry_count ?? t.entry_count
+  const totalEntries = row.entry_count ?? t.entry_count
   const slug = t.slug ?? t.id
 
   return (
@@ -306,9 +312,9 @@ function EntryCard({ entry }) {
             <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-500">Points</div>
             <AnimatedNumber value={points} className="font-mono text-3xl font-bold tracking-tight text-gold-400" />
           </div>
-          {entry.rank != null && (
+          {row.rank != null && (
             <span className="rounded-lg border border-mat-600 bg-mat-800 px-2.5 py-1.5 font-mono text-sm font-bold text-ink-100">
-              #{entry.rank}
+              #{row.rank}
               {totalEntries ? <span className="text-ink-500"> of {totalEntries}</span> : null}
             </span>
           )}
@@ -364,8 +370,9 @@ function EntryCard({ entry }) {
 }
 
 /* ── Pick'em mini card ────────────────────────────────── */
-function PickemCard({ entry }) {
-  const t = tournamentOf(entry)
+function PickemCard({ entry: row }) {
+  const entry = entryOf(row)
+  const t = tournamentOf(row)
   const slug = t.slug ?? t.id
   return (
     <motion.div variants={rise} className="h-full min-w-0">
@@ -381,9 +388,9 @@ function PickemCard({ entry }) {
             <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-500">Points</div>
             <AnimatedNumber value={entry.total_points ?? 0} className="font-mono text-2xl font-bold text-gold-400" />
           </div>
-          {entry.rank != null && (
+          {row.rank != null && (
             <Badge color="gold" className="font-mono normal-case">
-              #{entry.rank}
+              #{row.rank}
             </Badge>
           )}
         </div>
