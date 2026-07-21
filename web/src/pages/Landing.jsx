@@ -483,10 +483,10 @@ export default function Landing() {
             index={1}
             icon={Scale}
             title="Pick'em Showdown"
-            copy="Salary-cap wrestling. Draft one wrestler per weight class, priced by seed — a #1 costs far more than a #7. A lineup of favorites blows the budget by pick three, so winning teams are usually built on mid-pack wrestlers who outperform their seed, not a stable of champions."
+            copy="Salary-cap wrestling. Draft one wrestler from each weight class, with pricing based on tournament seed. Build the strongest lineup you can within the budget and compete against your friends."
             steps={[
-              'Every wrestler scores points for each win, plus a bonus for how they win — a fall, tech fall, or major decision',
-              'Where each one finally places (1st through 8th) adds points on top — a champion is worth the most, but a low seed who makes the podium can outscore a #1 who doesn\'t',
+              'Match Points — wrestlers earn points for every win, with additional points based on how they win: by fall, technical fall, or major decision. Victories over top-12 ranked opponents receive a bonus multiplier.',
+              'Placement Bonuses — wrestlers who place in the tournament earn bonus points based on their final finish.',
             ]}
             stepsLabel="How scoring works"
             chips={['1,000-point salary cap', 'One pick per weight', 'Tiebreaker drama']}
