@@ -139,20 +139,26 @@ export default function WrestlerProfile() {
               const placement = placementInfo(m.round_label)
               const time = formatMatchTime(m.time_seconds)
               return (
-                <div key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className={cn('font-bold', m.is_winner ? 'text-pin-400' : 'text-ink-500 line-through decoration-blood-500/60')}>
-                        {m.is_winner ? 'W' : 'L'}
-                      </span>
+                <div key={m.id} className="flex items-start gap-3 py-3">
+                  <span className={cn('mt-0.5 shrink-0 font-bold', m.is_winner ? 'text-pin-400' : 'text-ink-500')}>
+                    {m.is_winner ? 'W' : 'L'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm">
                       <span className="text-ink-100">vs {m.opponent_name || 'opponent'}</span>
-                      {m.opponent_school && <span className="text-ink-500">({m.opponent_school})</span>}
+                      {m.opponent_school && <span className="ml-1 text-ink-500">({m.opponent_school})</span>}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <Badge color={color}>
-                        {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
-                      </Badge>
-                      {m.score && <span className="font-mono text-[11px] text-ink-500">{m.score}{time ? ` @ ${time}` : ''}</span>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-2 rounded-md border border-mat-700 bg-mat-900/60 px-2 py-1">
+                        <Badge color={color}>
+                          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+                        </Badge>
+                        {(m.score || time) && (
+                          <span className="font-mono text-sm font-bold text-ink-100">
+                            {m.score}{m.score && time && ' '}{time && `@ ${time}`}
+                          </span>
+                        )}
+                      </span>
                       {placement && (
                         <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
                           <Trophy size={11} /> {placement.label}
@@ -160,7 +166,10 @@ export default function WrestlerProfile() {
                       )}
                       {m.weight_class && <Badge color="ink">{m.weight_class} lbs</Badge>}
                     </div>
-                    <div className="mt-1 text-xs text-ink-600">{m.event_name}</div>
+                    <div className="mt-1.5 text-xs text-ink-600">
+                      {m.event_name}
+                      {m.round_label && !placement && <span> · {m.round_label}</span>}
+                    </div>
                   </div>
                   <span className="shrink-0 text-xs text-ink-500">{formatDate(m.occurred_at)}</span>
                 </div>
