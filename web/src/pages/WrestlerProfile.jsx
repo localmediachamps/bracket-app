@@ -139,16 +139,16 @@ export default function WrestlerProfile() {
               const placement = placementInfo(m.round_label)
               const time = formatMatchTime(m.time_seconds)
               return (
-                <div key={m.id} className="flex items-start gap-3 py-3">
-                  <span className={cn('mt-0.5 shrink-0 font-bold', m.is_winner ? 'text-pin-400' : 'text-ink-500')}>
-                    {m.is_winner ? 'W' : 'L'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm">
-                      <span className="text-ink-100">vs {m.opponent_name || 'opponent'}</span>
-                      {m.opponent_school && <span className="ml-1 text-ink-500">({m.opponent_school})</span>}
+                <div key={m.id} className="py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                      <span className={cn('shrink-0 font-bold', m.is_winner ? 'text-pin-400' : 'text-ink-500')}>
+                        {m.is_winner ? 'W' : 'L'}
+                      </span>
+                      <span className="truncate text-ink-100">vs {m.opponent_name || 'opponent'}</span>
+                      {m.opponent_school && <span className="shrink-0 text-ink-500">({m.opponent_school})</span>}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-2 rounded-md border border-mat-700 bg-mat-900/60 px-2 py-1">
                         <Badge color={color}>
                           {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
@@ -166,12 +166,14 @@ export default function WrestlerProfile() {
                       )}
                       {m.weight_class && <Badge color="ink">{m.weight_class} lbs</Badge>}
                     </div>
-                    <div className="mt-1.5 text-xs text-ink-600">
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-ink-600">
+                    <span>
                       {m.event_name}
                       {m.round_label && !placement && <span> · {m.round_label}</span>}
-                    </div>
+                    </span>
+                    <span className="shrink-0 text-ink-500">{formatDate(m.occurred_at)}</span>
                   </div>
-                  <span className="shrink-0 text-xs text-ink-500">{formatDate(m.occurred_at)}</span>
                 </div>
               )
             })}
