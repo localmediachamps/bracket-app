@@ -365,6 +365,7 @@ function get_weight_bracket_view {
             round_number        : $m.round_number
             round_label         : $m.round_label
             match_number        : $m.match_number
+            display_order       : $m.display_order
             is_bye              : $m.is_bye
             status              : $m.match_status
             score               : $m.actual_score

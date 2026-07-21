@@ -24,6 +24,12 @@ export function splitBands(matches) {
   return { champ, cons, place }
 }
 
+// Server's own printed-bracket order (server sorts bracket_match by this
+// column, so it's the canonical, verified, non-crossing sequence — the R-cycle
+// consolation routing doesn't reduce to a plain ascending match_number, so
+// match_number is only a fallback for older payloads that predate this field).
+const orderKey = (m) => m.display_order ?? m.match_number
+
 function byRound(matches) {
   const map = new Map()
   for (const m of matches) {
@@ -33,7 +39,7 @@ function byRound(matches) {
   }
   return [...map.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([round, list]) => ({ round, list: list.sort((a, b) => a.match_number - b.match_number) }))
+    .map(([round, list]) => ({ round, list: list.sort((a, b) => orderKey(a) - orderKey(b)) }))
 }
 
 /** collision-resolve a column: targets → enforced min gaps, order-preserving */
@@ -87,13 +93,21 @@ export function layoutBracket(matches) {
   maxY = champBottom
 
   /* ── Consolation band ──────────────────────────────────
-   * Positioned by bout number (match_number), same as championship round 1
-   * — NOT clustered near the average position of each match's feeders.
-   * NCAA consolation rounds route through a deliberate "R-cycle" shuffle
-   * (see bracket_generate's docs), not simple adjacent-pair merging, so
-   * source-position clustering produced far-jumping, chaotic-looking
-   * connector lines. Bout number order is how real printed brackets lay
-   * this out and reads cleanly regardless of which earlier bout feeds in.
+   * Clustered near the average Y of each match's same-band feeders, same
+   * approach as the championship band — this is what actually makes
+   * matches that DO feed each other read as a nested tree instead of a
+   * flat table. The wrinkle a flat "bout number order" layout was trying
+   * to avoid: NCAA consolation rounds route through a deliberate "R-cycle"
+   * shuffle where a lot of slots are drop-ins from the CHAMPIONSHIP band
+   * (a losing wrestler dropping into consolation) rather than from a prior
+   * consolation match — and since BracketView renders one section at a
+   * time, that source match's position simply doesn't exist in `pos` here
+   * (no line is drawn to it either, for the same reason — see
+   * CanvasView's connector loop, which only draws from matches actually
+   * present in the current section). Averaging only the feeders that ARE
+   * resolvable (and falling back to bout order per-match when none are)
+   * avoids the earlier chaotic result, which came from a version that
+   * averaged in missing/garbage positions for every slot uniformly.
    * Uses a slightly taller pitch than championship — more cards funnel
    * through fewer rows here (blood round, etc.), so extra breathing room
    * keeps connector lines from visually overlapping each other.
@@ -108,9 +122,33 @@ export function layoutBracket(matches) {
     consRounds.forEach(({ round, list }, colIdx) => {
       const x = PAD + colIdx * colW
       columns.push({ key: `k${round}`, x, band: 'consolation', matches: list.length, round })
-      list.forEach((m, i) => {
-        pos.set(m.id, { x, y: bandTop + HEADER_H + i * consPitch, col: colIdx, band: 'consolation' })
-      })
+      if (colIdx === 0) {
+        // Round 1 of consolation is always fed entirely by championship
+        // round 1 (pigtail losers) — no same-band predecessor to cluster
+        // against, so bout-number order is the only option, same as
+        // championship's own first column.
+        list.forEach((m, i) => {
+          pos.set(m.id, { x, y: bandTop + HEADER_H + i * consPitch, col: colIdx, band: 'consolation' })
+        })
+      } else {
+        // Deliberately NOT sorted by computed target (unlike championship,
+        // below) - the R-cycle shuffle means source-average order can
+        // diverge from the server's actual verified print order (it
+        // involves position flips within the routing, not simple adjacent-
+        // pair merging), which produced crossing connector lines. `list` is
+        // already in the server's canonical order (see byRound/orderKey);
+        // resolveColumn nudges each match toward its cluster average while
+        // enforcing monotonic Y *in that fixed order*, so the sequence can
+        // never cross even when a target would otherwise suggest reordering.
+        const items = list.map((m, i) => {
+          const srcs = slotSourceIds(m)
+          const ys = srcs.map((id) => pos.get(id)?.y).filter((v) => v !== undefined)
+          const fallback = bandTop + HEADER_H + i * consPitch
+          return { id: m.id, target: ys.length ? avg(ys) : fallback }
+        })
+        const ys = resolveColumn(items, consPitch)
+        for (const m of list) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'consolation' })
+      }
     })
     maxY = Math.max(maxY, ...cons.flatMap((m) => [pos.get(m.id)?.y ?? 0]).map((y) => y + MATCH_H))
   }
@@ -125,14 +163,16 @@ export function layoutBracket(matches) {
     const x = PAD + colIdx * colW
     const top = consRounds.length ? bandTop : PAD
     columns.push({ key: 'place', x, band: 'placement', matches: place.length })
-    const items = place.map((m) => {
+    // Canonical order (not re-sorted by target), same reasoning as consolation.
+    const placeOrdered = [...place].sort((a, b) => orderKey(a) - orderKey(b))
+    const items = placeOrdered.map((m, i) => {
       const srcs = slotSourceIds(m)
       const ys = srcs.map((id) => pos.get(id)?.y).filter((v) => v !== undefined)
-      const fallback = top + HEADER_H + (place.indexOf(m)) * consPitch * 1.6
+      const fallback = top + HEADER_H + i * consPitch * 1.6
       return { id: m.id, target: ys.length ? avg(ys) : fallback }
-    }).sort((a, b) => a.target - b.target)
+    })
     const ys = resolveColumn(items, consPitch * 1.6)
-    for (const m of place) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'placement' })
+    for (const m of placeOrdered) pos.set(m.id, { x, y: ys.get(m.id), col: colIdx, band: 'placement' })
     maxY = Math.max(maxY, ...place.map((m) => pos.get(m.id).y + MATCH_H))
   }
 
