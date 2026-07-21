@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button } from '../ui'
@@ -25,6 +25,7 @@ const NAV = [
   { to: '/results', label: 'Results', icon: ScrollText },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
+  { to: '/leagues', label: 'Leagues', icon: Swords, auth: true },
 ]
 
 export default function AppShell() {
@@ -128,11 +129,12 @@ export default function AppShell() {
 
       {/* Mobile bottom tabs */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-mat-800 bg-mat-950/92 backdrop-blur-md md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {[
             { to: '/tournaments', label: 'Events', icon: Trophy },
             { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
             { to: '/groups', label: 'Groups', icon: Users },
+            { to: '/leagues', label: 'Leagues', icon: Swords },
             { to: token ? '/profile' : '/login', label: token ? 'Profile' : 'Sign in', icon: UserIcon },
           ].map((n) => (
             <NavLink

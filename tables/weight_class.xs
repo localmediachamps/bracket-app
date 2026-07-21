@@ -38,4 +38,5 @@ table weight_class {
       ]
     }
   ]
+  guid = "jfLAPs337ZPuuXb8vTdkF-r1S6c"
 }

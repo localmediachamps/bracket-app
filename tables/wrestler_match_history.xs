@@ -31,6 +31,18 @@ table wrestler_match_history {
     text weight_class? filters=trim
     text victory_type? filters=trim
 
+    // "winner-loser" bout score, e.g. "16-1". Null for a Fall (pin - no
+    // numeric score recorded, by design) and for administrative outcomes
+    // (bye/forfeit/default/etc). Populated for everything else: decisions,
+    // major decisions, tech falls, sudden victory/tie-breaker matches.
+    text? score? filters=trim
+
+    // Seconds elapsed when the match ended early - populated for a Fall,
+    // Technical Fall, Injury Default, or a fall during sudden-victory OT.
+    // Null when the match went the full scheduled length (decision, major
+    // decision, a points-based sudden victory/tie-breaker).
+    int? time_seconds?
+
     text round_label? filters=trim
     text round_sort_key? filters=trim
     text level? filters=trim

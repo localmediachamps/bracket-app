@@ -48,4 +48,5 @@ table user_bracket {
     {type: "btree", field: [{name: "tournament_id", op: "asc"}]}
     {type: "btree", field: [{name: "total_points", op: "desc"}]}
   ]
+  guid = "j2dJ28dB5L5rknmu5aCdg3Q1HhI"
 }

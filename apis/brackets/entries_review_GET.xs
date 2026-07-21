@@ -99,7 +99,11 @@ query "entries/{id}/review" verb=GET {
         var $champion {
           value = null
         }
-      
+
+        var $champion_correct {
+          value = null
+        }
+
         conditional {
           if ($champ_match_id != null) {
             foreach ($picks) {
@@ -111,9 +115,22 @@ query "entries/{id}/review" verb=GET {
                       field_value = $p.picked_wrestler_id
                       output = ["id", "name", "school", "seed"]
                     } as $champ_wrestler
-                  
+
                     var.update $champion {
                       value = $champ_wrestler
+                    }
+
+                    conditional {
+                      if ($p.outcome_status == "correct") {
+                        var.update $champion_correct {
+                          value = true
+                        }
+                      }
+                      elseif ($p.outcome_status == "incorrect" || $p.outcome_status == "eliminated") {
+                        var.update $champion_correct {
+                          value = false
+                        }
+                      }
                     }
                   }
                 }
@@ -179,13 +196,14 @@ query "entries/{id}/review" verb=GET {
       
         array.push $wc_rows {
           value = {
-            weight_class_id: $wc.id
-            weight         : $wc.weight
-            name           : $wc.name
-            champion       : $champion
-            correct        : $wc_correct
-            scored         : $wc_scored
-            points_earned  : $wc_points
+            weight_class_id : $wc.id
+            weight          : $wc.weight
+            name            : $wc.name
+            champion        : $champion
+            champion_correct: $champion_correct
+            correct         : $wc_correct
+            scored          : $wc_scored
+            points_earned   : $wc_points
           }
         }
       
@@ -232,4 +250,5 @@ query "entries/{id}/review" verb=GET {
     totals        : {correct: $total_correct, scored: $total_scored, points_earned: $total_points}
     missing       : $missing_count
   }
+  guid = "BRgtR6n2M7CYYl9jNtDrouJgoDc"
 }

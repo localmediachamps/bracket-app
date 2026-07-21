@@ -23,6 +23,13 @@ const Compare = lazy(() => import('./pages/Compare'))
 const Groups = lazy(() => import('./pages/Groups'))
 const GroupNew = lazy(() => import('./pages/GroupNew'))
 const GroupDetail = lazy(() => import('./pages/GroupDetail'))
+const Leagues = lazy(() => import('./pages/Leagues'))
+const LeagueNew = lazy(() => import('./pages/LeagueNew'))
+const LeagueDetail = lazy(() => import('./pages/LeagueDetail'))
+const DraftRoom = lazy(() => import('./pages/DraftRoom'))
+const LeagueLineup = lazy(() => import('./pages/LeagueLineup'))
+const LeagueWaivers = lazy(() => import('./pages/LeagueWaivers'))
+const LeagueTrades = lazy(() => import('./pages/LeagueTrades'))
 const Profile = lazy(() => import('./pages/Profile'))
 const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Notifications = lazy(() => import('./pages/Notifications'))
@@ -86,6 +93,14 @@ export default function App() {
             <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
             <Route path="/groups/new" element={<RequireAuth><GroupNew /></RequireAuth>} />
             <Route path="/groups/:id" element={<GroupDetail />} />
+            <Route path="/leagues" element={<RequireAuth><Leagues /></RequireAuth>} />
+            <Route path="/leagues/new" element={<RequireAuth><LeagueNew /></RequireAuth>} />
+            <Route path="/leagues/:id" element={<RequireAuth><LeagueDetail /></RequireAuth>} />
+            <Route path="/leagues/:id/draft" element={<RequireAuth><DraftRoom /></RequireAuth>} />
+            <Route path="/leagues/:id/draft/:seasonWeekId" element={<RequireAuth><DraftRoom /></RequireAuth>} />
+            <Route path="/leagues/:id/lineup" element={<RequireAuth><LeagueLineup /></RequireAuth>} />
+            <Route path="/leagues/:id/waivers" element={<RequireAuth><LeagueWaivers /></RequireAuth>} />
+            <Route path="/leagues/:id/trades" element={<RequireAuth><LeagueTrades /></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/users/:id" element={<UserProfile />} />
             <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />

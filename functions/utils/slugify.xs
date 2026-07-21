@@ -30,4 +30,5 @@ function slugify {
   }
 
   response = $slug
+  guid = "F4CSd-Tu0rTgGLLL9u7bzpv6DLY"
 }

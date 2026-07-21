@@ -43,7 +43,7 @@ FIELDS = [
     "winner_class_year_raw", "loser_class_year_raw", "weight_class", "victory_type",
     "round_label", "round_sort_key", "level", "event_name", "event_series_name",
     "event_type", "event_id_external", "date_start_raw", "date_end_raw", "occurred_at",
-    "source_match_id", "extraction_confidence",
+    "source_match_id", "extraction_confidence", "score", "time_seconds",
 ]
 
 
@@ -134,6 +134,8 @@ def main() -> int:
                         "occurred_at": parse_occurred_at(m.date_start),
                         "source_match_id": m.match_id,
                         "extraction_confidence": c["extraction_confidence"],
+                        "score": m.score,
+                        "time_seconds": m.time_seconds,
                     })
                 print(f"  added {new_count} new unique matches (running total: {len(all_records)})")
             except SessionExpired as exc:

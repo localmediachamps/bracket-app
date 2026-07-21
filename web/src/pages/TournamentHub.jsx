@@ -142,7 +142,7 @@ export default function TournamentHub() {
 
   const ctas = []
   if (t.status === 'open') {
-    const predictLabel = isSubmitted ? 'View Your Submission' : myEntry ? 'Continue Picks' : 'Make Your Picks'
+    const predictLabel = isSubmitted ? 'View Submission' : myEntry ? 'Continue Picks' : 'Make Your Picks'
     ctas.push(
       <Button key="predict" size="lg" onClick={goReviewOrPredict}>
         <GitBranch size={16} /> {predictLabel}

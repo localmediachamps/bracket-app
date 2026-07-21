@@ -30,4 +30,5 @@ table notification {
       ]
     }
   ]
+  guid = "r0NpbP8SN0tJ2bzoUYw6uH39TvA"
 }

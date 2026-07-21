@@ -45,4 +45,5 @@ table user_pick {
     }
     {type: "btree", field: [{name: "tournament_id", op: "asc"}]}
   ]
+  guid = "gdpkQnAgyHBQoni0FWt1BUuQoCM"
 }

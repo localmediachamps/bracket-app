@@ -79,6 +79,30 @@ function formatDate(occurredAt) {
   return new Date(occurredAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// time_seconds is only set for matches that ended early (fall, tech fall,
+// injury default) - null means the match went the full scheduled length.
+function formatMatchTime(seconds) {
+  if (seconds == null) return null
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// Score/time detail line shown under the victory-type badge - "16-7" for a
+// decision, "16-7 @ 3:23" for a tech fall, "@ 1:52" for a fall (pins have no
+// numeric score, by design). Renders nothing if neither is present.
+function MatchDetail({ m }) {
+  const time = formatMatchTime(m.time_seconds)
+  if (!m.score && !time) return null
+  return (
+    <span className="font-mono text-[11px] text-ink-500">
+      {m.score}
+      {m.score && time && ' '}
+      {time && `@ ${time}`}
+    </span>
+  )
+}
+
 function MatchRow({ m }) {
   const { color, icon: Icon } = victoryStyle(m.victory_type)
   const placement = placementInfo(m.round_label)
@@ -107,6 +131,7 @@ function MatchRow({ m }) {
           <Badge color={color}>
             {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
           </Badge>
+          <MatchDetail m={m} />
           {placement && (
             <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
               <Trophy size={11} /> {placement.label}
@@ -137,19 +162,16 @@ function MatchCard({ m }) {
         placement ? 'border-gold-500/50 shadow-glow-sm' : 'border-mat-700'
       )}
     >
-      {placement && (
-        <div
-          className={cn(
-            'absolute -right-9 top-3.5 flex w-36 -rotate-45 items-center justify-center gap-1 py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-mat-950 shadow-md',
-            placement.isChampionship ? 'bg-gold-400' : 'bg-gold-500/80'
+      <div className="flex items-center justify-between gap-2 pr-2">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Badge color="ink">{m.weight_class ? `${m.weight_class} lbs` : '—'}</Badge>
+          {placement && (
+            <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
+              <Trophy size={11} /> {placement.label}
+            </Badge>
           )}
-        >
-          <Trophy size={11} /> {placement.label}
-        </div>
-      )}
-      <div className="flex items-center justify-between pr-2">
-        <Badge color="ink">{m.weight_class ? `${m.weight_class} lbs` : '—'}</Badge>
-        <span className="text-[11px] text-ink-500">{formatDate(m.occurred_at)}</span>
+        </span>
+        <span className="shrink-0 text-[11px] text-ink-500">{formatDate(m.occurred_at)}</span>
       </div>
       <div className="mt-3.5">
         <p className="font-bold leading-snug text-ink-50">{m.winner_name_raw}</p>
@@ -160,10 +182,13 @@ function MatchCard({ m }) {
         <p className="text-sm text-ink-300">{m.loser_name_raw || 'opponent'}</p>
         {m.loser_school_raw && <p className="text-xs text-ink-600">{m.loser_school_raw}</p>}
       </div>
-      <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-mat-700 pt-3">
-        <Badge color={color}>
-          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
-        </Badge>
+      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-mat-700 pt-3">
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Badge color={color}>
+            {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+          </Badge>
+          <MatchDetail m={m} />
+        </span>
         {m.round_label && !placement && (
           <span className="truncate text-[10px] uppercase tracking-wider text-ink-600">{m.round_label}</span>
         )}

@@ -14,6 +14,10 @@ web/dist-check-*/
 __pycache__/
 *.pyc
 
+# Generated data exports (large, regenerable from the DB + cache) - not source
+scripts/results_scraper/score_time_paste*.csv
+scripts/results_scraper/score_time_batches/
+
 # Saved browser captures for reverse-engineering scraper endpoints - these
 # embed live session tokens, never commit (see
 # scripts/results_scraper/README.md's "Legal & politeness" section)

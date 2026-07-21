@@ -7,6 +7,7 @@ import { useAuthStore } from './store'
 export const XANO_AUTH = 'https://xhuf-7flt-jytp.n7d.xano.io/api:47V6PWBN'
 export const XANO_APP = 'https://xhuf-7flt-jytp.n7d.xano.io/api:17Ryya5W'
 export const XANO_ADMIN = 'https://xhuf-7flt-jytp.n7d.xano.io/api:PBpa1T2y'
+export const XANO_LEAGUE = 'https://xhuf-7flt-jytp.n7d.xano.io/api:league'
 
 async function apiFetch(base, path, options = {}) {
   const token = useAuthStore.getState().token
@@ -132,6 +133,62 @@ export const api = {
 
   /* ── Admin AI (Results Analyst) ─────────────────────── */
   resultsAnalystAsk: (message) => post(XANO_ADMIN, `/admin/results-analyst`, { message }),
+
+  /* ── Fantasy leagues ─────────────────────────────────── */
+  myLeagues: () => get(XANO_LEAGUE, `/leagues`),
+  leagueSeasons: () => get(XANO_LEAGUE, `/leagues/seasons`),
+  createLeague: (payload) => post(XANO_LEAGUE, `/leagues`, payload),
+  league: (id) => get(XANO_LEAGUE, `/leagues/${id}`),
+  updateLeague: (id, payload) => patch(XANO_LEAGUE, `/leagues/${id}`, payload),
+  lookupLeagueUser: (username) => get(XANO_LEAGUE, `/leagues/user-lookup${qs({ username })}`),
+  inviteToLeague: (leagueId, invitedUserId) => post(XANO_LEAGUE, `/leagues/invite`, { league_id: leagueId, invited_user_id: invitedUserId }),
+  acceptLeagueInvite: (leagueId) => post(XANO_LEAGUE, `/leagues/invite/accept`, { league_id: leagueId }),
+  declineLeagueInvite: (leagueId) => post(XANO_LEAGUE, `/leagues/invite/decline`, { league_id: leagueId }),
+  leaveLeague: (id) => post(XANO_LEAGUE, `/leagues/${id}/leave`),
+
+  // seasonWeekId omitted -> the preseason league draft; set -> a tournament
+  // mini-draft scoped to that week (same engine, same draft room UI).
+  startDraft: (leagueId, seasonWeekId) => post(XANO_LEAGUE, `/leagues/draft/start`, { league_id: leagueId, season_week_id: seasonWeekId }),
+  draftState: (leagueId, seasonWeekId) => get(XANO_LEAGUE, `/leagues/draft/state${qs({ league_id: leagueId, season_week_id: seasonWeekId })}`),
+  makeDraftPick: (leagueId, canonicalWrestlerId, { seasonWeekId, seasonWeightClassId } = {}) =>
+    post(XANO_LEAGUE, `/leagues/draft/pick`, {
+      league_id: leagueId,
+      canonical_wrestler_id: canonicalWrestlerId,
+      season_week_id: seasonWeekId,
+      season_weight_class_id: seasonWeightClassId,
+    }),
+  autopick: (leagueId, seasonWeekId) => post(XANO_LEAGUE, `/leagues/draft/autopick`, { league_id: leagueId, season_week_id: seasonWeekId }),
+  draftPool: (leagueId, q, page, seasonWeekId) => get(XANO_LEAGUE, `/leagues/draft/pool${qs({ league_id: leagueId, q, page, season_week_id: seasonWeekId })}`),
+  leagueWeightClasses: (leagueId) => get(XANO_LEAGUE, `/leagues/weight-classes${qs({ league_id: leagueId })}`),
+  leagueWeeks: (leagueId) => get(XANO_LEAGUE, `/leagues/weeks${qs({ league_id: leagueId })}`),
+  configureWeek: (leagueId, seasonWeekId, tournamentGameMode, linkedTournamentId) =>
+    put(XANO_LEAGUE, `/leagues/week/config`, {
+      league_id: leagueId,
+      season_week_id: seasonWeekId,
+      tournament_game_mode: tournamentGameMode,
+      linked_tournament_id: linkedTournamentId,
+    }),
+
+  leagueLineup: (leagueId, seasonWeekId) => get(XANO_LEAGUE, `/leagues/lineup${qs({ league_id: leagueId, season_week_id: seasonWeekId })}`),
+  setLeagueLineup: (leagueId, seasonWeekId, slots) => put(XANO_LEAGUE, `/leagues/lineup`, { league_id: leagueId, season_week_id: seasonWeekId, slots }),
+
+  waiversAvailable: (leagueId, params = {}) => get(XANO_LEAGUE, `/leagues/waivers/available${qs({ league_id: leagueId, ...params })}`),
+  claimWaiver: (leagueId, canonicalWrestlerId, dropRosterSlotId) =>
+    post(XANO_LEAGUE, `/leagues/waiver/claim`, { league_id: leagueId, canonical_wrestler_id: canonicalWrestlerId, drop_roster_slot_id: dropRosterSlotId }),
+
+  leagueTrades: (leagueId) => get(XANO_LEAGUE, `/leagues/trades${qs({ league_id: leagueId })}`),
+  leagueRoster: (leagueId, membershipId) => get(XANO_LEAGUE, `/leagues/roster${qs({ league_id: leagueId, membership_id: membershipId })}`),
+  proposeTrade: (leagueId, receiverMembershipId, offeredRosterSlotIds, requestedRosterSlotIds) =>
+    post(XANO_LEAGUE, `/leagues/trade/propose`, {
+      league_id: leagueId,
+      receiver_membership_id: receiverMembershipId,
+      offered_roster_slot_ids: offeredRosterSlotIds,
+      requested_roster_slot_ids: requestedRosterSlotIds,
+    }),
+  respondToTrade: (tradeId, action) => post(XANO_LEAGUE, `/leagues/trade/respond`, { trade_id: tradeId, action }),
+  cancelTrade: (tradeId) => post(XANO_LEAGUE, `/leagues/trade/cancel`, { trade_id: tradeId }),
+
+  leagueResultsAnalystAsk: (leagueId, message) => post(XANO_LEAGUE, `/leagues/results-analyst`, { league_id: leagueId, message }),
 }
 
 function qs(params) {

@@ -73,4 +73,5 @@ function notify {
   }
 
   response = $created
+  guid = "FHm9u-06HIAIxoQWzq7cvknoTho"
 }

@@ -152,7 +152,74 @@ class WrestlerMatch:
     # than a confirmed result - see WINNER/LOSER BUG note above.
     win_side_uncertain: bool = False
 
+    # "winner-loser" bout score, e.g. "16-1" - decoded 2026-07-21 from fields
+    # 7/10 (side A/side B point totals, independent of who won - see
+    # SCORE/TIME note below). None for a Fall (no numeric score requested)
+    # and for administrative no-contest outcomes (bye/forfeit/default/etc).
+    score: Optional[str] = None
+
+    # Seconds elapsed when the match ended early (fall, tech fall, injury
+    # default, or a fall during a sudden-victory OT period). None when the
+    # match went the full scheduled length (decision, major decision, a
+    # points-based sudden victory/tie-breaker) - field 13 is 0 in that case.
+    time_seconds: Optional[int] = None
+
     raw_row: list = field(default_factory=list, repr=False)
+
+
+# Victory types with no meaningful numeric bout score to report: a pin ends
+# the match outright (Garrett's explicit call - record time only, not score),
+# and these others are administrative outcomes where 0-0 isn't a real score.
+_NO_SCORE_VICTORY_TYPES = {
+    "Fall", "Bye", "Forfeit", "Medical Forfeit", "Medical FF w/Loss",
+    "Default", "Disqualified", "No Contest", "Double Forfeit",
+}
+
+
+def _decode_score_and_time(row: list, side_a_won: bool) -> tuple[Optional[str], Optional[int]]:
+    """Decode the bout score ("winner-loser") and early-stoppage time
+    (seconds) from fields 7 (side A points), 10 (side B points), and 13
+    (stoppage time in seconds, 0 if the match went the full length).
+
+    Reverse-engineered 2026-07-21 against real Decision/Major
+    Decision/Technical Fall/Fall rows: field 7/10 margins consistently
+    matched each victory type's real point-margin rule (e.g. exactly 15+ for
+    Technical Fall, 8-14 for Major Decision), confirming these are the real
+    bout score, not an unrelated team-score field. Fields 5/49 ("summary
+    template" strings) are NOT usable for this - they're always the raw
+    unfilled template text (e.g. "[wtAbbr] [score] [fallTime]"), never
+    actually interpolated by this endpoint.
+    """
+    side_a_pts = _s(row, 7)
+    side_b_pts = _s(row, 10)
+    winner_pts = side_a_pts if side_a_won else side_b_pts
+    loser_pts = side_b_pts if side_a_won else side_a_pts
+
+    vtype_name = _s(row, 3)
+    # "(Fall)" suffix covers sudden-victory/tie-breaker periods that ended in
+    # a pin (e.g. "Sudden Victory - 1 (Fall)") - still a pin, no score.
+    ends_in_fall = vtype_name is not None and vtype_name.endswith("(Fall)")
+    score = None
+    if (
+        vtype_name is not None
+        and vtype_name not in _NO_SCORE_VICTORY_TYPES
+        and not ends_in_fall
+        and winner_pts is not None
+        and loser_pts is not None
+    ):
+        score = f"{winner_pts}-{loser_pts}"
+
+    time_seconds = None
+    raw_time = _s(row, 13)
+    if raw_time is not None:
+        try:
+            parsed_time = int(raw_time)
+        except ValueError:
+            parsed_time = 0
+        if parsed_time > 0:
+            time_seconds = parsed_time
+
+    return score, time_seconds
 
 
 def _s(row: list, idx: int) -> Optional[str]:
@@ -195,6 +262,8 @@ def parse_wrestler_matches_response(rows: list) -> list[WrestlerMatch]:
             lose_id, lose_first, lose_last, lose_school, lose_school_abbrev = 14, 16, 17, 18, 19
             lose_class_year, lose_team_id = 52, 53
 
+        score, time_seconds = _decode_score_and_time(row, side_a_won)
+
         out.append(
             WrestlerMatch(
                 match_id=_s(row, 0) or "",
@@ -226,6 +295,8 @@ def parse_wrestler_matches_response(rows: list) -> list[WrestlerMatch]:
                 event_type=event_type,
                 query_subject_id=_s(row, 30),
                 win_side_uncertain=win_side_uncertain,
+                score=score,
+                time_seconds=time_seconds,
                 raw_row=row,
             )
         )
@@ -257,6 +328,8 @@ def to_candidate(m: WrestlerMatch) -> Optional[dict]:
         "source_loser_school": m.loser_school,
         "source_loser_class_year": m.loser_class_year,
         "source_victory_type": m.victory_type,
+        "source_score": m.score,
+        "source_time_seconds": m.time_seconds,
         "date_start": m.date_start,
         "date_end": m.date_end,
         "extraction_confidence": 0.5 if m.win_side_uncertain else 1.0,

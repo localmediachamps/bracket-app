@@ -19,18 +19,10 @@ const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 
 const weightLabel = (w) => (w == null ? '—' : typeof w === 'number' ? `${w} lbs` : String(w))
 
-function normalizeChampions(champions) {
-  if (!champions) return []
-  if (Array.isArray(champions)) return champions
-  // object map keyed by weight
-  return Object.entries(champions).map(([weight, v]) => ({
-    weight,
-    ...(typeof v === 'object' && v ? v : { name: v }),
-  }))
-}
-const champWrestler = (c) => c?.wrestler ?? c?.champion ?? c ?? {}
-const champNameOf = (c) => champWrestler(c)?.name ?? c?.wrestler_name ?? null
-const champCorrect = (c) => c?.correct ?? c?.is_correct ?? null
+// entries/{id}/review's champion object is the raw picked wrestler row
+// ({id, name, school, seed}) - no nested .wrestler/.champion wrapper.
+const champWrestler = (c) => c ?? {}
+const champNameOf = (c) => champWrestler(c)?.name ?? null
 
 const EMPTY = {}
 
@@ -47,24 +39,28 @@ export default function EntryReview() {
   })
 
   const review = data ?? EMPTY
-  const entry = review.entry ?? review
-  const tournament = review.tournament ?? entry.tournament ?? {}
-  const tournamentKey = tournament.slug ?? tournament.id
-  const champions = useMemo(() => normalizeChampions(review.champions), [review.champions])
-  const breakdown = useMemo(
-    () => review.points_breakdown ?? review.breakdown ?? review.by_weight ?? [],
-    [review]
-  )
-  const incomplete = review.incomplete_matches ?? review.missing ?? []
+  const entry = review.entry ?? {}
+  const reviewWeightClasses = review.weight_classes ?? []
+  const missingCount = review.missing ?? 0
 
-  // tournament payload drives the weight rail
+  // The review payload doesn't nest a tournament object - just tournament_id.
+  // Fetch the tournament separately for the header name/year/slug link.
+  const tournamentId = entry.tournament_id
   const { data: tData } = useQuery({
-    queryKey: ['tournament', tournamentKey],
-    queryFn: () => api.tournament(tournamentKey),
-    enabled: !!tournamentKey,
+    queryKey: ['tournament', tournamentId],
+    queryFn: () => api.tournament(tournamentId),
+    enabled: !!tournamentId,
   })
-  const weightClasses = useMemo(() => tData?.weight_classes ?? [], [tData])
-  const tournamentId = tournament.id ?? tData?.id
+  const tournament = tData ?? {}
+  const tournamentKey = tournament.slug ?? tournamentId
+
+  // The weight rail/breakdown come straight from the review payload itself -
+  // it already has every weight class this entry could pick, no separate
+  // tournament fetch needed for that part.
+  const weightClasses = useMemo(
+    () => reviewWeightClasses.map((w) => ({ id: w.weight_class_id, name: w.name, weight: w.weight })),
+    [reviewWeightClasses]
+  )
 
   useEffect(() => {
     if (!activeWeight && weightClasses.length) {
@@ -78,32 +74,22 @@ export default function EntryReview() {
     enabled: !!tournamentId && !!activeWeight,
   })
 
-  /* merge per-weight breakdown with champion picks */
+  /* one row per weight class, straight from the review payload */
   const weightRows = useMemo(() => {
-    const rows = new Map()
-    for (const b of breakdown) {
-      const key = b.weight_class_id ?? b.weight
-      rows.set(key, {
-        key,
-        weight: b.weight ?? b.weight_name ?? b.name,
-        correct: b.correct ?? b.correct_picks ?? 0,
-        scored: b.scored ?? b.total ?? b.scored_picks ?? 0,
-        earned: b.points_earned ?? b.points ?? 0,
-        possible: b.possible_points ?? b.possible ?? 0,
-      })
-    }
-    for (const c of champions) {
-      const key = c.weight_class_id ?? c.weight
-      const existing = rows.get(key) ?? { key, weight: c.weight ?? c.weight_name, correct: 0, scored: 0, earned: 0, possible: 0 }
-      existing.champion = c
-      if (existing.weight == null && c.weight != null) existing.weight = c.weight
-      rows.set(key, existing)
-    }
-    const out = [...rows.values()]
-    out.sort((a, b) => (parseInt(a.weight, 10) || 999) - (parseInt(b.weight, 10) || 999))
-    const maxEarned = Math.max(1, ...out.map((r) => (r.earned ?? 0) + (r.possible ?? 0)))
-    return out.map((r) => ({ ...r, barMax: maxEarned }))
-  }, [breakdown, champions])
+    const rows = reviewWeightClasses.map((w) => ({
+      key: w.weight_class_id,
+      weight: w.weight ?? w.name,
+      correct: w.correct ?? 0,
+      scored: w.scored ?? 0,
+      earned: w.points_earned ?? 0,
+      possible: 0, // per-weight possible points aren't computed by this endpoint
+      champion: w.champion,
+      championCorrect: w.champion_correct,
+    }))
+    rows.sort((a, b) => (parseInt(a.weight, 10) || 999) - (parseInt(b.weight, 10) || 999))
+    const maxEarned = Math.max(1, ...rows.map((r) => (r.earned ?? 0) + (r.possible ?? 0)))
+    return rows.map((r) => ({ ...r, barMax: maxEarned }))
+  }, [reviewWeightClasses])
 
   if (isLoading) return <ReviewSkeleton />
 
@@ -136,10 +122,7 @@ export default function EntryReview() {
   const correct = entry.correct_pick_count ?? 0
   const scored = entry.scored_pick_count ?? 0
   const accuracy = scored > 0 ? correct / scored : null
-  const progress = entry.progress ?? {}
-  const isDraftIncomplete =
-    entry.status === 'draft' && (incomplete.length > 0 || (progress.total != null && (progress.picked ?? 0) < progress.total))
-  const missingCount = incomplete.length || (progress.total != null ? Math.max(0, progress.total - (progress.picked ?? 0)) : 0)
+  const isDraftIncomplete = entry.status === 'draft' && missingCount > 0
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8 py-6">
@@ -230,7 +213,7 @@ export default function EntryReview() {
                     const champ = r.champion
                     const cName = champ ? champNameOf(champ) : null
                     const cSeed = champ ? champWrestler(champ)?.seed : null
-                    const cCorrect = champ ? champCorrect(champ) : null
+                    const cCorrect = champ ? r.championCorrect : null
                     const total = (r.earned ?? 0) + (r.possible ?? 0)
                     const barDenom = total > 0 ? total : r.barMax
                     return (

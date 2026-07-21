@@ -21,7 +21,7 @@
     "id": 22,
     "type": "api_group",
     "path": "apis/authentication/api_group.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "9e8d6b9c936035fb784721fdd3e98aa8ddf9136e91e3ef97782c535c7cd1f5b3",
     "original": "YXBpX2dyb3VwIEF1dGhlbnRpY2F0aW9uIHsKICBjYW5vbmljYWwgPSAiNDdWNlBXQk4iCn0="
@@ -30,7 +30,7 @@
     "id": 755,
     "type": "api_endpoint",
     "path": "apis/authentication/755_auth_login_POST.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "9b33de39a47b7315bbbeb7c43ccc88f3ddeff4cc6fe49e587d1ccdc18a391a20",
     "original": "Ly8gTG9naW4gYW5kIHJldHJpZXZlIGFuIGF1dGhlbnRpY2F0aW9uIHRva2VuIHBsdXMgdGhlIHVzZXIgb2JqZWN0CnF1ZXJ5ICJhdXRoL2xvZ2luIiB2ZXJiPVBPU1QgewogIGFwaV9ncm91cCA9ICJBdXRoZW50aWNhdGlvbiIKCiAgaW5wdXQgewogICAgZW1haWwgZW1haWw/IGZpbHRlcnM9dHJpbXxsb3dlcgogICAgdGV4dCBwYXNzd29yZD8gewogICAgICBzZW5zaXRpdmUgPSB0cnVlCiAgICB9CiAgfQoKICBzdGFjayB7CiAgICBkYi5nZXQgdXNlciB7CiAgICAgIGZpZWxkX25hbWUgPSAiZW1haWwiCiAgICAgIGZpZWxkX3ZhbHVlID0gJGlucHV0LmVtYWlsCiAgICB9IGFzICR1c2VyCiAgCiAgICBwcmVjb25kaXRpb24gKCR1c2VyICE9IG51bGwpIHsKICAgICAgZXJyb3JfdHlwZSA9ICJhY2Nlc3NkZW5pZWQiCiAgICAgIGVycm9yID0gIkludmFsaWQgQ3JlZGVudGlhbHMuIgogICAgfQogIAogICAgc2VjdXJpdHkuY2hlY2tfcGFzc3dvcmQgewogICAgICB0ZXh0X3Bhc3N3b3JkID0gJGlucHV0LnBhc3N3b3JkCiAgICAgIGhhc2hfcGFzc3dvcmQgPSAkdXNlci5wYXNzd29yZAogICAgfSBhcyAkcGFzc19yZXN1bHQKICAKICAgIHByZWNvbmRpdGlvbiAoJHBhc3NfcmVzdWx0KSB7CiAgICAgIGVycm9yX3R5cGUgPSAiYWNjZXNzZGVuaWVkIgogICAgICBlcnJvciA9ICJJbnZhbGlkIENyZWRlbnRpYWxzLiIKICAgIH0KICAKICAgIHNlY3VyaXR5LmNyZWF0ZV9hdXRoX3Rva2VuIHsKICAgICAgdGFibGUgPSAidXNlciIKICAgICAgZXh0cmFzID0ge30KICAgICAgZXhwaXJhdGlvbiA9IDg2NDAwCiAgICAgIGlkID0gJHVzZXIuaWQKICAgIH0gYXMgJGF1dGhUb2tlbgogIAogICAgdmFyICR1c2VyX291dCB7CiAgICAgIHZhbHVlID0gJHVzZXJ8dW5zZXQ6InBhc3N3b3JkIgogICAgfQogIH0KCiAgcmVzcG9uc2UgPSB7YXV0aFRva2VuOiAkYXV0aFRva2VuLCB1c2VyOiAkdXNlcl9vdXR9Cn0="
@@ -39,7 +39,7 @@
     "id": 757,
     "type": "api_endpoint",
     "path": "apis/authentication/757_auth_me_GET.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "404cc0a6985dcd461030cde943dd4e882f66ed03847f5569a2f1dc4f3e192b6f",
     "original": "Ly8gR2V0IHRoZSB1c2VyIHJlY29yZCBiZWxvbmdpbmcgdG8gdGhlIGF1dGhlbnRpY2F0aW9uIHRva2VuCnF1ZXJ5ICJhdXRoL21lIiB2ZXJiPUdFVCB7CiAgYXBpX2dyb3VwID0gIkF1dGhlbnRpY2F0aW9uIgogIGF1dGggPSAidXNlciIKCiAgaW5wdXQgewogIH0KCiAgc3RhY2sgewogICAgZGIuZ2V0IHVzZXIgewogICAgICBmaWVsZF9uYW1lID0gImlkIgogICAgICBmaWVsZF92YWx1ZSA9ICRhdXRoLmlkCiAgICB9IGFzICR1c2VyCiAgCiAgICBwcmVjb25kaXRpb24gKCR1c2VyICE9IG51bGwpIHsKICAgICAgZXJyb3JfdHlwZSA9ICJub3Rmb3VuZCIKICAgICAgZXJyb3IgPSAiVXNlciBub3QgZm91bmQuIgogICAgfQogIAogICAgdmFyICR1c2VyX291dCB7CiAgICAgIHZhbHVlID0gJHVzZXJ8dW5zZXQ6InBhc3N3b3JkIgogICAgfQogIH0KCiAgcmVzcG9uc2UgPSAkdXNlcl9vdXQKfQ=="
@@ -48,7 +48,7 @@
     "id": 756,
     "type": "api_endpoint",
     "path": "apis/authentication/756_auth_signup_POST.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "088eedcf19752f34b7af5844284f912a1d421105cc95822f02b8f03ac650ea5d",
     "original": "Ly8gU2lnbnVwOiB2YWxpZGF0ZSB1bmlxdWUgZW1haWwvdXNlcm5hbWUsIGRlcml2ZSB1c2VybmFtZSBmcm9tIGVtYWlsIHByZWZpeCB3aGVuCi8vIGJsYW5rIChzbHVnaWZ5ICsgZGlnaXQgc3VmZml4IHVudGlsIHVuaXF1ZSksIGNyZWF0ZSB1c2VyLCByZXR1cm4gYXV0aCB0b2tlbiArIHVzZXIuCnF1ZXJ5ICJhdXRoL3NpZ251cCIgdmVyYj1QT1NUIHsKICBhcGlfZ3JvdXAgPSAiQXV0aGVudGljYXRpb24iCgogIGlucHV0IHsKICAgIC8vIERpc3BsYXkgbmFtZSBmb3IgdGhlIG5ldyBhY2NvdW50CiAgICB0ZXh0IG5hbWUgZmlsdGVycz10cmltfG1pbjoxCiAgCiAgICAvLyBPcHRpb25hbCBoYW5kbGU7IGRlcml2ZWQgZnJvbSB0aGUgZW1haWwgcHJlZml4IHdoZW4gYmxhbmsKICAgIHRleHQ/IHVzZXJuYW1lPyBmaWx0ZXJzPXRyaW18bG93ZXIKICAKICAgIC8vIEFjY291bnQgZW1haWwgKHVuaXF1ZSkKICAgIGVtYWlsIGVtYWlsIGZpbHRlcnM9dHJpbXxsb3dlcgogIAogICAgLy8gQWNjb3VudCBwYXNzd29yZAogICAgdGV4dCBwYXNzd29yZCBmaWx0ZXJzPW1pbjo4IHsKICAgICAgc2Vuc2l0aXZlID0gdHJ1ZQogICAgfQogIH0KCiAgc3RhY2sgewogICAgZGIuZ2V0IHVzZXIgewogICAgICBmaWVsZF9uYW1lID0gImVtYWlsIgogICAgICBmaWVsZF92YWx1ZSA9ICRpbnB1dC5lbWFpbAogICAgfSBhcyAkZXhpc3RpbmdfZW1haWwKICAKICAgIHByZWNvbmRpdGlvbiAoJGV4aXN0aW5nX2VtYWlsID09IG51bGwpIHsKICAgICAgZXJyb3JfdHlwZSA9ICJpbnB1dGVycm9yIgogICAgICBlcnJvciA9ICJUaGlzIGVtYWlsIGlzIGFscmVhZHkgaW4gdXNlLiIKICAgIH0KICAKICAgIC8vIFJlc29sdmUgdGhlIHVzZXJuYW1lOiBwcm92aWRlZCB2YWx1ZSwgb3Igc2x1Z2lmaWVkIGVtYWlsIHByZWZpeAogICAgdmFyICR1c2VybmFtZSB7CiAgICAgIHZhbHVlID0gJGlucHV0LnVzZXJuYW1lCiAgICB9CiAgCiAgICBjb25kaXRpb25hbCB7CiAgICAgIGlmICgkdXNlcm5hbWUgPT0gbnVsbCB8fCAoJHVzZXJuYW1lfHN0cmxlbikgPT0gMCkgewogICAgICAgIHZhciAkZW1haWxfcHJlZml4IHsKICAgICAgICAgIHZhbHVlID0gJGlucHV0LmVtYWlsfHNwbGl0OiJAInxmaXJzdAogICAgICAgIH0KICAgICAgCiAgICAgICAgZnVuY3Rpb24ucnVuIHNsdWdpZnkgewogICAgICAgICAgaW5wdXQgPSB7dGV4dDogJGVtYWlsX3ByZWZpeH0KICAgICAgICB9IGFzICRzbHVnCiAgICAgIAogICAgICAgIHZhci51cGRhdGUgJHVzZXJuYW1lIHsKICAgICAgICAgIHZhbHVlID0gJHNsdWcKICAgICAgICB9CiAgICAgIAogICAgICAgIGNvbmRpdGlvbmFsIHsKICAgICAgICAgIGlmICgkdXNlcm5hbWUgPT0gbnVsbCB8fCAoJHVzZXJuYW1lfHN0cmxlbikgPT0gMCkgewogICAgICAgICAgICB2YXIudXBkYXRlICR1c2VybmFtZSB7CiAgICAgICAgICAgICAgdmFsdWUgPSAidXNlciIKICAgICAgICAgICAgfQogICAgICAgICAgfQogICAgICAgIH0KICAgICAgfQogICAgfQogIAogICAgLy8gRW5zdXJlIHRoZSB1c2VybmFtZSBpcyB1bmlxdWUgYnkgYXBwZW5kaW5nIGRpZ2l0cwogICAgZGIuaGFzIHVzZXIgewogICAgICBmaWVsZF9uYW1lID0gInVzZXJuYW1lIgogICAgICBmaWVsZF92YWx1ZSA9ICR1c2VybmFtZQogICAgfSBhcyAkdXNlcm5hbWVfdGFrZW4KICAKICAgIHZhciAkc3VmZml4IHsKICAgICAgdmFsdWUgPSAxCiAgICB9CiAgCiAgICB2YXIgJGZpbmFsX3VzZXJuYW1lIHsKICAgICAgdmFsdWUgPSAkdXNlcm5hbWUKICAgIH0KICAKICAgIHdoaWxlICgkdXNlcm5hbWVfdGFrZW4pIHsKICAgICAgZWFjaCB7CiAgICAgICAgdmFyLnVwZGF0ZSAkZmluYWxfdXNlcm5hbWUgewogICAgICAgICAgdmFsdWUgPSAkdXNlcm5hbWUgfiAkc3VmZml4CiAgICAgICAgfQogICAgICAKICAgICAgICBtYXRoLmFkZCAkc3VmZml4IHsKICAgICAgICAgIHZhbHVlID0gMQogICAgICAgIH0KICAgICAgCiAgICAgICAgZGIuaGFzIHVzZXIgewogICAgICAgICAgZmllbGRfbmFtZSA9ICJ1c2VybmFtZSIKICAgICAgICAgIGZpZWxkX3ZhbHVlID0gJGZpbmFsX3VzZXJuYW1lCiAgICAgICAgfSBhcyAkc3RpbGxfdGFrZW4KICAgICAgCiAgICAgICAgdmFyLnVwZGF0ZSAkdXNlcm5hbWVfdGFrZW4gewogICAgICAgICAgdmFsdWUgPSAkc3RpbGxfdGFrZW4KICAgICAgICB9CiAgICAgIH0KICAgIH0KICAKICAgIGRiLmFkZCB1c2VyIHsKICAgICAgZW5mb3JjZV9oaWRkZW5fZmllbGRzID0gZmFsc2UKICAgICAgZGF0YSA9IHsKICAgICAgICBjcmVhdGVkX2F0ICA6IG5vdwogICAgICAgIG5hbWUgICAgICAgIDogJGlucHV0Lm5hbWUKICAgICAgICBlbWFpbCAgICAgICA6ICRpbnB1dC5lbWFpbAogICAgICAgIHBhc3N3b3JkICAgIDogJGlucHV0LnBhc3N3b3JkCiAgICAgICAgdXNlcm5hbWUgICAgOiAkZmluYWxfdXNlcm5hbWUKICAgICAgICBkaXNwbGF5X25hbWU6ICRpbnB1dC5uYW1lCiAgICAgICAgdXBkYXRlZF9hdCAgOiBub3cKICAgICAgfQogICAgfSBhcyAkbmV3X3VzZXIKICAKICAgIHNlY3VyaXR5LmNyZWF0ZV9hdXRoX3Rva2VuIHsKICAgICAgdGFibGUgPSAidXNlciIKICAgICAgZXh0cmFzID0ge30KICAgICAgZXhwaXJhdGlvbiA9IDg2NDAwCiAgICAgIGlkID0gJG5ld191c2VyLmlkCiAgICB9IGFzICRhdXRoVG9rZW4KICAKICAgIHZhciAkdXNlcl9vdXQgewogICAgICB2YWx1ZSA9ICRuZXdfdXNlcnx1bnNldDoicGFzc3dvcmQiCiAgICB9CiAgfQoKICByZXNwb25zZSA9IHthdXRoVG9rZW46ICRhdXRoVG9rZW4sIHVzZXI6ICR1c2VyX291dH0KfQ=="
@@ -57,7 +57,7 @@
     "id": 97,
     "type": "table",
     "path": "tables/97_user.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "363dc22528b169ea9febc466bdb9b1129ac6b64518b437502568c1d5f2f14667",
     "original": "dGFibGUgdXNlciB7CiAgYXV0aCA9IHRydWUKCiAgc2NoZW1hIHsKICAgIGludCBpZAogICAgdGltZXN0YW1wIGNyZWF0ZWRfYXQ/PW5vdyB7CiAgICAgIHZpc2liaWxpdHkgPSAicHJpdmF0ZSIKICAgIH0KICAKICAgIHRleHQgbmFtZSBmaWx0ZXJzPXRyaW0KICAgIGVtYWlsPyBlbWFpbCBmaWx0ZXJzPXRyaW18bG93ZXIKICAgIHBhc3N3b3JkPyBwYXNzd29yZCBmaWx0ZXJzPW1pbjo4fG1pbkFscGhhOjF8bWluRGlnaXQ6MQogICAgYm9vbCBpc19hZG1pbj8KICAKICAgIC8vIHVybC1zYWZlIGhhbmRsZTsgZGVyaXZlIGZyb20gZW1haWwgcHJlZml4IHdoZW4gYWJzZW50CiAgICB0ZXh0IHVzZXJuYW1lPyBmaWx0ZXJzPXRyaW18bG93ZXIKICAKICAgIHRleHQgZGlzcGxheV9uYW1lPyBmaWx0ZXJzPXRyaW0KICAgIHRleHQgYXZhdGFyX3VybD8KICAgIHRleHQgYmlvPwogICAgdGV4dCBmYXZvcml0ZV9zY2hvb2w/IGZpbHRlcnM9dHJpbQogICAgdGltZXN0YW1wIHVwZGF0ZWRfYXQ/CiAgCiAgICAvLyBPcHQgb3V0IG9mIGFwcGVhcmluZyBvbiBwdWJsaWMgdG91cm5hbWVudC13aWRlIGxlYWRlcmJvYXJkcyBlbnRpcmVseQogICAgLy8gKHByaXZhdGUgZ3JvdXAgbGVhZGVyYm9hcmRzIGFyZSB1bmFmZmVjdGVkIOKAlCB0aG9zZSBhcmUgdmlzaWJsZSBvbmx5CiAgICAvLyB0byBwZW9wbGUgdGhlIHVzZXIgYWxyZWFkeSBzaGFyZXMgYSBncm91cCB3aXRoKQogICAgYm9vbCBsZWFkZXJib2FyZF92aXNpYmxlPz10cnVlCiAgCiAgICAvLyBXaGljaCBuYW1lIHRvIHNob3cgd2hlbiB2aXNpYmxlIG9uIHRoZSBwdWJsaWMgbGVhZGVyYm9hcmQKICAgIGVudW0gbGVhZGVyYm9hcmRfbmFtZV9tb2RlPz0iZGlzcGxheV9uYW1lIiB7CiAgICAgIHZhbHVlcyA9IFsiZGlzcGxheV9uYW1lIiwgInVzZXJuYW1lIl0KICAgIH0KICB9CgogIGluZGV4ID0gWwogICAge3R5cGU6ICJwcmltYXJ5IiwgZmllbGQ6IFt7bmFtZTogImlkIn1dfQogICAge3R5cGU6ICJidHJlZSIsIGZpZWxkOiBbe25hbWU6ICJjcmVhdGVkX2F0Iiwgb3A6ICJkZXNjIn1dfQogICAge3R5cGU6ICJidHJlZXx1bmlxdWUiLCBmaWVsZDogW3tuYW1lOiAiZW1haWwiLCBvcDogImFzYyJ9XX0KICAgIHsKICAgICAgdHlwZSA6ICJidHJlZXx1bmlxdWUiCiAgICAgIGZpZWxkOiBbe25hbWU6ICJ1c2VybmFtZSIsIG9wOiAiYXNjIn1dCiAgICB9CiAgXQp9"
@@ -1140,6 +1140,398 @@
   {
     "id": 0,
     "path": "apis/admin/admin_results_analyst_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_wrestler_match_history_upsert_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/utils/send_transactional_email.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/authentication/auth_verify_email_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/authentication/auth_forgot_password_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/authentication/auth_reset_password_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/season.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/season_weight_class.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/league.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/league_membership.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/draft.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/draft_pick.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/roster_slot.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/season_week.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/matchup.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/lineup.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/lineup_slot.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/season_week_tournament_result.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/bowl_assignment.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/waiver_claim.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/trade.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/trade_item.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/api_group.xs",
+    "status": "new",
+    "type": "api_group",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_invite_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_invite_accept_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_invite_decline_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_leave_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_id_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_id_PATCH.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_draft_start_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_draft_state_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_draft_pick_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/league/advance_draft_turn.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_draft_autopick_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_lineup_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_lineup_PUT.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_waivers_available_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_waiver_claim_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_trade_propose_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_trade_respond_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_trade_cancel_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_trades_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_results_analyst_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_seasons_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_seasons_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_user_lookup_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_draft_pool_search_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_weight_classes_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_season_weight_classes_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_weeks_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_season_weeks_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_roster_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_week_config_PUT.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/admin/bulk_update_match_history.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_bulk_update_matches_POST.xs",
     "status": "new",
     "type": "api_endpoint",
     "staged": false

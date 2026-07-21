@@ -36,4 +36,5 @@ function invite_code {
   }
 
   response = $code
+  guid = "uvkgTa81OiQ8WgpOIrggpSp5b-I"
 }
