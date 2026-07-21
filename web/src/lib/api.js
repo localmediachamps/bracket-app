@@ -69,6 +69,7 @@ export const api = {
   userProfile: (userId) => get(XANO_APP, `/users/${userId}/profile`),
   searchResults: (params = {}) => get(XANO_APP, `/results/matches${qs(params)}`),
   resultsFacets: (params = {}) => get(XANO_APP, `/results/facets${qs(params)}`),
+  wrestlerProfile: (id) => get(XANO_APP, `/results/wrestlers/${id}`),
 
   /* ── Player ─────────────────────────────────────────── */
   createEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/entries`),

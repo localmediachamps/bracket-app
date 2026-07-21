@@ -6,6 +6,10 @@
 // team_id is resolved client-side (by build_canonical_wrestlers.py, from
 // admin/canonical/teams/bulk-add's own response) rather than looked up here
 // by name, to avoid a name-matching problem inside this endpoint too.
+// legal_first_name/legal_last_name are also split client-side from
+// display_name (push_canonical.py) - this dataset is D1 men's wrestling
+// only, so gender is a real, correct constant here, not a placeholder.
+// No birthdate/external ids - not available in the scraped match history.
 query "admin/canonical/wrestlers/bulk-add" verb=POST {
   api_group = "admin"
   auth = "user"
@@ -15,6 +19,8 @@ query "admin/canonical/wrestlers/bulk-add" verb=POST {
       schema {
         text display_name filters=trim
         int? current_team_id?
+        text? legal_first_name? filters=trim
+        text? legal_last_name? filters=trim
       }
     }
   }
@@ -31,14 +37,11 @@ query "admin/canonical/wrestlers/bulk-add" verb=POST {
       each as $w {
         db.add canonical_wrestler {
           data = {
-            display_name              : $w.display_name
-            current_team_id           : 1
-            legal_first_name          : "Test"
-            legal_last_name           : "Wrestler"
-            birthdate                 : "2000-01-01"
-            gender                    : "M"
-            external_wrestler_id      : "diag-test-1"
-            external_wrestler_short_id: "dt1"
+            display_name    : $w.display_name
+            current_team_id : $w.current_team_id
+            legal_first_name: $w.legal_first_name
+            legal_last_name : $w.legal_last_name
+            gender          : "M"
           }
         } as $row
 

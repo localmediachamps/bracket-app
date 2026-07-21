@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -105,6 +105,19 @@ function MatchDetail({ m }) {
   )
 }
 
+// Links to the wrestler's profile when we have a canonical identity for
+// this side of the match; plain text otherwise (most historical rows do,
+// post-backfill, but not every raw name resolves to one).
+function WrestlerName({ name, canonicalId, className }) {
+  if (!name) return null
+  if (!canonicalId) return <span className={className}>{name}</span>
+  return (
+    <Link to={`/wrestlers/${canonicalId}`} className={cn(className, 'hover:underline')} onClick={(e) => e.stopPropagation()}>
+      {name}
+    </Link>
+  )
+}
+
 function MatchRow({ m }) {
   const { color, icon: Icon } = victoryStyle(m.victory_type)
   const placement = placementInfo(m.round_label)
@@ -118,11 +131,11 @@ function MatchRow({ m }) {
     >
       <td className="px-4 py-3">
         <div className="text-sm text-ink-100">
-          <span className="font-bold text-pin-400">{m.winner_name_raw}</span>
+          <WrestlerName name={m.winner_name_raw} canonicalId={m.winner_canonical_wrestler_id} className="font-bold text-pin-400" />
           <span className="text-ink-500"> ({m.winner_school_raw})</span>
         </div>
         <div className="text-sm text-ink-400">
-          over <span className="text-ink-200">{m.loser_name_raw || 'opponent'}</span>
+          over <WrestlerName name={m.loser_name_raw || 'opponent'} canonicalId={m.loser_canonical_wrestler_id} className="text-ink-200" />
           {m.loser_school_raw && <span className="text-ink-500"> ({m.loser_school_raw})</span>}
         </div>
       </td>
@@ -176,12 +189,16 @@ function MatchCard({ m }) {
         <span className="shrink-0 text-[11px] text-ink-500">{formatDate(m.occurred_at)}</span>
       </div>
       <div className="mt-3.5">
-        <p className="font-bold leading-snug text-ink-50">{m.winner_name_raw}</p>
+        <p className="font-bold leading-snug text-ink-50">
+          <WrestlerName name={m.winner_name_raw} canonicalId={m.winner_canonical_wrestler_id} />
+        </p>
         <p className="text-xs text-ink-500">{m.winner_school_raw}</p>
       </div>
       <p className="my-2 text-[10px] font-bold uppercase tracking-wider text-ink-600">def.</p>
       <div>
-        <p className="text-sm text-ink-300">{m.loser_name_raw || 'opponent'}</p>
+        <p className="text-sm text-ink-300">
+          <WrestlerName name={m.loser_name_raw || 'opponent'} canonicalId={m.loser_canonical_wrestler_id} />
+        </p>
         {m.loser_school_raw && <p className="text-xs text-ink-600">{m.loser_school_raw}</p>}
       </div>
       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-mat-700 pt-3">
