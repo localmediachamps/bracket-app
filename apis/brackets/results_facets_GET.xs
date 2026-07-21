@@ -11,6 +11,7 @@ query "results/facets" verb=GET {
   input {
     text? school? filters=trim|max:100
     text? weight_class?
+    text? event_name? filters=trim|max:200
   }
 
   stack {
@@ -19,7 +20,7 @@ query "results/facets" verb=GET {
     }
 
     db.query wrestler_match_history {
-      where = (($db.wrestler_match_history.winner_school_raw|to_lower) ==? $school_lower) && ($db.wrestler_match_history.weight_class ==? $input.weight_class)
+      where = (($db.wrestler_match_history.winner_school_raw|to_lower) ==? $school_lower) && ($db.wrestler_match_history.weight_class ==? $input.weight_class) && ($db.wrestler_match_history.event_name ==? $input.event_name)
       return = {
         type  : "list"
         paging: {page: 1, per_page: 2000}
@@ -27,12 +28,20 @@ query "results/facets" verb=GET {
     } as $winner_side
 
     db.query wrestler_match_history {
-      where = (($db.wrestler_match_history.loser_school_raw|to_lower) ==? $school_lower) && ($db.wrestler_match_history.weight_class ==? $input.weight_class)
+      where = (($db.wrestler_match_history.loser_school_raw|to_lower) ==? $school_lower) && ($db.wrestler_match_history.weight_class ==? $input.weight_class) && ($db.wrestler_match_history.event_name ==? $input.event_name)
       return = {
         type  : "list"
         paging: {page: 1, per_page: 2000}
       }
     } as $loser_side
+
+    var $round_labels_raw {
+      value = ($winner_side.items|map:$$.round_label)|merge:($loser_side.items|map:$$.round_label)
+    }
+
+    var $round_labels {
+      value = ($round_labels_raw|filter_empty_text)|unique|sort
+    }
 
     var $wrestler_names_raw {
       value = ($winner_side.items|map:$$.winner_name_raw)|merge:($loser_side.items|map:$$.loser_name_raw)
@@ -52,8 +61,9 @@ query "results/facets" verb=GET {
   }
 
   response = {
-    wrestlers  : $wrestlers
-    event_names: $event_names
+    wrestlers   : $wrestlers
+    event_names : $event_names
+    round_labels: $round_labels
   }
   guid = "gHQaiDOYO7w7lUrKpFDxTsbhWQk"
 }

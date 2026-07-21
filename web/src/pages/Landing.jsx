@@ -584,6 +584,43 @@ export default function Landing() {
         </section>
       )}
 
+      {/* ── Pricing teaser ───────────────────────────── */}
+      <section className="py-16">
+        <SectionHeading sub="Start free. Upgrade whenever the free plan starts to feel small.">Pricing</SectionHeading>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.4 }}>
+            <Card className="flex h-full flex-col p-6">
+              <h3 className="font-display text-base uppercase tracking-wide text-ink-100">Free</h3>
+              <div className="mb-4 mt-1 font-mono text-3xl font-bold text-ink-100">$0</div>
+              <ul className="flex-1 space-y-2 text-sm text-ink-400">
+                <li>Up to 3 tournaments with a submitted entry, ever</li>
+                <li>Create private groups and run your own pool</li>
+                <li>Full access to the Results Library</li>
+              </ul>
+            </Card>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.4, delay: 0.08 }}>
+            <Card className="flex h-full flex-col border-gold-500/40 p-6 shadow-glow-sm">
+              <h3 className="flex items-center gap-2 font-display text-base uppercase tracking-wide text-ink-100">
+                <Crown size={16} className="text-gold-400" /> Annual
+              </h3>
+              <div className="mb-4 mt-1 flex items-baseline gap-1.5">
+                <span className="font-mono text-3xl font-bold text-gold-400">$29.99</span>
+                <span className="text-sm text-ink-500">/ year</span>
+              </div>
+              <ul className="mb-5 flex-1 space-y-2 text-sm text-ink-200">
+                <li>Unlimited tournament entries, every event</li>
+                <li>Create and commission season-long fantasy leagues</li>
+                <li>Everything in the free plan</li>
+              </ul>
+              <Link to="/pricing">
+                <Button className="w-full">See full pricing <ArrowRight size={15} /></Button>
+              </Link>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ── School marquee ───────────────────────────── */}
       <section
         aria-label="Schools on the mat"

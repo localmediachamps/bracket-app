@@ -220,6 +220,7 @@ export default function Results() {
   const [weightClass, setWeightClass] = useState(() => searchParams.get('weight_class') || '')
   const [wrestler, setWrestler] = useState(() => searchParams.get('wrestler') || '')
   const [eventName, setEventName] = useState(() => searchParams.get('event_name') || '')
+  const [roundLabel, setRoundLabel] = useState(() => searchParams.get('round_label') || '')
   const [season, setSeason] = useState(() => (initialStart || initialEnd ? 'custom' : 'all'))
   const [customStart, setCustomStart] = useState(initialStart)
   const [customEnd, setCustomEnd] = useState(initialEnd)
@@ -255,7 +256,7 @@ export default function Results() {
 
   useEffect(() => {
     setPage(1)
-  }, [qd, school, weightClass, wrestler, eventName, season, customStart, customEnd])
+  }, [qd, school, weightClass, wrestler, eventName, roundLabel, season, customStart, customEnd])
 
   // Selecting a school/weight can invalidate a previously-picked wrestler or
   // event that no longer matches - clear them rather than silently filtering
@@ -269,16 +270,28 @@ export default function Results() {
     if (prevSchool !== school || prevWeight !== weightClass) {
       setWrestler('')
       setEventName('')
+      setRoundLabel('')
     }
     prevSchoolWeight.current = [school, weightClass]
   }, [school, weightClass])
+
+  // Changing the event can invalidate a previously-picked round (rounds are
+  // event-specific) - clear it rather than filtering on a combination that
+  // can never match.
+  const prevEvent = useRef(eventName)
+  useEffect(() => {
+    if (prevEvent.current !== eventName) {
+      setRoundLabel('')
+    }
+    prevEvent.current = eventName
+  }, [eventName])
 
   const activeSeason = SEASONS.find((s) => s.key === season)
   const startDate = season === 'custom' ? customStart : activeSeason?.start
   const endDate = season === 'custom' ? customEnd : activeSeason?.end
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['results', 'search', qd, school, weightClass, wrestler, eventName, startDate, endDate, page],
+    queryKey: ['results', 'search', qd, school, weightClass, wrestler, eventName, roundLabel, startDate, endDate, page],
     queryFn: () =>
       api.searchResults({
         q: qd || undefined,
@@ -286,6 +299,7 @@ export default function Results() {
         weight_class: weightClass || undefined,
         wrestler: wrestler || undefined,
         event_name: eventName || undefined,
+        round_label: roundLabel || undefined,
         start_date: startDate ? new Date(startDate).getTime() : undefined,
         end_date: endDate ? new Date(endDate).getTime() : undefined,
         page,
@@ -296,22 +310,23 @@ export default function Results() {
   })
 
   // Wrestler + event dropdowns narrow with whichever of school/weight are
-  // active, so picking a school/weight first shows only values that
-  // actually occur in that slice of the data.
+  // active; round narrows further by whichever event is selected (rounds are
+  // event-specific - "Champ. Round 1" only makes sense within one event).
   const { data: facetData } = useQuery({
-    queryKey: ['results', 'facets', school, weightClass],
-    queryFn: () => api.resultsFacets({ school: school || undefined, weight_class: weightClass || undefined }),
+    queryKey: ['results', 'facets', school, weightClass, eventName],
+    queryFn: () => api.resultsFacets({ school: school || undefined, weight_class: weightClass || undefined, event_name: eventName || undefined }),
     staleTime: 30000,
   })
   const wrestlerOptions = facetData?.wrestlers ?? []
   const eventOptions = facetData?.event_names ?? []
+  const roundOptions = facetData?.round_labels ?? []
 
   const items = data?.items ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
-  const filtersActive = q || school || weightClass || wrestler || eventName || season !== 'all'
-  const activeFilterCount = [school, weightClass, wrestler, eventName, season !== 'all' ? season : ''].filter(Boolean).length
+  const filtersActive = q || school || weightClass || wrestler || eventName || roundLabel || season !== 'all'
+  const activeFilterCount = [school, weightClass, wrestler, eventName, roundLabel, season !== 'all' ? season : ''].filter(Boolean).length
 
   const clearFilters = () => {
     setQ('')
@@ -319,6 +334,7 @@ export default function Results() {
     setWeightClass('')
     setWrestler('')
     setEventName('')
+    setRoundLabel('')
     setSeason('all')
     setCustomStart('')
     setCustomEnd('')
@@ -407,6 +423,21 @@ export default function Results() {
             </Select>
           </div>
           <div className="w-48 shrink-0">
+            <Select
+              value={roundLabel}
+              onChange={(e) => setRoundLabel(e.target.value)}
+              aria-label="Filter by round"
+              disabled={!eventName || !roundOptions.length}
+            >
+              <option value="">
+                {!eventName ? 'Pick an event for rounds' : roundOptions.length ? 'Any round' : 'No rounds match yet'}
+              </option>
+              {roundOptions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-48 shrink-0">
             <Select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Filter by season">
               {SEASONS.map((s) => (
                 <option key={s.key} value={s.key}>{s.label}</option>
@@ -475,6 +506,19 @@ export default function Results() {
             <option value="">{eventOptions.length ? 'Any event' : 'No events match yet'}</option>
             {eventOptions.map((e) => (
               <option key={e} value={e}>{e}</option>
+            ))}
+          </Select>
+          <Select
+            value={roundLabel}
+            onChange={(e) => setRoundLabel(e.target.value)}
+            aria-label="Filter by round"
+            disabled={!eventName || !roundOptions.length}
+          >
+            <option value="">
+              {!eventName ? 'Pick an event for rounds' : roundOptions.length ? 'Any round' : 'No rounds match yet'}
+            </option>
+            {roundOptions.map((r) => (
+              <option key={r} value={r}>{r}</option>
             ))}
           </Select>
           <Select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Filter by season">
@@ -564,14 +608,14 @@ export default function Results() {
                 transition={{ duration: 0.15 }}
                 className="overflow-x-auto rounded-xl border border-mat-700 bg-mat-850"
               >
-                <table className="w-full min-w-[720px] border-collapse">
+                <table className="w-full min-w-[720px] border-collapse" style={{ tableLayout: 'fixed' }}>
                   <thead>
                     <tr className="border-b border-mat-700 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500">
-                      <th className="w-[46%] px-4 py-3">Matchup</th>
-                      <th className="px-4 py-3">Result</th>
-                      <th className="w-20 px-4 py-3">Weight</th>
-                      <th className="px-4 py-3">Event</th>
-                      <th className="whitespace-nowrap px-4 py-3">Date</th>
+                      <th className="w-[30%] px-4 py-3">Matchup</th>
+                      <th className="w-[22%] px-4 py-3">Result</th>
+                      <th className="w-16 px-4 py-3">Weight</th>
+                      <th className="w-[28%] px-4 py-3">Event</th>
+                      <th className="w-24 whitespace-nowrap px-4 py-3">Date</th>
                     </tr>
                   </thead>
                   <tbody>

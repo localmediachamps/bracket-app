@@ -338,7 +338,7 @@ function CanvasView({ matches, layout, mode, resolution, picks, onPick, data }) 
             const p = layout.pos.get(m.id)
             if (!p) return null
             const resolved = resolution?.resolved.get(m.id)
-            const pickedId = mode === 'predict' ? picks?.get(m.id) : undefined
+            const pickedId = mode === 'predict' ? picks?.get(m.id) : m.user_pick?.wrestler_id
             return (
               <div key={m.id} className="absolute" style={{ left: p.x, top: p.y }}>
                 <MatchCard match={m} mode={mode} resolved={resolved} pickedId={pickedId} onPick={onPick} />

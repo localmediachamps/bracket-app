@@ -11,6 +11,7 @@ query "results/matches" verb=GET {
     text? school? filters=trim|max:100
     text? wrestler? filters=trim|max:100
     text? event_name? filters=trim|max:150
+    text? round_label? filters=trim|max:100
     text? weight_class?
     timestamp? start_date?
     timestamp? end_date?
@@ -37,7 +38,7 @@ query "results/matches" verb=GET {
     }
 
     db.query wrestler_match_history {
-      where = ($input.q == null || (($db.wrestler_match_history.winner_name_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.loser_name_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.winner_school_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.loser_school_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.event_name|to_lower) includes $q_lower) || (($db.wrestler_match_history.event_series_name|to_lower) includes $q_lower)) && ($input.school == null || (($db.wrestler_match_history.winner_school_raw|to_lower) == $school_lower) || (($db.wrestler_match_history.loser_school_raw|to_lower) == $school_lower)) && ($input.wrestler == null || (($db.wrestler_match_history.winner_name_raw|to_lower) == $wrestler_lower) || (($db.wrestler_match_history.loser_name_raw|to_lower) == $wrestler_lower)) && ($input.event_name == null || (($db.wrestler_match_history.event_name|to_lower) == $event_lower)) && ($db.wrestler_match_history.weight_class ==? $input.weight_class) && ($db.wrestler_match_history.occurred_at >=? $input.start_date) && ($db.wrestler_match_history.occurred_at <=? $input.end_date)
+      where = ($input.q == null || (($db.wrestler_match_history.winner_name_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.loser_name_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.winner_school_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.loser_school_raw|to_lower) includes $q_lower) || (($db.wrestler_match_history.event_name|to_lower) includes $q_lower) || (($db.wrestler_match_history.event_series_name|to_lower) includes $q_lower)) && ($input.school == null || (($db.wrestler_match_history.winner_school_raw|to_lower) == $school_lower) || (($db.wrestler_match_history.loser_school_raw|to_lower) == $school_lower)) && ($input.wrestler == null || (($db.wrestler_match_history.winner_name_raw|to_lower) == $wrestler_lower) || (($db.wrestler_match_history.loser_name_raw|to_lower) == $wrestler_lower)) && ($input.event_name == null || (($db.wrestler_match_history.event_name|to_lower) == $event_lower)) && ($db.wrestler_match_history.round_label ==? $input.round_label) && ($db.wrestler_match_history.weight_class ==? $input.weight_class) && ($db.wrestler_match_history.occurred_at >=? $input.start_date) && ($db.wrestler_match_history.occurred_at <=? $input.end_date)
       sort = {wrestler_match_history.occurred_at: "desc"}
       return = {
         type  : "list"
