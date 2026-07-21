@@ -6,13 +6,11 @@ import {
   ArrowRight,
   Trophy,
   GitBranch,
-  TrendingUp,
   Sparkles,
   Scale,
   Crown,
   ScrollText,
   Swords,
-  Search,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuthStore } from '../lib/store'
@@ -20,7 +18,7 @@ import { Button, Card, CardSkeleton, EmptyState, SectionHeading, Avatar } from '
 import TournamentCard from '../components/tournament/TournamentCard'
 import { ErrorState } from '../components/tournament/Feedback'
 import { normalizeList, displayName } from '../components/tournament/helpers'
-import { cn, formatPoints } from '../lib/utils'
+import { cn, formatPoints, victoryLabel } from '../lib/utils'
 
 const SCHOOLS = [
   'Penn State', 'Iowa', 'Oklahoma State', 'Ohio State', 'Michigan', 'Cornell',
@@ -177,34 +175,27 @@ function FantasyMock() {
   )
 }
 
-function ResultsMock() {
-  const rows = [
-    { w: 149, a: 'Vito Arujau', b: 'Real Woods', type: 'DEC' },
-    { w: 174, a: 'Carter Starocci', b: 'Aaron Brooks', type: 'DEC' },
-    { w: 285, a: 'Mason Parris', b: 'Y. Slavikouski', type: 'FALL' },
-  ]
+/* Small numbered "how this mode works" list, shared by PlayCard/SpotlightCard */
+function HowSteps({ steps, label }) {
+  if (!steps?.length) return null
   return (
-    <div aria-hidden="true">
-      <div className="mb-3 flex items-center gap-2 rounded-lg border border-mat-700 bg-mat-800 px-3 py-2">
-        <Search size={13} className="text-ink-500" />
-        <span className="text-[11px] text-ink-500">Search wrestler, school, event…</span>
-      </div>
-      <div className="space-y-1.5">
-        {rows.map((r) => (
-          <div key={r.w} className="flex items-center gap-2 rounded-md border border-mat-700 bg-mat-800 px-2 py-1.5">
-            <span className="flex h-5 w-9 items-center justify-center rounded bg-mat-700 font-mono text-[9px] font-bold text-gold-400">{r.w}</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-200">{r.a}</span>
-            <span className="shrink-0 font-mono text-[9px] text-ink-600">def.</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-ink-400">{r.b}</span>
-            <span className="shrink-0 font-mono text-[9px] font-bold text-blood-400">{r.type}</span>
-          </div>
+    <div className="mt-4">
+      {label && <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-600">{label}</div>}
+      <ol className="space-y-2">
+        {steps.map((s, i) => (
+          <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-ink-400">
+            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gold-500/15 font-mono text-[9px] font-bold text-gold-400">
+              {i + 1}
+            </span>
+            <span>{s}</span>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   )
 }
 
-function PlayCard({ icon: Icon, title, copy, chips, mock, index }) {
+function PlayCard({ icon: Icon, title, copy, steps, stepsLabel, chips, mock, index }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -220,6 +211,7 @@ function PlayCard({ icon: Icon, title, copy, chips, mock, index }) {
           <h3 className="font-display text-base uppercase tracking-wide text-ink-100">{title}</h3>
         </div>
         <p className="text-sm leading-relaxed text-ink-400">{copy}</p>
+        <HowSteps steps={steps} label={stepsLabel} />
         <div className="mt-5 rounded-lg border border-mat-700 bg-mat-900/70 p-4">{mock}</div>
         <div className="mt-4 flex flex-wrap gap-2">
           {chips.map((c) => (
@@ -229,6 +221,72 @@ function PlayCard({ icon: Icon, title, copy, chips, mock, index }) {
           ))}
         </div>
       </Card>
+    </motion.div>
+  )
+}
+
+// The season league is a bigger commitment than the other two (a whole
+// season of team-building, not a one-off entry) - it gets its own wider,
+// more explanatory treatment rather than being squeezed into the same
+// half-width card shape.
+function SpotlightCard({ icon: Icon, eyebrow, title, copy, steps, chips, mock, cta, ctaHref }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="overflow-hidden border-gold-500/40 p-0 shadow-glow-sm">
+        <div className="grid gap-0 lg:grid-cols-[1.15fr_1fr]">
+          <div className="p-6 sm:p-8">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gold-400">
+              <Icon size={12} /> {eyebrow}
+            </span>
+            <h3 className="font-display text-2xl uppercase tracking-tight text-ink-100 sm:text-3xl">{title}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-ink-400">{copy}</p>
+            <HowSteps steps={steps} label="How it works" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              {chips.map((c) => (
+                <span key={c} className="rounded-full border border-mat-600 bg-mat-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                  {c}
+                </span>
+              ))}
+            </div>
+            <Link to={ctaHref} className="mt-6 inline-block">
+              <Button>
+                {cta} <ArrowRight size={15} />
+              </Button>
+            </Link>
+          </div>
+          <div className="border-t border-mat-700 bg-mat-900/70 p-6 sm:p-8 lg:border-l lg:border-t-0">{mock}</div>
+        </div>
+      </Card>
+    </motion.div>
+  )
+}
+
+function ResultsPreviewRow({ m, index }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="flex items-center gap-3 border-t border-mat-700/60 px-5 py-3.5 first:border-t-0 sm:gap-4"
+    >
+      <span className="w-11 shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider text-gold-400">
+        {m.weight_class || '—'}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm">
+        <span className="font-semibold text-ink-100">{m.winner_name_raw}</span>
+        <span className="text-ink-600"> def. </span>
+        <span className="text-ink-400">{m.loser_name_raw || 'opponent'}</span>
+      </span>
+      <span className="hidden shrink-0 max-w-[160px] truncate text-xs text-ink-500 md:block">{m.event_name}</span>
+      <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider text-ink-500">
+        {victoryLabel(m.victory_type) || m.victory_type || '—'}
+      </span>
     </motion.div>
   )
 }
@@ -268,22 +326,15 @@ export default function Landing() {
   })
   const teaserRows = normalizeList(lbQ.data).items.slice(0, 5)
 
-  const resultsCountQ = useQuery({
-    queryKey: ['results', 'landing-count'],
-    queryFn: () => api.searchResults({ per: 1 }),
-    staleTime: 300000,
+  const resultsPreviewQ = useQuery({
+    queryKey: ['results', 'landing-preview'],
+    queryFn: () => api.searchResults({ per: 5 }),
+    staleTime: 60000,
     retry: 1,
   })
-  const resultsCount = resultsCountQ.data?.total ?? null
+  const resultsPreview = resultsPreviewQ.data?.items ?? []
 
-  const totals = {
-    events: open.total + live.total,
-    players: cards.reduce((a, t) => a + (t.entry_count ?? 0), 0),
-    athletes: cards.reduce((a, t) => a + (t.competitor_count ?? 0), 0),
-  }
-  const showStats = !loading && (totals.events > 0 || totals.players > 0 || totals.athletes > 0)
-
-  const scrollToHow = () => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToWaysToPlay = () => document.getElementById('ways-to-play')?.scrollIntoView({ behavior: 'smooth' })
 
   return (
     <div className="-mt-6">
@@ -329,30 +380,10 @@ export default function Landing() {
             <Button size="xl" onClick={() => navigate(ctaHref)}>
               Browse Tournaments <ArrowRight size={18} />
             </Button>
-            <Button size="xl" variant="secondary" onClick={scrollToHow}>
-              How it works
+            <Button size="xl" variant="secondary" onClick={scrollToWaysToPlay}>
+              Ways to play
             </Button>
           </motion.div>
-
-          {showStats && (
-            <motion.dl
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.55 }}
-              className="mt-14 grid grid-cols-3 gap-6 border-t border-mat-800 pt-8 sm:gap-12"
-            >
-              {[
-                { label: 'Events in the arena', value: totals.events },
-                { label: 'Players on the board', value: totals.players },
-                { label: 'Athletes seeded', value: totals.athletes },
-              ].map((s) => (
-                <div key={s.label}>
-                  <dd className="font-mono text-2xl font-bold text-ink-100 sm:text-3xl">{s.value}</dd>
-                  <dt className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-500">{s.label}</dt>
-                </div>
-              ))}
-            </motion.dl>
-          )}
         </div>
       </section>
 
@@ -398,15 +429,22 @@ export default function Landing() {
         )}
       </section>
 
-      {/* ── Two ways to play ─────────────────────────── */}
-      <section className="py-16">
-        <SectionHeading sub="Same tournament, two battlegrounds. Enter one — or both.">Two ways to play</SectionHeading>
+      {/* ── Ways to play ──────────────────────────────── */}
+      <section id="ways-to-play" className="scroll-mt-24 py-16">
+        <SectionHeading sub="Jump into a single tournament in minutes, or go the distance for a whole season.">
+          Ways to Play
+        </SectionHeading>
         <div className="grid gap-5 lg:grid-cols-2">
           <PlayCard
             index={0}
             icon={GitBranch}
             title="Bracket Challenge"
-            copy="Predict every match of every weight — first round through the finals, plus the consolation gauntlet. Winners advance through your bracket, and every correct call banks points."
+            copy="Predict every match of every weight — first round through the finals, plus the consolation gauntlet. Fill it out before the lock, then watch it score live as real results land."
+            steps={[
+              'Every correct pick scores — and the deeper the round, the more it\'s worth (1 point in round one, up to 32 for the championship)',
+              'The consolation bracket and placement matches (3rd, 5th, 7th) score too, not just the title side',
+            ]}
+            stepsLabel="How scoring works"
             chips={['Any bracket size', 'Full consolation support', 'Every round counts']}
             mock={<BracketMock />}
           />
@@ -415,92 +453,67 @@ export default function Landing() {
             icon={Scale}
             title="Pick'em Showdown"
             copy="Salary-cap wrestling. Build a stable of ten champions under the budget — spend big on a #1 seed or hunt contrarian value deep in the bracket. Tiebreakers settle the rest."
+            steps={[
+              'Your ten wrestlers score for every win, plus bonus points for a fall, tech fall, or major decision',
+              'Where each one finally places (1st through 8th) adds points on top — a champion is worth far more than an early exit',
+            ]}
+            stepsLabel="How scoring works"
             chips={['1,000-point salary cap', 'One pick per weight', 'Tiebreaker drama']}
             mock={<PickemMock />}
           />
         </div>
-      </section>
 
-      {/* ── Go further: season-long league + results library ── */}
-      <section className="py-16">
-        <SectionHeading sub="One tournament not enough? Draft the whole season, or dig into the archive.">
-          Take it further
-        </SectionHeading>
-        <div className="grid gap-5 lg:grid-cols-2">
-          <PlayCard
-            index={0}
+        <div className="mt-5">
+          <SpotlightCard
             icon={Swords}
+            eyebrow="The deep game"
             title="Season-Long Fantasy League"
-            copy="Draft the entire NCAA D1 field with your league, snake-style. Set your lineup every week, work the waiver wire, make trades, and battle head-to-head all season — right through bowl season and NCAAs."
-            chips={['Snake draft', 'Weekly lineups', 'Trades & waivers']}
+            copy="Bracket Challenge and Pick'em Showdown are quick — pick any open tournament and you're already playing. The Fantasy League is bigger: it's both of those ideas, plus a whole season of team-building on top. Draft the entire NCAA D1 field with your league, then manage a real roster all year long."
+            steps={[
+              'Draft your 10-man roster with your league, snake-style',
+              'Set your active lineup every week',
+              'Battle head-to-head, work the waiver wire, make trades',
+              'Marquee tournaments and bowl season decide the finish',
+            ]}
+            chips={['Snake draft', 'Weekly lineups', 'Trades & waivers', 'Bowl season & NCAAs']}
             mock={<FantasyMock />}
+            cta="Start a league"
+            ctaHref={token ? '/leagues' : '/register'}
           />
-          <PlayCard
-            index={1}
-            icon={ScrollText}
-            title="Results Library"
-            copy={`Search ${resultsCount ? resultsCount.toLocaleString() + '+' : 'tens of thousands of'} real NCAA results by wrestler, school, weight class, or event — final score, how it ended, all in one place.`}
-            chips={['Full match history', 'Score & time on every bout', 'Filter by weight or school']}
-            mock={<ResultsMock />}
-          />
-        </div>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to={token ? '/leagues' : '/register'}>
-            <Button variant="secondary">
-              Start a league <ArrowRight size={15} />
-            </Button>
-          </Link>
-          <Link to="/results">
-            <Button variant="secondary">
-              Explore results <ArrowRight size={15} />
-            </Button>
-          </Link>
         </div>
       </section>
 
-      {/* ── How it works ─────────────────────────────── */}
-      <section id="how-it-works" className="scroll-mt-24 py-16">
-        <SectionHeading sub="From first whistle to the final hand-raise.">How it works</SectionHeading>
-        <div className="grid gap-5 md:grid-cols-3">
-          {[
-            {
-              icon: Trophy,
-              title: 'Pick your tournament',
-              copy: 'NCAA championships, conference brackets, opens — if there’s a bracket, there’s a game waiting for you.',
-            },
-            {
-              icon: GitBranch,
-              title: 'Predict every match',
-              copy: 'Champions, consolation comebacks, 3rd through 8th place — fill out the whole tree before the lock.',
-            },
-            {
-              icon: TrendingUp,
-              title: 'Climb the leaderboard',
-              copy: 'Live scoring as results land. Out-pick your friends, your group, and the entire arena.',
-            },
-          ].map((s, i) => (
-            <motion.div
-              key={s.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Card className="relative h-full overflow-hidden p-6">
-                <span className="absolute -right-1 -top-2 font-mono text-5xl font-bold text-mat-700" aria-hidden="true">
-                  0{i + 1}
-                </span>
-                <div className="relative">
-                  <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/12 text-gold-400">
-                    <s.icon size={20} />
-                  </span>
-                  <h3 className="font-display text-sm uppercase tracking-wide text-ink-100">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-500">{s.copy}</p>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+      {/* ── Results library ───────────────────────────── */}
+      <section className="py-16">
+        <SectionHeading sub="Every real match, searchable — score, time, and how it ended.">The Results Library</SectionHeading>
+        {resultsPreviewQ.isLoading ? (
+          <CardSkeleton />
+        ) : resultsPreview.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.45 }}
+          >
+            <Card className="overflow-hidden">
+              {resultsPreview.map((m, i) => (
+                <ResultsPreviewRow key={m.id ?? m.source_match_id ?? i} m={m} index={i} />
+              ))}
+              <Link
+                to="/results"
+                className="block border-t border-mat-700 bg-mat-900/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.14em] text-gold-500 transition-colors hover:text-gold-300"
+              >
+                Explore the full library →
+              </Link>
+            </Card>
+          </motion.div>
+        ) : (
+          <EmptyState
+            icon={<ScrollText size={22} />}
+            title="Building the archive"
+            body="Real match results are on their way."
+          />
+        )}
       </section>
 
       {/* ── Leaderboard teaser ───────────────────────── */}
