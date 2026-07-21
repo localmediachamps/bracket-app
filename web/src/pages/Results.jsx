@@ -1,13 +1,55 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ScrollText, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Search, ScrollText, ChevronLeft, ChevronRight, X, Zap, Flame, TrendingUp,
+  Trophy, Rows3, LayoutGrid,
+} from 'lucide-react'
 import { api } from '../lib/api'
 import { Select, Badge, CardSkeleton, EmptyState, Button } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
+import { cn, victoryLabel } from '../lib/utils'
 
 const WEIGHTS = ['125', '133', '141', '149', '157', '165', '174', '184', '197', '285']
 const PER_PAGE = 25
+
+// Visual weight per victory type - the more decisive/dramatic the win, the
+// more it should pop. Decision/medical-forfeit/etc fall through to a plain
+// "ink" badge with no icon (no bonus, nothing to celebrate).
+// The stored victory_type is raw scraped text ("Fall", "Technical Fall",
+// "Major Decision", "Sudden Victory - 3", ...), not a normalized enum key -
+// match on substrings rather than exact keys, checking "technical"/"major"
+// before the plain "fall" check since "Technical Fall" also contains "fall".
+const VICTORY_STYLE = {
+  fall: { color: 'blood', icon: Zap },
+  tech_fall: { color: 'gold', icon: Flame },
+  major: { color: 'gold', icon: TrendingUp },
+}
+function normalizeVictoryType(raw) {
+  if (!raw) return null
+  const s = raw.toLowerCase()
+  if (s.includes('technical')) return 'tech_fall'
+  if (s.includes('major')) return 'major'
+  if (s.includes('fall')) return 'fall'
+  return null
+}
+function victoryStyle(victoryType) {
+  return VICTORY_STYLE[normalizeVictoryType(victoryType)] || { color: 'ink', icon: null }
+}
+
+// "1st/3rd/5th/7th Place Match" round labels are the whole reason a bracket
+// exists - they should visually pop out of a scan of the list, not read the
+// same as "Quarterfinals" or "Cons. Round 2".
+function placementInfo(roundLabel) {
+  if (!roundLabel) return null
+  const m = /(\d+)(st|nd|rd|th)\s*Place Match/i.exec(roundLabel)
+  if (!m) return null
+  return { label: `${m[1]}${m[2].toUpperCase()} PLACE`, isChampionship: m[1] === '1' }
+}
+
+const listVariants = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } }
+const itemVariants = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 // Same 74 D1 programs for both crawled seasons - static, so no backend
 // distinct-query is needed just to populate this dropdown.
@@ -38,8 +80,16 @@ function formatDate(occurredAt) {
 }
 
 function MatchRow({ m }) {
+  const { color, icon: Icon } = victoryStyle(m.victory_type)
+  const placement = placementInfo(m.round_label)
+
   return (
-    <tr className="border-b border-mat-700 last:border-0">
+    <tr
+      className={cn(
+        'border-b border-mat-700 last:border-0',
+        placement && (placement.isChampionship ? 'bg-gold-500/[0.06] border-l-2 border-l-gold-500' : 'bg-gold-500/[0.03] border-l-2 border-l-gold-500/40')
+      )}
+    >
       <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-500">{formatDate(m.occurred_at)}</td>
       <td className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">{m.weight_class || '—'}</td>
       <td className="px-4 py-3">
@@ -53,8 +103,17 @@ function MatchRow({ m }) {
         </div>
       </td>
       <td className="px-4 py-3">
-        <Badge color="ink">{m.victory_type || '—'}</Badge>
-        {m.round_label && <div className="mt-1 text-[11px] uppercase tracking-wider text-ink-500">{m.round_label}</div>}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge color={color}>
+            {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+          </Badge>
+          {placement && (
+            <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
+              <Trophy size={11} /> {placement.label}
+            </Badge>
+          )}
+        </div>
+        {m.round_label && !placement && <div className="mt-1 text-[11px] uppercase tracking-wider text-ink-500">{m.round_label}</div>}
       </td>
       <td className="px-4 py-3 text-sm text-ink-400">
         {m.event_name}
@@ -63,6 +122,57 @@ function MatchRow({ m }) {
         )}
       </td>
     </tr>
+  )
+}
+
+function MatchCard({ m }) {
+  const { color, icon: Icon } = victoryStyle(m.victory_type)
+  const placement = placementInfo(m.round_label)
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className={cn(
+        'group relative overflow-hidden rounded-xl border bg-mat-850 p-4 transition-all hover:-translate-y-0.5 hover:shadow-glow',
+        placement ? 'border-gold-500/50 shadow-glow-sm' : 'border-mat-700'
+      )}
+    >
+      {placement && (
+        <div
+          className={cn(
+            'absolute -right-9 top-3.5 flex w-36 -rotate-45 items-center justify-center gap-1 py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-mat-950 shadow-md',
+            placement.isChampionship ? 'bg-gold-400' : 'bg-gold-500/80'
+          )}
+        >
+          <Trophy size={11} /> {placement.label}
+        </div>
+      )}
+      <div className="flex items-center justify-between pr-2">
+        <Badge color="ink">{m.weight_class ? `${m.weight_class} lbs` : '—'}</Badge>
+        <span className="text-[11px] text-ink-500">{formatDate(m.occurred_at)}</span>
+      </div>
+      <div className="mt-3.5">
+        <p className="font-bold leading-snug text-ink-50">{m.winner_name_raw}</p>
+        <p className="text-xs text-ink-500">{m.winner_school_raw}</p>
+      </div>
+      <p className="my-2 text-[10px] font-bold uppercase tracking-wider text-ink-600">def.</p>
+      <div>
+        <p className="text-sm text-ink-300">{m.loser_name_raw || 'opponent'}</p>
+        {m.loser_school_raw && <p className="text-xs text-ink-600">{m.loser_school_raw}</p>}
+      </div>
+      <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-mat-700 pt-3">
+        <Badge color={color}>
+          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+        </Badge>
+        {m.round_label && !placement && (
+          <span className="truncate text-[10px] uppercase tracking-wider text-ink-600">{m.round_label}</span>
+        )}
+      </div>
+      <p className="mt-2 truncate text-[11px] text-ink-600">{m.event_name}</p>
+      {m.extraction_confidence != null && m.extraction_confidence < 1 && (
+        <Badge color="gold" className="mt-2">Unverified</Badge>
+      )}
+    </motion.div>
   )
 }
 
@@ -87,6 +197,23 @@ export default function Results() {
   const [customStart, setCustomStart] = useState(initialStart)
   const [customEnd, setCustomEnd] = useState(initialEnd)
   const [page, setPage] = useState(1)
+
+  // Sticks across visits so a user who prefers the card view doesn't have to
+  // re-toggle it every time they come back.
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem('mat-savvy-results-view') === 'cards' ? 'cards' : 'table'
+    } catch {
+      return 'table'
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('mat-savvy-results-view', viewMode)
+    } catch {
+      // Ignore storage errors
+    }
+  }, [viewMode])
 
   useEffect(() => {
     const t = setTimeout(() => setQd(q.trim()), 300)
@@ -275,27 +402,79 @@ export default function Results() {
         <ErrorState error={error} onRetry={refetch} title="Results failed to load" />
       ) : items.length ? (
         <>
-          <div className="overflow-x-auto rounded-xl border border-mat-700 bg-mat-850">
-            <table className="w-full min-w-[720px] border-collapse">
-              <thead>
-                <tr className="border-b border-mat-700 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Weight</th>
-                  <th className="px-4 py-3">Matchup</th>
-                  <th className="px-4 py-3">Result</th>
-                  <th className="px-4 py-3">Event</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((m) => (
-                  <MatchRow key={m.id ?? m.source_match_id} m={m} />
-                ))}
-              </tbody>
-            </table>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm text-ink-500">{total} match{total === 1 ? '' : 'es'} found</span>
+            <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1" role="tablist" aria-label="Results view">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'table'}
+                onClick={() => setViewMode('table')}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors',
+                  viewMode === 'table' ? 'bg-mat-700 text-gold-400' : 'text-ink-500 hover:text-ink-200'
+                )}
+              >
+                <Rows3 size={13} /> Table
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'cards'}
+                onClick={() => setViewMode('cards')}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors',
+                  viewMode === 'cards' ? 'bg-mat-700 text-gold-400' : 'text-ink-500 hover:text-ink-200'
+                )}
+              >
+                <LayoutGrid size={13} /> Cards
+              </button>
+            </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-sm text-ink-500">
-            <span>{total} match{total === 1 ? '' : 'es'} found</span>
+          <AnimatePresence mode="wait">
+            {viewMode === 'table' ? (
+              <motion.div
+                key="table"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-x-auto rounded-xl border border-mat-700 bg-mat-850"
+              >
+                <table className="w-full min-w-[720px] border-collapse">
+                  <thead>
+                    <tr className="border-b border-mat-700 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500">
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Weight</th>
+                      <th className="px-4 py-3">Matchup</th>
+                      <th className="px-4 py-3">Result</th>
+                      <th className="px-4 py-3">Event</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((m) => (
+                      <MatchRow key={m.id ?? m.source_match_id} m={m} />
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="cards"
+                variants={listVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+              >
+                {items.map((m) => (
+                  <MatchCard key={m.id ?? m.source_match_id} m={m} />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-4 flex items-center justify-end text-sm text-ink-500">
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                 <ChevronLeft size={14} /> Prev
