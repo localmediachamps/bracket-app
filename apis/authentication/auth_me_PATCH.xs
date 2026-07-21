@@ -145,4 +145,5 @@ query "auth/me" verb=PATCH {
   }
 
   response = $user_out
+  guid = "VGZaSeHd4QHdZKxbWFHhVgb9dek"
 }

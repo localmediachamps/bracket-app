@@ -9,6 +9,9 @@ import { Toaster, Skeleton } from './components/ui'
 const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
 const Tournaments = lazy(() => import('./pages/Tournaments'))
 const Results = lazy(() => import('./pages/Results'))
 const TournamentHub = lazy(() => import('./pages/TournamentHub'))
@@ -69,6 +72,9 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/results" element={<Results />} />
             <Route path="/tournaments/:slug" element={<TournamentHub />} />

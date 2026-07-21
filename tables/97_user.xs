@@ -30,6 +30,27 @@ table user {
     enum leaderboard_name_mode?="display_name" {
       values = ["display_name", "username"]
     }
+
+    // Email verification - signup sends a verify link immediately, but
+    // being unverified doesn't block login/play, just gates whatever the
+    // frontend chooses to gate later (e.g. notifications). Token+expiry
+    // are cleared once consumed; never exposed via the API.
+    bool email_verified?=false
+    text? email_verify_token? {
+      visibility = "private"
+    }
+    timestamp? email_verify_expires_at? {
+      visibility = "private"
+    }
+
+    // Password reset - single-use token + expiry, cleared once consumed.
+    // Never exposed via the API.
+    text? password_reset_token? {
+      visibility = "private"
+    }
+    timestamp? password_reset_expires_at? {
+      visibility = "private"
+    }
   }
 
   index = [
@@ -41,4 +62,5 @@ table user {
       field: [{name: "username", op: "asc"}]
     }
   ]
+  guid = "9muXwZ5q7RHlyup9X6JrIFuSlLI"
 }

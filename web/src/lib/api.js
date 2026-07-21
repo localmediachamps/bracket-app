@@ -43,6 +43,9 @@ export const api = {
   login: (email, password) => post(XANO_AUTH, '/auth/login', { email, password }),
   me: () => get(XANO_AUTH, '/auth/me'),
   updateMe: (payload) => patch(XANO_AUTH, '/auth/me', payload),
+  verifyEmail: (token) => post(XANO_AUTH, '/auth/verify-email', { token }),
+  forgotPassword: (email) => post(XANO_AUTH, '/auth/forgot-password', { email }),
+  resetPassword: (token, password) => post(XANO_AUTH, '/auth/reset-password', { token, password }),
 
   /* ── Public tournaments ─────────────────────────────── */
   tournaments: (params = {}) => get(XANO_APP, `/tournaments${qs(params)}`),

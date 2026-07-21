@@ -23,4 +23,5 @@ query "auth/me" verb=GET {
   }
 
   response = $user_out
+  guid = "NFLQVB_iewiRYIEqwH7BtZoCK6o"
 }
