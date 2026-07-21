@@ -271,19 +271,103 @@ function score_entry {
                 var.update $new_outcome {
                   value = "correct"
                 }
-              
-                var.update $new_earned {
-                  value = $points_available
+
+                // flat bonus on top of round points, by victory_type
+                var $victory_bonus {
+                  value = 0
                 }
-              
+
+                conditional {
+                  if ($match.victory_type != null) {
+                    var $victory_bonus_map {
+                      value = $bracket_cfg|get:"victory_bonus_points":{}
+                    }
+
+                    conditional {
+                      if ($victory_bonus_map|has:$match.victory_type) {
+                        var.update $victory_bonus {
+                          value = $victory_bonus_map[$match.victory_type]
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // opponent-quality multiplier on round points only (not the
+                // victory bonus) - a no-op (1x) until wrestler_composite_ranking
+                // has real data for the beaten opponent
+                var $opponent_multiplier {
+                  value = 1
+                }
+
+                conditional {
+                  if ($match.actual_loser_wrestler_id != null) {
+                    db.get wrestler {
+                      field_name = "id"
+                      field_value = $match.actual_loser_wrestler_id
+                    } as $opponent
+
+                    conditional {
+                      if ($opponent != null && $opponent.canonical_wrestler_id != null) {
+                        db.query wrestler_composite_ranking {
+                          where = ($db.wrestler_composite_ranking.canonical_wrestler_id == $opponent.canonical_wrestler_id) && ($db.wrestler_composite_ranking.season_year == $tournament.year)
+                          return = {type: "single"}
+                        } as $opp_ranking
+
+                        conditional {
+                          if ($opp_ranking != null) {
+                            var $mult_tiers {
+                              value = $bracket_cfg|get:"opponent_multipliers":{}
+                            }
+
+                            var $contender {
+                              value = $mult_tiers|get:"contender":null
+                            }
+
+                            var $all_american {
+                              value = $mult_tiers|get:"all_american":null
+                            }
+
+                            var $blood_round {
+                              value = $mult_tiers|get:"blood_round":null
+                            }
+
+                            conditional {
+                              if ($contender != null && $opp_ranking.rank >= $contender.min_rank && $opp_ranking.rank <= $contender.max_rank) {
+                                var.update $opponent_multiplier {
+                                  value = $contender.multiplier
+                                }
+                              }
+                              elseif ($all_american != null && $opp_ranking.rank >= $all_american.min_rank && $opp_ranking.rank <= $all_american.max_rank) {
+                                var.update $opponent_multiplier {
+                                  value = $all_american.multiplier
+                                }
+                              }
+                              elseif ($blood_round != null && $opp_ranking.rank >= $blood_round.min_rank && $opp_ranking.rank <= $blood_round.max_rank) {
+                                var.update $opponent_multiplier {
+                                  value = $blood_round.multiplier
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                var.update $new_earned {
+                  value = ($points_available * $opponent_multiplier) + $victory_bonus
+                }
+
                 var.update $new_is_correct {
                   value = true
                 }
-              
+
                 math.add $total_points {
-                  value = $points_available
+                  value = $new_earned
                 }
-              
+
                 math.add $correct_count {
                   value = 1
                 }
@@ -535,4 +619,5 @@ function score_entry {
     scoring_version   : $scoring_version
     picks_updated     : $picks_updated
   }
+  guid = "3gyzV2Xhnu9AZTR1IXzbF-8o7ec"
 }

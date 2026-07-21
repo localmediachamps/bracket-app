@@ -36,4 +36,5 @@ table pickem_entry {
     {type: "btree", field: [{name: "tournament_id", op: "asc"}]}
     {type: "btree", field: [{name: "total_points", op: "desc"}]}
   ]
+  guid = "tAix7Fjaz2P_t3Pt2HJBsv9_M34"
 }

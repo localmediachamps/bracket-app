@@ -30,7 +30,22 @@ query "entries/{id}/submit" verb=POST {
       error_type = "accessdenied"
       error = "You do not own this entry."
     }
-  
+
+    // Free-tier cap only applies to a genuinely new submission - re-saving
+    // picks on an already-submitted entry doesn't use another slot.
+    conditional {
+      if ($entry.is_submitted != true) {
+        function.run check_submission_cap {
+          input = {user_id: $auth.id}
+        } as $cap
+
+        precondition ($cap.allowed) {
+          error_type = "accessdenied"
+          error = "Free plan is limited to " ~ ($cap.limit|to_text) ~ " submitted entries total. Upgrade to the annual plan for unlimited entries."
+        }
+      }
+    }
+
     db.query bracket_match {
       where = $db.bracket_match.tournament_id == $entry.tournament_id && $db.bracket_match.is_bye == false
       return = {type: "list"}

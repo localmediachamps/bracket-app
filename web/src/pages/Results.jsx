@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, ScrollText, ChevronLeft, ChevronRight, X, Zap, Flame, TrendingUp,
-  Trophy, Rows3, LayoutGrid,
+  Trophy, Rows3, LayoutGrid, SlidersHorizontal,
 } from 'lucide-react'
 import { api } from '../lib/api'
-import { Select, Badge, CardSkeleton, EmptyState, Button } from '../components/ui'
+import { Select, Badge, CardSkeleton, EmptyState, Button, Modal } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
 import { cn, victoryLabel } from '../lib/utils'
 
@@ -71,6 +71,8 @@ const SEASONS = [
   { key: 'all', label: 'All time' },
   { key: '2025-26', label: '2025-26 season', start: '2025-11-01', end: '2026-04-01' },
   { key: '2024-25', label: '2024-25 season', start: '2024-11-01', end: '2025-04-01' },
+  { key: '2023-24', label: '2023-24 season', start: '2023-11-01', end: '2024-04-01' },
+  { key: '2022-23', label: '2022-23 season', start: '2022-11-01', end: '2023-04-01' },
   { key: 'custom', label: 'Custom range' },
 ]
 
@@ -222,12 +224,18 @@ export default function Results() {
   const [customStart, setCustomStart] = useState(initialStart)
   const [customEnd, setCustomEnd] = useState(initialEnd)
   const [page, setPage] = useState(1)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Sticks across visits so a user who prefers the card view doesn't have to
-  // re-toggle it every time they come back.
+  // re-toggle it every time they come back. Table view forces a min-width
+  // (needs the Matchup/Result/Event columns), which is a poor fit for a
+  // phone screen - default to cards on mobile unless the user already
+  // picked something explicitly.
   const [viewMode, setViewMode] = useState(() => {
     try {
-      return localStorage.getItem('mat-savvy-results-view') === 'cards' ? 'cards' : 'table'
+      const stored = localStorage.getItem('mat-savvy-results-view')
+      if (stored === 'cards' || stored === 'table') return stored
+      return typeof window !== 'undefined' && window.innerWidth < 1024 ? 'cards' : 'table'
     } catch {
       return 'table'
     }
@@ -303,6 +311,7 @@ export default function Results() {
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
   const filtersActive = q || school || weightClass || wrestler || eventName || season !== 'all'
+  const activeFilterCount = [school, weightClass, wrestler, eventName, season !== 'all' ? season : ''].filter(Boolean).length
 
   const clearFilters = () => {
     setQ('')
@@ -334,7 +343,21 @@ export default function Results() {
               className="h-11 w-full rounded-xl border border-mat-600 bg-mat-800 pl-10 pr-3.5 text-sm text-ink-100 placeholder:text-ink-600 transition-colors hover:border-mat-500 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
             />
           </div>
-          <div className="w-52 shrink-0">
+
+          {/* Mobile: single button opens the full filter set in a bottom drawer */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <Button variant="secondary" className="flex-1" onClick={() => setFiltersOpen(true)}>
+              <SlidersHorizontal size={15} /> Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </Button>
+            {filtersActive && (
+              <Button variant="ghost" size="md" onClick={clearFilters} aria-label="Clear filters">
+                <X size={16} />
+              </Button>
+            )}
+          </div>
+
+          {/* Desktop: filters stay inline */}
+          <div className="hidden shrink-0 lg:block lg:w-52">
             <Select value={school} onChange={(e) => setSchool(e.target.value)} aria-label="Filter by school">
               <option value="">All schools</option>
               {SCHOOLS.map((s) => (
@@ -342,7 +365,7 @@ export default function Results() {
               ))}
             </Select>
           </div>
-          <div className="w-40 shrink-0">
+          <div className="hidden shrink-0 lg:block lg:w-40">
             <Select value={weightClass} onChange={(e) => setWeightClass(e.target.value)} aria-label="Filter by weight class">
               <option value="">All weights</option>
               {WEIGHTS.map((w) => (
@@ -352,7 +375,7 @@ export default function Results() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center">
           <div className="w-64 shrink-0">
             <Select
               value={wrestler}
@@ -416,6 +439,80 @@ export default function Results() {
           )}
         </div>
       </div>
+
+      {/* Mobile filter drawer - every selector full width, stacked */}
+      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
+        <div className="space-y-4">
+          <Select value={school} onChange={(e) => setSchool(e.target.value)} aria-label="Filter by school">
+            <option value="">All schools</option>
+            {SCHOOLS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </Select>
+          <Select value={weightClass} onChange={(e) => setWeightClass(e.target.value)} aria-label="Filter by weight class">
+            <option value="">All weights</option>
+            {WEIGHTS.map((w) => (
+              <option key={w} value={w}>{w} lbs</option>
+            ))}
+          </Select>
+          <Select
+            value={wrestler}
+            onChange={(e) => setWrestler(e.target.value)}
+            aria-label="Filter by specific wrestler"
+            disabled={!wrestlerOptions.length}
+          >
+            <option value="">{wrestlerOptions.length ? 'Any wrestler' : 'No wrestlers match yet'}</option>
+            {wrestlerOptions.map((w) => (
+              <option key={w} value={w}>{w}</option>
+            ))}
+          </Select>
+          <Select
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            aria-label="Filter by event"
+            disabled={!eventOptions.length}
+          >
+            <option value="">{eventOptions.length ? 'Any event' : 'No events match yet'}</option>
+            {eventOptions.map((e) => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </Select>
+          <Select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Filter by season">
+            {SEASONS.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </Select>
+          {season === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                aria-label="Start date"
+                className="h-11 w-full rounded-xl border border-mat-600 bg-mat-800 px-3 text-sm text-ink-100 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
+              />
+              <span className="shrink-0 text-ink-500">to</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                aria-label="End date"
+                className="h-11 w-full rounded-xl border border-mat-600 bg-mat-800 px-3 text-sm text-ink-100 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3 pt-1">
+            {filtersActive && (
+              <Button variant="ghost" className="flex-1" onClick={clearFilters}>
+                <X size={14} /> Clear filters
+              </Button>
+            )}
+            <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+              Show results
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {isLoading ? (
         <div className="space-y-3">

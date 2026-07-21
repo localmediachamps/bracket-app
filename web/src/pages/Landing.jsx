@@ -36,7 +36,10 @@ function buildBracketPaths() {
   const side = (xStart, dir) => {
     let level = ys
     let x = xStart
-    const step = 150 * dir
+    // 3 halving levels (8→4→2→1); step*2*3 must land short of center (600)
+    // on both sides so the two brackets meet cleanly instead of overshooting
+    // past each other.
+    const step = 80 * dir
     while (level.length > 1) {
       const next = []
       for (let i = 0; i < level.length; i += 2) {
@@ -53,9 +56,11 @@ function buildBracketPaths() {
     }
     return { y: level[0], x }
   }
-  side(20, 1)
-  side(1180, -1)
-  out.push({ d: 'M 280 312 H 920', gold: true })
+  const left = side(20, 1)
+  const right = side(1180, -1)
+  // Bridge the two sides' actual convergence points (finals) instead of a
+  // hardcoded span that no longer matches once the geometry above changes.
+  out.push({ d: `M ${left.x} ${left.y} H ${right.x}`, gold: true })
   return out
 }
 
@@ -121,26 +126,30 @@ function BracketMock() {
 }
 
 function PickemMock() {
+  // Costs match the real seed-cost table (seed 1 = 200 down to a flat 10 for
+  // unseeded) - illustrating why a full lineup of favorites is impossible.
   const rows = [
-    { seed: 1, name: 'Starocci', cost: 130, w: '52%' },
-    { seed: 2, name: 'Brooks', cost: 120, w: '46%' },
-    { seed: 7, name: 'Contrarian pick', cost: 70, w: '30%' },
+    { seed: 1, name: 'Starocci', cost: 200 },
+    { seed: 4, name: 'Hamiti', cost: 120 },
+    { seed: 9, name: 'Contrarian pick', cost: 60 },
+    { seed: 14, name: 'Deep sleeper', cost: 20 },
   ]
+  const spent = rows.reduce((s, r) => s + r.cost, 0)
   return (
     <div aria-hidden="true">
       <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] font-bold">
-        <span className="text-ink-500">BUDGET</span>
-        <span className="text-gold-400">640 / 1000</span>
+        <span className="text-ink-500">BUDGET (4 OF 10 PICKS)</span>
+        <span className="text-gold-400">{spent} / 1000</span>
       </div>
       <div className="mb-3 h-2 overflow-hidden rounded-full bg-mat-700">
-        <div className="h-full rounded-full bg-gold-500" style={{ width: '64%' }} />
+        <div className="h-full rounded-full bg-gold-500" style={{ width: `${Math.min(100, (spent / 1000) * 100)}%` }} />
       </div>
       <div className="space-y-1.5">
         {rows.map((r) => (
           <div key={r.name} className="flex items-center gap-2 rounded-md border border-mat-700 bg-mat-800 px-2 py-1.5">
             <span className="flex h-5 w-5 items-center justify-center rounded bg-mat-700 font-mono text-[9px] font-bold text-gold-400">{r.seed}</span>
             <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-200">{r.name}</span>
-            <span className="font-mono text-[9px] font-bold text-ink-500">{r.cost} pts</span>
+            <span className="font-mono text-[9px] font-bold text-ink-500">{r.cost}</span>
           </div>
         ))}
       </div>
@@ -149,25 +158,46 @@ function PickemMock() {
 }
 
 function FantasyMock() {
+  const you = { name: 'Iron Range WC', score: 34.2 }
+  const opp = { name: 'The Cradle Crew', score: 28.9 }
+  const total = you.score + opp.score
+  const youPct = Math.round((you.score / total) * 100)
   const rows = [
-    { weight: 125, name: 'J. Martinez', pts: 6.4 },
-    { weight: 133, name: 'T. Owens', pts: 9.0 },
-    { weight: 141, name: 'D. Guanajuato', pts: 4.5 },
+    { weight: 125, name: 'J. Martinez', pts: 6.4, side: 'you' },
+    { weight: 133, name: 'T. Owens', pts: 9.0, side: 'you' },
+    { weight: 141, name: 'D. Guanajuato', pts: 4.5, side: 'you' },
+    { weight: 149, name: 'R. Diaz', pts: 7.5, side: 'opp' },
+    { weight: 157, name: 'K. Foster', pts: 5.0, side: 'opp' },
   ]
   return (
     <div aria-hidden="true">
       <div className="mb-3 flex items-center justify-between">
-        <span className="font-display text-xs uppercase tracking-wide text-ink-200">Week 6</span>
-        <span className="rounded-full border border-gold-500/30 bg-gold-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-gold-400">
-          You lead 34.2–28.9
-        </span>
+        <span className="font-display text-xs uppercase tracking-wide text-ink-200">Week 6 · Head-to-head</span>
+        <span className="rounded-full border border-gold-500/30 bg-gold-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-gold-400">Live</span>
       </div>
+
+      <div className="rounded-lg border border-mat-700 bg-mat-800/60 p-3">
+        <div className="flex items-center justify-between text-xs font-bold text-ink-100">
+          <span className="truncate">{you.name}</span>
+          <span className="truncate text-ink-500">{opp.name}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between font-mono text-2xl font-bold">
+          <span className="text-gold-400">{you.score}</span>
+          <span className="text-ink-500">{opp.score}</span>
+        </div>
+        <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-mat-700">
+          <div className="h-full bg-gold-500" style={{ width: `${youPct}%` }} />
+          <div className="h-full bg-mat-500" style={{ width: `${100 - youPct}%` }} />
+        </div>
+      </div>
+
+      <div className="mb-1.5 mt-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-600">This week's top scorers</div>
       <div className="space-y-1.5">
         {rows.map((r) => (
           <div key={r.weight} className="flex items-center gap-2 rounded-md border border-mat-700 bg-mat-800 px-2 py-1.5">
             <span className="flex h-5 w-9 items-center justify-center rounded bg-mat-700 font-mono text-[9px] font-bold text-gold-400">{r.weight}</span>
             <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-200">{r.name}</span>
-            <span className="font-mono text-[9px] font-bold text-pin-400">+{r.pts}</span>
+            <span className={cn('font-mono text-[9px] font-bold', r.side === 'you' ? 'text-pin-400' : 'text-ink-500')}>+{r.pts}</span>
           </div>
         ))}
       </div>
@@ -441,7 +471,8 @@ export default function Landing() {
             title="Bracket Challenge"
             copy="Predict every match of every weight — first round through the finals, plus the consolation gauntlet. Fill it out before the lock, then watch it score live as real results land."
             steps={[
-              'Every correct pick scores — and the deeper the round, the more it\'s worth (1 point in round one, up to 32 for the championship)',
+              'Every correct pick scores by round — 1 point in round one, up to 32 for the championship — so the deeper you predict correctly, the more it\'s worth',
+              'How they win adds points on top, dual-meet style: a decision is 3, major decision 4, tech fall 5, and a fall is 6 — so a pin in the finals is worth far more than a decision in round one',
               'The consolation bracket and placement matches (3rd, 5th, 7th) score too, not just the title side',
             ]}
             stepsLabel="How scoring works"
@@ -452,10 +483,10 @@ export default function Landing() {
             index={1}
             icon={Scale}
             title="Pick'em Showdown"
-            copy="Salary-cap wrestling. Build a stable of ten champions under the budget — spend big on a #1 seed or hunt contrarian value deep in the bracket. Tiebreakers settle the rest."
+            copy="Salary-cap wrestling. Draft one wrestler per weight class, priced by seed — a #1 costs far more than a #7. A lineup of favorites blows the budget by pick three, so winning teams are usually built on mid-pack wrestlers who outperform their seed, not a stable of champions."
             steps={[
-              'Your ten wrestlers score for every win, plus bonus points for a fall, tech fall, or major decision',
-              'Where each one finally places (1st through 8th) adds points on top — a champion is worth far more than an early exit',
+              'Every wrestler scores points for each win, plus a bonus for how they win — a fall, tech fall, or major decision',
+              'Where each one finally places (1st through 8th) adds points on top — a champion is worth the most, but a low seed who makes the podium can outscore a #1 who doesn\'t',
             ]}
             stepsLabel="How scoring works"
             chips={['1,000-point salary cap', 'One pick per weight', 'Tiebreaker drama']}
@@ -468,14 +499,14 @@ export default function Landing() {
             icon={Swords}
             eyebrow="The deep game"
             title="Season-Long Fantasy League"
-            copy="Bracket Challenge and Pick'em Showdown are quick — pick any open tournament and you're already playing. The Fantasy League is bigger: it's both of those ideas, plus a whole season of team-building on top. Draft the entire NCAA D1 field with your league, then manage a real roster all year long."
+            copy="Form a league with your friends — as many as you want, though 6 to 8 is the sweet spot. Hold a snake draft to build your roster from the entire NCAA D1 field, then play out the whole season: weekly head-to-head matchups against another league member, plus a handful of marquee tournaments where the whole league competes on the same event at once."
             steps={[
-              'Draft your 10-man roster with your league, snake-style',
-              'Set your active lineup every week',
-              'Battle head-to-head, work the waiver wire, make trades',
-              'Marquee tournaments and bowl season decide the finish',
+              'Form a league and invite your friends, then snake draft the entire D1 field to build your roster',
+              'Every week, set your active lineup and face another league member head-to-head',
+              'A few marquee tournaments during the season have the whole league playing the same event at once',
+              'Bowl season and the NCAA finals decide the champion',
             ]}
-            chips={['Snake draft', 'Weekly lineups', 'Trades & waivers', 'Bowl season & NCAAs']}
+            chips={['Snake draft', 'Weekly head-to-head', 'Everyone-plays tournaments', 'Bowl season & NCAAs']}
             mock={<FantasyMock />}
             cta="Start a league"
             ctaHref={token ? '/leagues' : '/register'}

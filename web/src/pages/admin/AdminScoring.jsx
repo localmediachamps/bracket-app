@@ -171,10 +171,26 @@ function NumCell({ label, value, onChange }) {
 }
 
 /* ── bracket scoring grid editor ────────────────────── */
+const VICTORY_TYPE_LABELS = {
+  decision: 'Decision', major: 'Major decision', tech_fall: 'Tech fall', fall: 'Fall',
+  medical_forfeit: 'Medical forfeit', injury_default: 'Injury default', forfeit: 'Forfeit', disqualification: 'Disqualification',
+}
+
+const MULTIPLIER_TIER_LABELS = {
+  contender: 'Contender (seed 1-4)', all_american: 'All-American (seed 5-8)', blood_round: 'Blood Round (seed 9-12)',
+}
+
 function BracketScoringEditor({ scoring, setScoring }) {
   const setRound = (section, round, v) => setScoring((s) => ({ ...s, bracket: { ...s.bracket, [section]: { ...s.bracket[section], [round]: v } } }))
   const setPlace = (code, v) => setScoring((s) => ({ ...s, bracket: { ...s.bracket, placement: { ...s.bracket.placement, [code]: v } } }))
   const setB = (patch) => setScoring((s) => ({ ...s, bracket: { ...s.bracket, ...patch } }))
+  const setVictoryPoints = (type, v) =>
+    setScoring((s) => ({ ...s, bracket: { ...s.bracket, victory_bonus_points: { ...s.bracket.victory_bonus_points, [type]: v } } }))
+  const setMultiplier = (tier, v) =>
+    setScoring((s) => ({
+      ...s,
+      bracket: { ...s.bracket, opponent_multipliers: { ...s.bracket.opponent_multipliers, [tier]: { ...s.bracket.opponent_multipliers[tier], multiplier: v } } },
+    }))
 
   const move = (i, dir) =>
     setScoring((s) => {
@@ -213,6 +229,39 @@ function BracketScoringEditor({ scoring, setScoring }) {
           <NumCell label="7th place" value={scoring.bracket.placement.place_7} onChange={(v) => setPlace('place_7', v)} />
           <NumCell label="Pigtail" value={scoring.bracket.pigtail} onChange={(v) => setB({ pigtail: v })} />
           <NumCell label="Champ bonus" value={scoring.bracket.champion_bonus} onChange={(v) => setB({ champion_bonus: v })} />
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="mb-1 font-display text-sm uppercase tracking-wide text-ink-100">Victory-type points</h3>
+        <p className="mb-4 text-xs text-ink-500">Flat points added on top of a correct pick's round points, by how the match was won.</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Object.keys(VICTORY_TYPE_LABELS).map((type) => (
+            <NumCell
+              key={type}
+              label={VICTORY_TYPE_LABELS[type]}
+              value={scoring.bracket.victory_bonus_points[type]}
+              onChange={(v) => setVictoryPoints(type, v)}
+            />
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="mb-1 font-display text-sm uppercase tracking-wide text-ink-100">Opponent-quality multiplier</h3>
+        <p className="mb-4 text-xs text-ink-500">
+          Multiplies a correct pick's round points (not victory-type points or placement bonuses) when the beaten opponent's
+          composite national rank falls in the tier below. No effect until national rankings data exists.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Object.keys(MULTIPLIER_TIER_LABELS).map((tier) => (
+            <NumCell
+              key={tier}
+              label={MULTIPLIER_TIER_LABELS[tier]}
+              value={scoring.bracket.opponent_multipliers[tier].multiplier}
+              onChange={(v) => setMultiplier(tier, v)}
+            />
+          ))}
         </div>
       </Card>
 

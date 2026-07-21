@@ -4,6 +4,193 @@ Running log of the current debugging session(s). Newest entries on top.
 
 ---
 
+## 2026-07-21 — Stripe billing scaffolding: real syntax discoveries
+
+Building `apis/billing/` (checkout/webhook/portal) turned up several things
+not accurately documented in the local XanoScript doc set, confirmed live:
+
+### `util.get_raw_input`, not `util.get_input`
+The local docs' webhook example calls `util.get_input { encoding = "json" }
+as $payload_data` and then reads `$payload_data.body.event_type`. Both parts
+are wrong: the real statement is `util.get_raw_input`, and its output is the
+parsed body **directly**, no `.body` wrapper. Caught immediately by the IDE's
+live diagnostics ("Expecting one of these possible Token sequences... but
+found 'get_input'") - trust that over doc examples when they conflict.
+
+### No documented way to read incoming request headers
+Needed to read the `Stripe-Signature` header for webhook HMAC verification.
+Tried and ruled out empirically: `util.get_vars` (dumps local stack
+variables, not headers), `util.get_all_input` (same as `get_raw_input`, just
+the parsed body again), and a bare `$headers` reference (`Missing var entry:
+headers` at runtime, though it parses fine - XanoScript allows referencing
+any identifier syntactically, only fails at runtime if unbound). Checked
+Xano's own official "Stripe Checkout" marketplace extension (installed this
+session at `api:UQuTJ3vx`) for a working reference - its
+`webhooks_POST.xs` has **no signature verification at all**, confirming this
+is a real gap in what Xano's declarative layer exposes, not something
+missed. **Resolved without header access**: instead of verifying the
+webhook's signature, every branch in `billing_webhook_POST.xs` re-fetches
+the real object (checkout session / subscription / invoice) from Stripe's
+API using our own `stripe_secret_key` before acting on it, and only writes
+data from that authenticated response - never from the untrusted webhook
+body. A forged request naming a real object id can at worst trigger a
+harmless re-sync of that object's already-true state; it can't inject false
+state. Reasonable substitute given the platform constraint.
+
+### `api.request`'s response is nested under `.response.result`
+Confirmed by reading Xano's official extension's `sessions_POST.xs`:
+`$stripe_session.response.result`, not flat on the `as` variable directly.
+My first-draft checkout/portal endpoints read `$stripe_response.url` and
+silently would have gotten `null` back (masked by a precondition that
+happened to still catch it, but for the wrong surface-level reason). Fixed
+both to unwrap `.response.result` first.
+
+### Stripe Price ID vs Product ID
+`stripe_id_annual` was initially set to the **Product** id (`prod_...`), not
+a **Price** id (`price_...`) - Stripe's Checkout `line_items[].price` needs
+the latter specifically. Surfaced as a clear Stripe API error ("No such
+price: 'prod_...'") once the request was actually reaching Stripe correctly,
+which is what made it findable. Fixed once Garrett grabbed the real
+`price_...` value from the product's price row in the Stripe dashboard.
+
+### `line_items` nested array passes through fine as-is
+`params = {}|set:"line_items":$line_items` (an actual array of objects, not
+manually flattened into `line_items[0][price]` bracket-notation strings) -
+confirmed working by mirroring Xano's own extension code, which does the
+same. `api.request`'s form encoder handles the nested-array flattening
+itself; no need for the more error-prone manual-bracket-key approach I'd
+used in an earlier draft.
+
+### Status
+Checkout (`billing/checkout`) and portal (`billing/portal`) endpoints
+verified live end-to-end against real Stripe (checkout returns a genuine
+`checkout.stripe.com` URL; portal correctly reaches Stripe and surfaces a
+real Stripe-side error for a stale test customer id). Webhook
+(`billing/webhook`) handles all 5 required events via the refetch-verify
+pattern above, tested with realistic payload shapes. **Note: the Stripe
+secret key currently in Xano is a live-mode key** (`cs_live_...` session ids
+returned) - full test-mode verification with Stripe's test card numbers
+hasn't happened yet, per Garrett's choice to proceed with live keys directly.
+
+---
+
+## 2026-07-21 — Entry review showed the empty seeded bracket instead of your picks
+
+User report (with screenshot): the entry review page's "Your bracket" section
+showed the real tournament seeding (e.g. "#1 Marcello Milani vs #32 Caleb
+Weiand") with every round marked `TBD`, not the picks the user actually made.
+
+### Root cause: `entry_id` personalization on the public bracket endpoint was
+permanently disabled, and it was fixable, not a platform limit
+[apis/brackets/tournaments_bracket_GET.xs](apis/brackets/tournaments_bracket_GET.xs)
+had a standing `KNOWN ISSUE` comment: every attempt to verify `entry_id`
+ownership (inline `db.get`/`db.query`, or `function.run
+verify_entry_ownership`) threw a masked `ERROR_CODE_ACCESS_DENIED`, so
+`$verified_entry_id` was hardcoded to `null` and the endpoint always rendered
+the bare seeded bracket. That workaround predates today's session.
+
+This is the same stale per-query-object binding bug as the entry above and
+the `tournaments_slugOrId_GET.xs` incident (2026-07-20) — not a genuine
+platform ceiling. The real blocker here, though, is structural: this endpoint
+has no `auth = "user"` (tournament brackets are public/anonymous-viewable),
+so `$auth.id` is never populated on this query at all — there is no way to
+verify "does the requester own this entry" without an auth context, and
+Xano's auth model is all-or-nothing per endpoint (no soft/optional auth), so
+adding `auth = "user"` here would force login for every anonymous bracket
+view.
+
+### Fix
+Added a new, separate, owner-authenticated endpoint,
+[apis/brackets/entries_bracket_GET.xs](apis/brackets/entries_bracket_GET.xs)
+(`GET /entries/{id}/bracket/{weightClassId}`, `auth = "user"`), using the same
+inline `db.get user_bracket` + `precondition ($entry.user_id == $auth.id)`
+pattern already proven working in `entries_review_GET.xs`. It calls the
+existing `get_weight_bracket_view` function directly with a verified
+`entry_id` — that function already correctly merges `user_pick` data into
+each match's `user_pick` field; it just never got a working, secured caller.
+Mirrors the app's established convention (see `tournaments_my_entry_GET.xs`'s
+own header comment) of keeping public/personalized data on separate
+endpoints rather than one soft-gated one.
+[EntryReview.jsx](web/src/pages/EntryReview.jsx) now calls
+`api.entryBracketView(entryId, weightClassId)` instead of the public
+`api.bracketView(tournamentId, weightClassId, entryId)` call, whose `entry_id`
+param was always silently ignored. `Predict.jsx` was left untouched — it
+still calls the public endpoint with `entry_id`, but its "your pick"
+indication comes from client-side state (`usePredictPicks`), not this
+endpoint's (still-disabled, still fine to leave off) personalization, so it
+was never actually affected by this bug.
+
+**Push note:** this new query's dependency chain cascaded further than
+expected — `wrestler` FKs to `canonical_wrestler`, which FKs to
+`canonical_team` — both had to be included in the same push alongside
+`user_bracket`, `weight_class`, `bracket_match`, `user_pick`, and the
+`get_weight_bracket_view` function, or the push reports them as unresolved
+and converts them to placeholders.
+
+### Status
+**Fixed and pushed live** — verified via curl: the entry's real owner now
+gets a full bracket view with an `entry` summary object (`progress`,
+`complete`) attached; a second, different test account correctly gets `403`
+(`"You do not own this entry."`). Also added a clear "Bracket Challenge"
+label to the entry review page header and renamed its per-weight table
+heading to "Bracket picks by weight" (was ambiguous "By weight"), per user
+feedback that bracket vs. pick'em scoring needs to be visually
+unambiguous — this page has no pick'em data on it at all, but the plain
+heading read as if it might.
+
+---
+
+## 2026-07-21 — "Entry not found" / "This entry is private" for the entry's own owner
+
+User report: viewing an already-submitted entry showed "Entry not found" or
+"This entry is private. You can only review your own entries." even when
+logged in as the entry's actual owner.
+
+### Symptom
+`GET /entries/{id}/review` → `403 {"code":"ERROR_CODE_ACCESS_DENIED","message":""}`
+for the entry's real owner. Reproduced directly via curl: created a fresh
+entry with a throwaway test account, immediately called its own review
+endpoint with the same token, got the blank-message 403 above.
+
+### Root cause: same stale per-query-object binding bug as the
+`tournaments_slugOrId_GET.xs` incident (2026-07-20, below), this time on a
+`precondition` expression rather than a `db.query`
+Static review found nothing wrong —
+[entries_review_GET.xs](apis/brackets/entries_review_GET.xs)'s
+`precondition ($entry.user_id == $auth.id) { error_type = "accessdenied" ... }`
+is textually identical to the same check in `entries_submit_POST.xs`, which
+works fine. Bisected with the debug log's established checkpoint technique
+(a `precondition (false) { error = "CHECKPOINT..." }` inserted mid-stack to
+read out intermediate values, since `try_catch` doesn't catch this class of
+failure): confirmed `$entry.user_id` and `$auth.id` were both `5` — genuinely
+equal — yet the real ownership precondition still 403'd with an empty
+message (not the configured `"You do not own this entry."` text), meaning
+Xano's own platform-level access check was firing instead of the custom one.
+
+Unlike the earlier incident (where the broken reference had to be permanently
+deleted and replaced with hardcoded defaults because re-saving identical text
+never rebound it), this time **deleting the specific precondition statement,
+pushing, then re-adding the identical statement and pushing again did fix
+it** — confirms the stale binding is tied to the specific statement/object
+history, not something inherent to `user_id == auth.id` comparisons or to
+`user_bracket` as a table generally (both are used successfully elsewhere in
+this same query and in sibling endpoints).
+
+**Note for future occurrences of this bug class:** a scoped `-i` push of only
+the affected query file (without its referenced tables) will report
+`Unresolved References` warnings and silently convert those `db.*` calls to
+placeholder statements — always include the full dependency chain of
+referenced tables in the same push, even for a throwaway diagnostic edit.
+
+### Status
+**Fixed and pushed live** — verified via curl: the real owner now gets `200`
+with the full review payload; a second, different test account correctly
+gets `403` with the real configured message this time (`"You do not own this
+entry."`, not blank), confirming the ownership check itself is intact and not
+just disabled.
+
+---
+
 ## 2026-07-20 — Picks wouldn't save past round 1 + a pan/zoom crash
 
 ### "Wrestler is not a current participant of this match"

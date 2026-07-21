@@ -1,10 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
-import { Avatar, Button } from '../ui'
+import { Avatar, Button, Modal } from '../ui'
 import { cn } from '../../lib/utils'
 import { ResultsAnalystWidget } from '../ai/ResultsAnalystWidget'
 
@@ -31,6 +31,7 @@ const NAV = [
 export default function AppShell() {
   const { token, user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
   const { data: notifData } = useQuery({
     queryKey: ['notifications', 'peek'],
     queryFn: () => api.notifications({ per: 1 }),
@@ -76,7 +77,8 @@ export default function AppShell() {
               </NavLink>
             )}
           </nav>
-          <div className="flex items-center gap-2">
+          {/* Desktop: unchanged bell/avatar dropdown or sign-in/get-savvy buttons */}
+          <div className="hidden items-center gap-2 md:flex">
             {token ? (
               <>
                 <button
@@ -120,8 +122,123 @@ export default function AppShell() {
               </>
             )}
           </div>
+
+          {/* Mobile: hamburger replaces the bell/avatar or sign-in/get-savvy
+              buttons, which wrapped awkwardly at narrow widths. The bottom
+              tab bar stays as the everyday nav - this menu is the "access to
+              every screen" overflow, not a replacement for it. */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="relative rounded-lg p-2 text-ink-300 hover:bg-mat-850 hover:text-ink-100 md:hidden"
+            aria-label="Open menu"
+          >
+            <Menu size={22} />
+            {token && unread > 0 && (
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blood-500 px-1 text-[9px] font-bold text-white">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
         </div>
       </header>
+
+      <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
+        <div className="space-y-4">
+          {token && (
+            <div className="flex items-center gap-3 border-b border-mat-700 pb-4">
+              <Avatar user={user} size="md" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-ink-100">{user?.display_name || user?.name}</p>
+                <p className="truncate text-xs text-ink-500">@{user?.username || user?.email}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            {NAV.filter((n) => !n.auth || token).map((n) => (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                    isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                  )
+                }
+              >
+                <n.icon size={17} />
+                {n.label}
+              </NavLink>
+            ))}
+            {token && (
+              <NavLink
+                to="/notifications"
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                    isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                  )
+                }
+              >
+                <Bell size={17} />
+                Notifications
+                {unread > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-blood-500 px-1.5 text-[10px] font-bold text-white">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </NavLink>
+            )}
+            {token && (
+              <NavLink
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                    isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                  )
+                }
+              >
+                <UserIcon size={17} />
+                Profile
+              </NavLink>
+            )}
+            {user?.is_admin && (
+              <NavLink
+                to="/admin"
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                    isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                  )
+                }
+              >
+                <Shield size={17} />
+                Admin
+              </NavLink>
+            )}
+          </div>
+
+          {token ? (
+            <Button
+              variant="danger"
+              className="w-full"
+              onClick={() => { setMenuOpen(false); logout(); navigate('/') }}
+            >
+              <LogOut size={15} /> Sign out
+            </Button>
+          ) : (
+            <div className="flex items-center gap-3 border-t border-mat-700 pt-4">
+              <Button variant="secondary" className="flex-1" onClick={() => { setMenuOpen(false); navigate('/login') }}>Sign in</Button>
+              <Button className="flex-1" onClick={() => { setMenuOpen(false); navigate('/register') }}>Get Savvy</Button>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-6 md:pb-12">
         <Outlet />

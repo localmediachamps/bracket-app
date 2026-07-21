@@ -25,7 +25,7 @@ query "entries/{id}/review" verb=GET {
       error_type = "notfound"
       error = "Entry not found."
     }
-  
+
     precondition ($entry.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "You do not own this entry."

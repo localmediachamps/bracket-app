@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Award, BarChart3, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound } from 'lucide-react'
+import { AlertTriangle, Award, BarChart3, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound, Upload } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
 import { Avatar, Badge, Button, Card, EmptyState, Input, Select, Skeleton, Stat, Switch, Tabs, Textarea } from '../components/ui'
@@ -78,6 +78,22 @@ function EditTab() {
     onError: (err) => toast.error('Could not save profile', { body: err.message }),
   })
 
+  const avatarMutation = useMutation({
+    mutationFn: (file) => api.uploadAvatar(file),
+    onSuccess: (updated) => {
+      setUser({ ...me, ...updated })
+      qc.setQueryData(['me'], { ...me, ...updated })
+      setForm((f) => ({ ...f, avatar_url: updated.avatar_url ?? f.avatar_url }))
+      toast.success('Photo updated')
+    },
+    onError: (err) => toast.error('Could not upload photo', { body: err.message }),
+  })
+  const handleAvatarFile = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) avatarMutation.mutate(file)
+  }
+
   if (isLoading || !form) {
     return (
       <div className="mx-auto max-w-2xl space-y-5">
@@ -130,8 +146,14 @@ function EditTab() {
     <motion.form variants={stagger} initial="hidden" animate="show" onSubmit={submit} className="mx-auto max-w-2xl space-y-5">
       <motion.div variants={rise}>
         <Card className="flex items-center gap-4 p-5">
-          <Avatar user={{ ...me, ...form }} size="xl" ring />
-          <div className="min-w-0">
+          <div className="relative shrink-0">
+            <Avatar user={{ ...me, ...form }} size="xl" ring />
+            <label className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-mat-600 bg-mat-800 text-ink-300 shadow-card transition-colors hover:border-gold-500/50 hover:text-gold-400">
+              <Upload size={13} />
+              <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarFile} disabled={avatarMutation.isPending} />
+            </label>
+          </div>
+          <div className="min-w-0 flex-1">
             <div className="truncate text-base font-bold text-ink-100">{form.display_name || 'Your name'}</div>
             <div className="truncate text-sm text-ink-500">@{form.username || 'username'}</div>
             {form.favorite_school && (
@@ -140,6 +162,7 @@ function EditTab() {
               </Badge>
             )}
           </div>
+          {avatarMutation.isPending && <span className="shrink-0 text-xs text-ink-500">Uploading…</span>}
         </Card>
       </motion.div>
 

@@ -119,7 +119,10 @@ def extract_roster_json(html: str) -> Optional[list]:
     # The JSP emits this as a JS string literal (backslash-escaped quotes);
     # unescape before parsing as JSON.
     unescaped = raw.replace('\\"', '"').replace("\\\\", "\\")
-    return json.loads(unescaped)
+    # strict=False: the site emits this as a JS string literal, not properly
+    # escaped JSON - some rows contain literal control characters (e.g. a raw
+    # newline in a bio/notes field) that strict JSON parsing rejects.
+    return json.loads(unescaped, strict=False)
 
 
 def parse_roster(rows: list) -> list[RosterWrestler]:

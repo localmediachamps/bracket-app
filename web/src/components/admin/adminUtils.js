@@ -194,15 +194,34 @@ export const TIEBREAKER_LABELS = {
   earliest_submission: 'Earliest submission',
 }
 
+// Dual-meet-style flat points by victory_type, added on top of round points.
+// Same shape used by every preset below - presets vary round-point
+// escalation, not how a victory_type scores.
+const DEFAULT_VICTORY_BONUS_POINTS = {
+  decision: 3, major: 4, tech_fall: 5, fall: 6, medical_forfeit: 3, injury_default: 3, forfeit: 6, disqualification: 6,
+}
+
+// Opponent-quality multiplier tiers (applied to round points only), keyed by
+// composite national rank of the beaten opponent - a no-op until that
+// ranking data exists. Ranges are fixed by definition; only the multiplier
+// value itself is meant to be admin-edited.
+const DEFAULT_OPPONENT_MULTIPLIERS = {
+  contender: { min_rank: 1, max_rank: 4, multiplier: 1.5 },
+  all_american: { min_rank: 5, max_rank: 8, multiplier: 1.3 },
+  blood_round: { min_rank: 9, max_rank: 12, multiplier: 1.15 },
+}
+
 export function defaultScoringConfig() {
   return {
     version: 1,
     bracket: {
       pigtail: 1,
       championship: { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16, 6: 16 },
-      consolation: { 1: 1, 2: 1, 3: 2, 4: 2, 5: 4, 6: 4, 7: 4, 8: 4 },
+      consolation: { 1: 0.5, 2: 1, 3: 2, 4: 4, 5: 8, 6: 16, 7: 32, 8: 64 },
       placement: { place_3: 4, place_5: 2, place_7: 2 },
       champion_bonus: 0,
+      victory_bonus_points: { ...DEFAULT_VICTORY_BONUS_POINTS },
+      opponent_multipliers: { ...DEFAULT_OPPONENT_MULTIPLIERS },
     },
     tiebreakers: ['total_points', 'champions_correct', 'finalists_correct', 'earliest_submission'],
   }
@@ -222,9 +241,11 @@ export const SCORING_PRESETS = [
     config: {
       pigtail: 1,
       championship: { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16, 6: 32 },
-      consolation: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2 },
+      consolation: { 1: 0.5, 2: 1, 3: 2, 4: 4, 5: 8, 6: 16, 7: 32, 8: 64 },
       placement: { place_3: 2, place_5: 1, place_7: 1 },
       champion_bonus: 0,
+      victory_bonus_points: { ...DEFAULT_VICTORY_BONUS_POINTS },
+      opponent_multipliers: { ...DEFAULT_OPPONENT_MULTIPLIERS },
     },
   },
   {
@@ -237,6 +258,8 @@ export const SCORING_PRESETS = [
       consolation: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1 },
       placement: { place_3: 1, place_5: 1, place_7: 1 },
       champion_bonus: 0,
+      victory_bonus_points: { ...DEFAULT_VICTORY_BONUS_POINTS },
+      opponent_multipliers: { ...DEFAULT_OPPONENT_MULTIPLIERS },
     },
   },
 ]
@@ -272,6 +295,12 @@ export function normalizeScoringConfig(data) {
       consolation: { ...base.bracket.consolation, ...(b.consolation ?? {}) },
       placement: { ...base.bracket.placement, ...(b.placement ?? {}) },
       champion_bonus: b.champion_bonus ?? 0,
+      victory_bonus_points: { ...base.bracket.victory_bonus_points, ...(b.victory_bonus_points ?? {}) },
+      opponent_multipliers: {
+        contender: { ...base.bracket.opponent_multipliers.contender, ...(b.opponent_multipliers?.contender ?? {}) },
+        all_american: { ...base.bracket.opponent_multipliers.all_american, ...(b.opponent_multipliers?.all_american ?? {}) },
+        blood_round: { ...base.bracket.opponent_multipliers.blood_round, ...(b.opponent_multipliers?.blood_round ?? {}) },
+      },
     },
     tiebreakers: Array.isArray(src.tiebreakers) && src.tiebreakers.length ? [...src.tiebreakers] : base.tiebreakers,
   }

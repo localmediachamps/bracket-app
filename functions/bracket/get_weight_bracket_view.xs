@@ -517,4 +517,5 @@ function get_weight_bracket_view {
   }
 
   response = $result
+  guid = "Drq2WCQ69CI3G7R3N4GnAmCGWVY"
 }

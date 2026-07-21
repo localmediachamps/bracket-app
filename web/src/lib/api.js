@@ -44,6 +44,11 @@ export const api = {
   login: (email, password) => post(XANO_AUTH, '/auth/login', { email, password }),
   me: () => get(XANO_AUTH, '/auth/me'),
   updateMe: (payload) => patch(XANO_AUTH, '/auth/me', payload),
+  uploadAvatar: (file) => {
+    const form = new FormData()
+    form.append('avatar_file', file)
+    return apiFetch(XANO_AUTH, '/auth/avatar', { method: 'POST', body: form })
+  },
   verifyEmail: (token) => post(XANO_AUTH, '/auth/verify-email', { token }),
   forgotPassword: (email) => post(XANO_AUTH, '/auth/forgot-password', { email }),
   resetPassword: (token, password) => post(XANO_AUTH, '/auth/reset-password', { token, password }),
@@ -70,6 +75,7 @@ export const api = {
   savePicks: (entryId, picks) => put(XANO_APP, `/entries/${entryId}/picks`, { picks }),
   submitEntry: (entryId) => post(XANO_APP, `/entries/${entryId}/submit`),
   reviewEntry: (entryId) => get(XANO_APP, `/entries/${entryId}/review`),
+  entryBracketView: (entryId, weightClassId) => get(XANO_APP, `/entries/${entryId}/bracket/${weightClassId}`),
   compareEntries: (aId, bId) => get(XANO_APP, `/entries/${aId}/compare/${bId}`),
 
   createPickemEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/pickem`),

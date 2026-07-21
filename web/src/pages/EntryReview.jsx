@@ -69,9 +69,9 @@ export default function EntryReview() {
   }, [weightClasses, activeWeight])
 
   const { data: bracketData, isLoading: bracketLoading, isError: bracketError, error: bracketErr, refetch: refetchBracket } = useQuery({
-    queryKey: ['bracket', tournamentId, activeWeight, id],
-    queryFn: () => api.bracketView(tournamentId, activeWeight, id),
-    enabled: !!tournamentId && !!activeWeight,
+    queryKey: ['entry-bracket', id, activeWeight],
+    queryFn: () => api.entryBracketView(id, activeWeight),
+    enabled: !!id && !!activeWeight,
   })
 
   /* one row per weight class, straight from the review payload */
@@ -129,7 +129,10 @@ export default function EntryReview() {
       {/* ── Header ─────────────────────────────────────── */}
       <motion.header variants={rise} className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-gold-400">
+            <GitBranch size={12} /> Bracket Challenge
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
             <Link
               to={tournamentKey ? `/tournaments/${tournamentKey}` : '/tournaments'}
               className="font-display text-2xl uppercase tracking-tight text-ink-100 hover:text-gold-300 sm:text-3xl"
@@ -195,7 +198,7 @@ export default function EntryReview() {
       {weightRows.length > 0 && (
         <motion.section variants={rise}>
           <h2 className="mb-4 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-100">
-            <ListChecks size={16} className="text-gold-400" /> By weight
+            <ListChecks size={16} className="text-gold-400" /> Bracket picks by weight
           </h2>
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
