@@ -77,20 +77,20 @@ export default function TeamProfile() {
           )}
         </div>
         {rosterForSeason?.wrestlers.length ? (
+          // Already sorted by weight class (ascending) by the backend -
+          // keep that order rather than re-sorting alphabetically here.
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {rosterForSeason.wrestlers
-              .slice()
-              .sort((a, b) => a.display_name.localeCompare(b.display_name))
-              .map((w) => (
-                <Link
-                  key={w.wrestler_id}
-                  to={`/wrestlers/${w.wrestler_id}`}
-                  className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-sm hover:bg-mat-800"
-                >
-                  <span className="font-semibold text-ink-100">{w.display_name}</span>
-                  <span className="text-xs text-ink-500">{w.match_count} matches</span>
-                </Link>
-              ))}
+            {rosterForSeason.wrestlers.map((w) => (
+              <Link
+                key={w.wrestler_id}
+                to={`/wrestlers/${w.wrestler_id}`}
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm hover:bg-mat-800"
+              >
+                <span className="w-9 shrink-0 font-mono text-xs font-bold text-gold-500">{w.weight_class || '—'}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold text-ink-100">{w.display_name}</span>
+                <span className="shrink-0 text-xs text-ink-500">{w.match_count} matches</span>
+              </Link>
+            ))}
           </div>
         ) : (
           <EmptyState icon={<Users size={22} />} title="No roster on record" body="No linked wrestlers for this season yet." />

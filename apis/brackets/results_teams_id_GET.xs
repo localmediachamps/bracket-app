@@ -63,6 +63,18 @@ query "results/teams/{id}" verb=GET {
       value = ["2025-26", "2024-25", "2023-24", "2022-23"]
     }
 
+    // Same academic-year windows as results/wrestlers/{id} - used to find a
+    // representative match (for its weight_class) within this specific
+    // season, since canonical_wrestler_team doesn't store weight itself.
+    var $season_bounds {
+      value = {
+        "2022-23": {start: 1659312000000, end: 1690847999000}
+        "2023-24": {start: 1690848000000, end: 1722470399000}
+        "2024-25": {start: 1722470400000, end: 1754006399000}
+        "2025-26": {start: 1754006400000, end: 1785628799000}
+      }
+    }
+
     var $roster_by_season {
       value = {}
     }
@@ -81,10 +93,36 @@ query "results/teams/{id}" verb=GET {
           }
         }
 
+        var $weight_class {
+          value = null
+        }
+
+        var $bounds {
+          value = $season_bounds[$l.season_label]
+        }
+
+        conditional {
+          if ($bounds != null) {
+            db.query wrestler_match_history {
+              where = (($db.wrestler_match_history.winner_canonical_wrestler_id == $l.canonical_wrestler_id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $l.canonical_wrestler_id)) && ($db.wrestler_match_history.occurred_at >= $bounds.start) && ($db.wrestler_match_history.occurred_at <= $bounds.end)
+              return = {type: "single"}
+            } as $sample_match
+
+            conditional {
+              if ($sample_match != null) {
+                var.update $weight_class {
+                  value = $sample_match.weight_class
+                }
+              }
+            }
+          }
+        }
+
         array.push $season_list {
           value = {
             wrestler_id : $l.canonical_wrestler_id
             display_name: $wrestler_name_map[$l.canonical_wrestler_id]
+            weight_class: $weight_class
             match_count : $l.match_count
           }
         }
@@ -103,10 +141,14 @@ query "results/teams/{id}" verb=GET {
       each as $season {
         conditional {
           if ($roster_by_season|has:$season) {
+            var $sorted {
+              value = $roster_by_season[$season]|sort:"weight_class":"text"
+            }
+
             array.push $roster_out {
               value = {
                 season_label: $season
-                wrestlers   : $roster_by_season[$season]
+                wrestlers   : $sorted
               }
             }
           }
