@@ -57,6 +57,8 @@ export const api = {
   group: (groupId) => get(XANO_APP, `/groups/${groupId}`),
   groupLeaderboard: (groupId, params = {}) => get(XANO_APP, `/groups/${groupId}/leaderboard${qs(params)}`),
   userProfile: (userId) => get(XANO_APP, `/users/${userId}/profile`),
+  searchResults: (params = {}) => get(XANO_APP, `/results/matches${qs(params)}`),
+  resultsFacets: (params = {}) => get(XANO_APP, `/results/facets${qs(params)}`),
 
   /* ── Player ─────────────────────────────────────────── */
   createEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/entries`),
@@ -124,6 +126,9 @@ export const api = {
   adminRejectCandidate: (candidateId, reason) => post(XANO_ADMIN, `/admin/candidates/${candidateId}/reject`, { reason }),
   adminBulkApproveCandidates: (tournamentId, candidateIds) => post(XANO_ADMIN, `/admin/tournaments/${tournamentId}/candidates/bulk-approve`, { candidate_ids: candidateIds }),
   adminConflicts: (tournamentId, params = {}) => get(XANO_ADMIN, `/admin/tournaments/${tournamentId}/conflicts${qs(params)}`),
+
+  /* ── Admin AI (Results Analyst) ─────────────────────── */
+  resultsAnalystAsk: (message) => post(XANO_ADMIN, `/admin/results-analyst`, { message }),
 }
 
 function qs(params) {

@@ -1,11 +1,12 @@
 import React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button } from '../ui'
 import { cn } from '../../lib/utils'
+import { ResultsAnalystWidget } from '../ai/ResultsAnalystWidget'
 
 export function Logo({ className }) {
   return (
@@ -21,6 +22,7 @@ export function Logo({ className }) {
 
 const NAV = [
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { to: '/results', label: 'Results', icon: ScrollText },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
 ]
@@ -113,7 +115,7 @@ export default function AppShell() {
             ) : (
               <>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Sign in</Button>
-                <Button size="sm" onClick={() => navigate('/register')}>Join the mat</Button>
+                <Button size="sm" onClick={() => navigate('/register')}>Get Savvy</Button>
               </>
             )}
           </div>
@@ -153,6 +155,8 @@ export default function AppShell() {
           <span>Built for wrestling fans · {new Date().getFullYear()}</span>
         </div>
       </footer>
+
+      {user?.is_admin && <ResultsAnalystWidget />}
     </div>
   )
 }

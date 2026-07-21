@@ -3,7 +3,7 @@
     "id": 24,
     "type": "api_group",
     "path": "apis/brackets/api_group.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "7a7680d4fd26985ee27c77cb13f3e1529b1a25c3284ba54564365503f9f5d682",
     "original": "YXBpX2dyb3VwIGJyYWNrZXRzIHsKICBjYW5vbmljYWwgPSAiMTdSeXlhNVciCn0="
@@ -12,7 +12,7 @@
     "id": 23,
     "type": "api_group",
     "path": "apis/admin/api_group.xs",
-    "status": "unchanged",
+    "status": "changed",
     "staged": false,
     "sha256": "56414e26c06fb02020be19a03a3c97fefa8f53fe1c687c30e75559cad77138df",
     "original": "YXBpX2dyb3VwIGFkbWluIHsKICBjYW5vbmljYWwgPSAiUEJwYTFUMnkiCn0="
@@ -1107,6 +1107,41 @@
     "path": "tables/wrestler_match_history.xs",
     "status": "new",
     "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/results_matches_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/results_facets_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tools/search_match_results.xs",
+    "status": "new",
+    "type": "tool",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "agents/results_analyst.xs",
+    "status": "new",
+    "type": "agent",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_results_analyst_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
     "staged": false
   }
 ]

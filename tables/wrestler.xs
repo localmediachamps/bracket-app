@@ -23,7 +23,9 @@ table wrestler {
     bool withdrawn?
   
     // future identity layer link
-    int canonical_wrestler_id?
+    int? canonical_wrestler_id? {
+      table = "canonical_wrestler"
+    }
   
     json metadata?
   }
@@ -44,4 +46,5 @@ table wrestler {
       ]
     }
   ]
+  guid = "n_p_D7Cw2p83rYg6mtghO6dFFO8"
 }

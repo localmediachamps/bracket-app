@@ -16,7 +16,7 @@ import { ConfirmModal, ErrorState, PageHeader } from '../../components/admin/Adm
 import { errMsg, timeAgo } from '../../components/admin/adminUtils'
 
 const PER = 25
-const README_URL = 'https://github.com/localmediachamps/bracket-app/blob/HEAD/scripts/trackwrestling/README.md'
+const README_URL = 'https://github.com/localmediachamps/bracket-app/blob/HEAD/scripts/results_scraper/README.md'
 
 const STATUS_FILTERS = [
   { key: 'needs_review', label: 'Needs review' },
@@ -149,7 +149,7 @@ function SourcesTab({ tournamentId, q }) {
         <EmptyState
           icon={<Satellite size={24} />}
           title="No sources configured"
-          body="Point a source (TrackWrestling event, manual upload, …) at this tournament and results start flowing into the review queue."
+          body="Point a source (external feed, manual upload, …) at this tournament and results start flowing into the review queue."
           action={
             <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
               <Plus size={14} /> Add your first source
@@ -199,7 +199,7 @@ function SourceCard({ source: s, onEdit, onDelete }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             <h3 className="text-sm font-bold text-ink-100">{s.name}</h3>
-            <Badge color="ink">{s.source_type ?? 'trackwrestling'}</Badge>
+            <Badge color="ink">{s.source_type ?? 'external_scrape'}</Badge>
             <PolicyPill policy={s.approval_policy} threshold={s.auto_approve_threshold} />
             <HealthPill status={s.health_status} enabled={s.enabled} />
           </div>
@@ -281,7 +281,7 @@ function IconBtn({ label, onClick, danger, active, children }) {
 function ScraperCheatsheet({ source }) {
   const cfg = source.configuration ?? {}
   const cmd = [
-    'python scripts/trackwrestling/tw.py run',
+    'python scripts/results_scraper/event_scraper.py run',
     `--season ${cfg.season_id ?? '<season_id>'}`,
     `--event ${cfg.event_id ?? '<event_id>'}`,
     `--source-config ${source.id}`,
@@ -315,7 +315,7 @@ function ScraperCheatsheet({ source }) {
             rel="noreferrer"
             className="font-semibold text-gold-400 underline decoration-gold-500/40 underline-offset-2 hover:text-gold-300"
           >
-            scripts/trackwrestling/README.md
+            scripts/results_scraper/README.md
           </a>
           .
         </p>
@@ -383,7 +383,7 @@ function SourceFormModal({ tournamentId, source, open, onClose }) {
     if (seasonId.trim()) configuration.season_id = seasonId.trim()
     if (eventId.trim()) configuration.event_id = eventId.trim()
     if (externalId.trim()) configuration.tournament_id_external = externalId.trim()
-    const payload = { name: name.trim(), source_type: 'trackwrestling', approval_policy: policy, configuration }
+    const payload = { name: name.trim(), source_type: 'external_scrape', approval_policy: policy, configuration }
     if (policy === 'auto_high_confidence') {
       const t = parseFloat(threshold)
       if (isNaN(t) || t < 0 || t > 1) {
@@ -399,12 +399,12 @@ function SourceFormModal({ tournamentId, source, open, onClose }) {
   return (
     <Modal open={open} onClose={mut.isPending ? undefined : onClose} title={editing ? 'Edit source' : 'Add source'}>
       <form onSubmit={submit} className="space-y-4">
-        <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="TrackWrestling — 2026 NCAA DI" required autoFocus />
+        <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="External Feed — 2026 NCAA DI" required autoFocus />
         <div>
-          <Select label="Source adapter" value="trackwrestling" onChange={() => {}} disabled className="opacity-70">
-            <option value="trackwrestling">TrackWrestling</option>
+          <Select label="Source adapter" value="external_scrape" onChange={() => {}} disabled className="opacity-70">
+            <option value="external_scrape">External feed</option>
           </Select>
-          <p className="mt-1 text-[11px] text-ink-600">TrackWrestling is the only wired adapter right now.</p>
+          <p className="mt-1 text-[11px] text-ink-600">External feed is the only wired adapter right now.</p>
         </div>
         <Select label="Approval policy" value={policy} onChange={(e) => setPolicy(e.target.value)}>
           <option value="review">Review — every candidate hits the queue</option>

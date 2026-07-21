@@ -10,15 +10,18 @@ web/dist/
 web/dist-check-*/
 
 # Scraper cache + python
-.twcache/
+.scrape_cache*/
 __pycache__/
 *.pyc
 
 # Saved browser captures for reverse-engineering scraper endpoints - these
-# embed live twSessionId/USER_SESSIONID values, never commit (see
-# scripts/trackwrestling/README.md's "Legal & politeness" section)
-trackwrestling_scraping_bundle/*.html
-trackwrestling_scraping_bundle/*.har
+# embed live session tokens, never commit (see
+# scripts/results_scraper/README.md's "Legal & politeness" section)
+results_scraper_bundle/*.html
+results_scraper_bundle/*.har
 
 # Vercel local
 .vercel/
+
+# Playwright MCP debug artifacts (page snapshots/console logs)
+.playwright-mcp/

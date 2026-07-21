@@ -59,4 +59,5 @@ table tournament {
     {type: "btree", field: [{name: "status", op: "asc"}]}
     {type: "btree", field: [{name: "year", op: "desc"}]}
   ]
+  guid = "xl0ssvJgtAynMwVSVLJYq4sggZE"
 }

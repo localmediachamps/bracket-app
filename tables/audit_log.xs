@@ -32,4 +32,5 @@ table audit_log {
     }
     {type: "btree", field: [{name: "created_at", op: "desc"}]}
   ]
+  guid = "96DoyZpkFdDQFz2stMd9dTiMnEI"
 }

@@ -12,7 +12,7 @@ query "admin/sources/{id}" verb=PUT {
   
     text? name? filters=trim|min:1
   
-    // trackwrestling | manual_upload | generic_html
+    // external_scrape | manual_upload | generic_html
     text? source_type? filters=trim|lower
   
     // Adapter implementation key
@@ -121,4 +121,5 @@ query "admin/sources/{id}" verb=PUT {
   }
 
   response = $updated_config
+  guid = "UdOhKLB8T950vJ0e2hWiqjfPQ2U"
 }

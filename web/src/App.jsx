@@ -10,6 +10,7 @@ const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const Tournaments = lazy(() => import('./pages/Tournaments'))
+const Results = lazy(() => import('./pages/Results'))
 const TournamentHub = lazy(() => import('./pages/TournamentHub'))
 const Predict = lazy(() => import('./pages/Predict'))
 const Pickem = lazy(() => import('./pages/Pickem'))
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/results" element={<Results />} />
             <Route path="/tournaments/:slug" element={<TournamentHub />} />
             <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />
             <Route path="/tournaments/:slug/pickem" element={<RequireAuth><Pickem /></RequireAuth>} />

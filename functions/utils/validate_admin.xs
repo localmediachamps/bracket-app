@@ -21,4 +21,5 @@ function validate_admin {
   }
 
   response = $user
+  guid = "HCqjZg1MzzZ7rUsf9PWExfsy3gE"
 }

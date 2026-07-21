@@ -6,14 +6,14 @@ table results_source_config {
     timestamp created_at?=now
     int tournament_id
   
-    // human-readable label, e.g. "TrackWrestling — 2026 NCAA DI"
+    // human-readable label, e.g. "External Feed — 2026 NCAA DI"
     text name
-  
-    // trackwrestling | manual_upload | generic_html
-    text source_type?=trackwrestling
-  
-    // adapter implementation key, e.g. trackwrestling_event_matches
-    text adapter_name?="trackwrestling_event_matches"
+
+    // external_scrape | manual_upload | generic_html
+    text source_type?=external_scrape
+
+    // adapter implementation key, e.g. external_event_matches
+    text adapter_name?="external_event_matches"
   
     text adapter_version?
     int update_interval_minutes?=15
@@ -47,4 +47,5 @@ table results_source_config {
     {type: "btree", field: [{name: "tournament_id", op: "asc"}]}
     {type: "btree", field: [{name: "enabled", op: "asc"}]}
   ]
+  guid = "CrfqeHGUjLirHs9gVIv4NoksC1c"
 }

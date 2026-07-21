@@ -1,6 +1,6 @@
 // Creates a results_source_config for a tournament
 // (POST /admin/tournaments/{id}/sources). Unprovided fields fall back to the
-// schema defaults (source_type=trackwrestling, approval_policy=review,
+// schema defaults (source_type=external_scrape, approval_policy=review,
 // auto_approve_threshold=0.9, update_interval_minutes=15, enabled=true).
 // configuration carries adapter params {season_id, event_id,
 // tournament_id_external, base_url}. Audited (source_created).
@@ -12,14 +12,14 @@ query "admin/tournaments/{tournament_id}/sources" verb=POST {
   input {
     // Tournament ID
     int tournament_id
-  
-    // Human-readable label, e.g. "TrackWrestling — 2026 NCAA DI"
+
+    // Human-readable label, e.g. "External Feed — 2026 NCAA DI"
     text name filters=trim|min:1
-  
-    // trackwrestling | manual_upload | generic_html
+
+    // external_scrape | manual_upload | generic_html
     text? source_type? filters=trim|lower
-  
-    // Adapter implementation key, e.g. trackwrestling_event_matches
+
+    // Adapter implementation key, e.g. external_event_matches
     text? adapter_name? filters=trim
   
     // review | auto_high_confidence | auto_all
@@ -74,8 +74,8 @@ query "admin/tournaments/{tournament_id}/sources" verb=POST {
         tournament_id          : $input.tournament_id
         name                   : $input.name
         created_by             : $auth.id
-        source_type            : $input.source_type|first_notnull:"trackwrestling"
-        adapter_name           : $input.adapter_name|first_notnull:"trackwrestling_event_matches"
+        source_type            : $input.source_type|first_notnull:"external_scrape"
+        adapter_name           : $input.adapter_name|first_notnull:"external_event_matches"
         approval_policy        : $input.approval_policy|first_notnull:"review"
         auto_approve_threshold : $input.auto_approve_threshold|first_notnull:0.9
         configuration          : $input.configuration
@@ -102,4 +102,5 @@ query "admin/tournaments/{tournament_id}/sources" verb=POST {
   }
 
   response = $new_config
+  guid = "ihpHRjzJNqDgB7OC7tqA2Uh57SA"
 }

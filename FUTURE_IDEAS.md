@@ -12,11 +12,11 @@ After a user fully predicts the championship bracket, auto-generate a suggested 
 - **UI:** "Recommended" chips next to wrestlers in the pick'em builder; a "Generate Best Scenario" button pre-fills the roster (still fully editable).
 - **Known gap:** predicted points can only include placement + win points, not bonus points (fall/tech-fall/major), since victory type isn't part of a plain "who wins" bracket pick. Closing that gap needs historical per-wrestler bonus-point rates — see #2.
 
-## 2. TrackWrestling historical data integration (IN PROGRESS as of 2026-07-20)
+## 2. External historical match-results integration (2025-26 + 2024-25 D1 imported as of 2026-07-20)
 
-Status: actively being built, not just planned. The original `tw.py`/`twclient.py` tooling (per-event/per-team HTML scraping) turned out to be built against an outdated site structure. A better data source was found: a team's "Results per Wrestler" page returns a wrestler's entire season (every dual + tournament) in one JSON call, and the same page embeds the full team roster (every wrestler id) inline — so the whole crawl only needs one page load per team plus one call per wrestler, no manual id lookup.
+Status: full D1 crawls for both the 2025-26 and 2024-25 seasons are done and imported into `wrestler_match_history` (real match results — this data is public factual information, not copyrighted; only the specific provider name is intentionally kept out of any stored field or UI text). A basic `/results` search page is live. Scraper tooling lives in `scripts/results_scraper/`.
 
-Built so far: `scripts/trackwrestling/twwrestlermatches.py` and `twroster.py` (parsers, validated against real captured data), plus new Xano tables `canonical_wrestler`, `canonical_team`, `wrestler_match_history`. Still needed: the actual fetcher (session/cookie handling — automatic bootstrap currently 406s, so a session token has to be grabbed manually from a browser for now) and the crawl orchestration tying it together. Full details in memory (`trackwrestling-historical-data-roadmap`) and in the docstrings at the top of the two parser modules.
+Still needed: wrestler identity resolution (see prerequisite below) and the crawl orchestration for additional seasons. Full details in memory (`trackwrestling-historical-data-roadmap`, `trackwrestling-session-bootstrap-solved` — memory file names are internal-only) and in the docstrings at the top of the parser modules.
 
 Once fully wired up, it unlocks:
 - Per-wrestler analytics (pin rate, tech-fall rate, etc.) — feeds #1's bonus-point estimate.
