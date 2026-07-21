@@ -10,6 +10,9 @@ import {
   Sparkles,
   Scale,
   Crown,
+  ScrollText,
+  Swords,
+  Search,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuthStore } from '../lib/store'
@@ -147,6 +150,60 @@ function PickemMock() {
   )
 }
 
+function FantasyMock() {
+  const rows = [
+    { weight: 125, name: 'J. Martinez', pts: 6.4 },
+    { weight: 133, name: 'T. Owens', pts: 9.0 },
+    { weight: 141, name: 'D. Guanajuato', pts: 4.5 },
+  ]
+  return (
+    <div aria-hidden="true">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="font-display text-xs uppercase tracking-wide text-ink-200">Week 6</span>
+        <span className="rounded-full border border-gold-500/30 bg-gold-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-gold-400">
+          You lead 34.2–28.9
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {rows.map((r) => (
+          <div key={r.weight} className="flex items-center gap-2 rounded-md border border-mat-700 bg-mat-800 px-2 py-1.5">
+            <span className="flex h-5 w-9 items-center justify-center rounded bg-mat-700 font-mono text-[9px] font-bold text-gold-400">{r.weight}</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-200">{r.name}</span>
+            <span className="font-mono text-[9px] font-bold text-pin-400">+{r.pts}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ResultsMock() {
+  const rows = [
+    { w: 149, a: 'Vito Arujau', b: 'Real Woods', type: 'DEC' },
+    { w: 174, a: 'Carter Starocci', b: 'Aaron Brooks', type: 'DEC' },
+    { w: 285, a: 'Mason Parris', b: 'Y. Slavikouski', type: 'FALL' },
+  ]
+  return (
+    <div aria-hidden="true">
+      <div className="mb-3 flex items-center gap-2 rounded-lg border border-mat-700 bg-mat-800 px-3 py-2">
+        <Search size={13} className="text-ink-500" />
+        <span className="text-[11px] text-ink-500">Search wrestler, school, event…</span>
+      </div>
+      <div className="space-y-1.5">
+        {rows.map((r) => (
+          <div key={r.w} className="flex items-center gap-2 rounded-md border border-mat-700 bg-mat-800 px-2 py-1.5">
+            <span className="flex h-5 w-9 items-center justify-center rounded bg-mat-700 font-mono text-[9px] font-bold text-gold-400">{r.w}</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-200">{r.a}</span>
+            <span className="shrink-0 font-mono text-[9px] text-ink-600">def.</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-ink-400">{r.b}</span>
+            <span className="shrink-0 font-mono text-[9px] font-bold text-blood-400">{r.type}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function PlayCard({ icon: Icon, title, copy, chips, mock, index }) {
   return (
     <motion.div
@@ -211,6 +268,14 @@ export default function Landing() {
   })
   const teaserRows = normalizeList(lbQ.data).items.slice(0, 5)
 
+  const resultsCountQ = useQuery({
+    queryKey: ['results', 'landing-count'],
+    queryFn: () => api.searchResults({ per: 1 }),
+    staleTime: 300000,
+    retry: 1,
+  })
+  const resultsCount = resultsCountQ.data?.total ?? null
+
   const totals = {
     events: open.total + live.total,
     players: cards.reduce((a, t) => a + (t.entry_count ?? 0), 0),
@@ -252,8 +317,8 @@ export default function Landing() {
             transition={{ duration: 0.55, delay: 0.25 }}
             className="mt-6 max-w-xl text-base text-ink-400 sm:text-lg"
           >
-            Wrestling fantasy perfected. Predict every match or build a pick-em team, and prove you
-            know the mat better than anyone.
+            Wrestling fantasy perfected. Predict a bracket, build a pick'em team, or draft a
+            season-long league — and prove you know the mat better than anyone.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -353,6 +418,43 @@ export default function Landing() {
             chips={['1,000-point salary cap', 'One pick per weight', 'Tiebreaker drama']}
             mock={<PickemMock />}
           />
+        </div>
+      </section>
+
+      {/* ── Go further: season-long league + results library ── */}
+      <section className="py-16">
+        <SectionHeading sub="One tournament not enough? Draft the whole season, or dig into the archive.">
+          Take it further
+        </SectionHeading>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <PlayCard
+            index={0}
+            icon={Swords}
+            title="Season-Long Fantasy League"
+            copy="Draft the entire NCAA D1 field with your league, snake-style. Set your lineup every week, work the waiver wire, make trades, and battle head-to-head all season — right through bowl season and NCAAs."
+            chips={['Snake draft', 'Weekly lineups', 'Trades & waivers']}
+            mock={<FantasyMock />}
+          />
+          <PlayCard
+            index={1}
+            icon={ScrollText}
+            title="Results Library"
+            copy={`Search ${resultsCount ? resultsCount.toLocaleString() + '+' : 'tens of thousands of'} real NCAA results by wrestler, school, weight class, or event — final score, how it ended, all in one place.`}
+            chips={['Full match history', 'Score & time on every bout', 'Filter by weight or school']}
+            mock={<ResultsMock />}
+          />
+        </div>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link to={token ? '/leagues' : '/register'}>
+            <Button variant="secondary">
+              Start a league <ArrowRight size={15} />
+            </Button>
+          </Link>
+          <Link to="/results">
+            <Button variant="secondary">
+              Explore results <ArrowRight size={15} />
+            </Button>
+          </Link>
         </div>
       </section>
 
