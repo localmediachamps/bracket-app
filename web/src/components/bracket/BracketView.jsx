@@ -511,7 +511,7 @@ function ListView({ matches, mode, resolution, picks, onPick, data }) {
                 match={m}
                 mode={mode}
                 resolved={resolution?.resolved.get(m.id)}
-                pickedId={mode === 'predict' ? picks?.get(m.id) : undefined}
+                pickedId={mode === 'predict' ? picks?.get(m.id) : m.user_pick?.wrestler_id}
                 onPick={onPick}
                 fluid
               />
