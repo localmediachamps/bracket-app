@@ -15,6 +15,8 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
 const Tournaments = lazy(() => import('./pages/Tournaments'))
 const Results = lazy(() => import('./pages/Results'))
 const WrestlerProfile = lazy(() => import('./pages/WrestlerProfile'))
+const Teams = lazy(() => import('./pages/Teams'))
+const TeamProfile = lazy(() => import('./pages/TeamProfile'))
 const Pricing = lazy(() => import('./pages/Pricing'))
 const TournamentHub = lazy(() => import('./pages/TournamentHub'))
 const Predict = lazy(() => import('./pages/Predict'))
@@ -87,6 +89,8 @@ export default function App() {
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/results" element={<Results />} />
             <Route path="/wrestlers/:id" element={<WrestlerProfile />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:id" element={<TeamProfile />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/tournaments/:slug" element={<TournamentHub />} />
             <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />

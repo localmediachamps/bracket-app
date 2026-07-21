@@ -70,6 +70,8 @@ export const api = {
   searchResults: (params = {}) => get(XANO_APP, `/results/matches${qs(params)}`),
   resultsFacets: (params = {}) => get(XANO_APP, `/results/facets${qs(params)}`),
   wrestlerProfile: (id) => get(XANO_APP, `/results/wrestlers/${id}`),
+  teams: () => get(XANO_APP, `/results/teams`),
+  teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 
   /* ── Player ─────────────────────────────────────────── */
   createEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/entries`),

@@ -93,11 +93,11 @@ function formatMatchTime(seconds) {
 // Score/time detail line shown under the victory-type badge - "16-7" for a
 // decision, "16-7 @ 3:23" for a tech fall, "@ 1:52" for a fall (pins have no
 // numeric score, by design). Renders nothing if neither is present.
-function MatchDetail({ m }) {
+function MatchDetail({ m, className, fallback }) {
   const time = formatMatchTime(m.time_seconds)
-  if (!m.score && !time) return null
+  if (!m.score && !time) return fallback ? <span className={cn('font-mono text-ink-500', className)}>{fallback}</span> : null
   return (
-    <span className="font-mono text-[11px] text-ink-500">
+    <span className={cn('font-mono text-[11px] text-ink-500', className)}>
       {m.score}
       {m.score && time && ' '}
       {time && `@ ${time}`}
@@ -129,7 +129,7 @@ function MatchRow({ m }) {
         placement && (placement.isChampionship ? 'bg-gold-500/[0.06] border-l-2 border-l-gold-500' : 'bg-gold-500/[0.03] border-l-2 border-l-gold-500/40')
       )}
     >
-      <td className="px-4 py-3">
+      <td className="px-3 py-3">
         <div className="text-sm text-ink-100">
           <WrestlerName name={m.winner_name_raw} canonicalId={m.winner_canonical_wrestler_id} className="font-bold text-pin-400" />
           <span className="text-ink-500"> ({m.winner_school_raw})</span>
@@ -139,28 +139,31 @@ function MatchRow({ m }) {
           {m.loser_school_raw && <span className="text-ink-500"> ({m.loser_school_raw})</span>}
         </div>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge color={color}>
-            {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
-          </Badge>
-          <MatchDetail m={m} />
-          {placement && (
-            <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
-              <Trophy size={11} /> {placement.label}
-            </Badge>
-          )}
-        </div>
-        {m.round_label && !placement && <div className="mt-1 text-[11px] uppercase tracking-wider text-ink-500">{m.round_label}</div>}
+      <td className="px-3 py-3">
+        <Badge color={color}>
+          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+        </Badge>
       </td>
-      <td className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">{m.weight_class || '—'}</td>
-      <td className="px-4 py-3 text-sm text-ink-400">
+      <td className="px-3 py-3">
+        <MatchDetail m={m} className="text-sm font-bold text-ink-100" fallback="—" />
+      </td>
+      <td className="px-3 py-3">
+        {placement ? (
+          <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
+            <Trophy size={11} /> {placement.label}
+          </Badge>
+        ) : (
+          <span className="text-[11px] uppercase tracking-wider text-ink-500">{m.round_label || '—'}</span>
+        )}
+      </td>
+      <td className="px-3 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">{m.weight_class || '—'}</td>
+      <td className="px-3 py-3 text-sm text-ink-400">
         {m.event_name}
         {m.extraction_confidence != null && m.extraction_confidence < 1 && (
           <Badge color="gold" className="ml-2">Unverified</Badge>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-500">{formatDate(m.occurred_at)}</td>
+      <td className="whitespace-nowrap px-3 py-3 text-xs text-ink-500">{formatDate(m.occurred_at)}</td>
     </tr>
   )
 }
@@ -178,14 +181,7 @@ function MatchCard({ m }) {
       )}
     >
       <div className="flex items-center justify-between gap-2 pr-2">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <Badge color="ink">{m.weight_class ? `${m.weight_class} lbs` : '—'}</Badge>
-          {placement && (
-            <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
-              <Trophy size={11} /> {placement.label}
-            </Badge>
-          )}
-        </span>
+        <Badge color="ink">{m.weight_class ? `${m.weight_class} lbs` : '—'}</Badge>
         <span className="shrink-0 text-[11px] text-ink-500">{formatDate(m.occurred_at)}</span>
       </div>
       <div className="mt-3.5">
@@ -201,21 +197,30 @@ function MatchCard({ m }) {
         </p>
         {m.loser_school_raw && <p className="text-xs text-ink-600">{m.loser_school_raw}</p>}
       </div>
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-mat-700 pt-3">
-        <span className="flex flex-wrap items-center gap-1.5">
-          <Badge color={color}>
-            {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+
+      {/* Result - the headline info this whole card exists to show, so it
+          gets the biggest, boldest treatment on the card rather than being
+          just another small badge in a row. */}
+      <div className="mt-3.5 flex items-center justify-between gap-2 rounded-lg border border-mat-700 bg-mat-900/60 px-3 py-2.5">
+        <Badge color={color}>
+          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+        </Badge>
+        <MatchDetail m={m} className="text-base font-bold text-ink-100" fallback="—" />
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        {placement ? (
+          <Badge color="gold" className={placement.isChampionship ? 'shadow-glow-sm' : ''}>
+            <Trophy size={11} /> {placement.label}
           </Badge>
-          <MatchDetail m={m} />
-        </span>
-        {m.round_label && !placement && (
-          <span className="truncate text-[10px] uppercase tracking-wider text-ink-600">{m.round_label}</span>
+        ) : (
+          <span className="truncate text-[10px] uppercase tracking-wider text-ink-600">{m.round_label || ''}</span>
+        )}
+        {m.extraction_confidence != null && m.extraction_confidence < 1 && (
+          <Badge color="gold">Unverified</Badge>
         )}
       </div>
       <p className="mt-2 truncate text-[11px] text-ink-600">{m.event_name}</p>
-      {m.extraction_confidence != null && m.extraction_confidence < 1 && (
-        <Badge color="gold" className="mt-2">Unverified</Badge>
-      )}
     </motion.div>
   )
 }
@@ -625,14 +630,16 @@ export default function Results() {
                 transition={{ duration: 0.15 }}
                 className="overflow-x-auto rounded-xl border border-mat-700 bg-mat-850"
               >
-                <table className="w-full min-w-[720px] border-collapse" style={{ tableLayout: 'fixed' }}>
+                <table className="w-full min-w-[860px] border-collapse" style={{ tableLayout: 'fixed' }}>
                   <thead>
                     <tr className="border-b border-mat-700 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500">
-                      <th className="w-[30%] px-4 py-3">Matchup</th>
-                      <th className="w-[22%] px-4 py-3">Result</th>
-                      <th className="w-16 px-4 py-3">Weight</th>
-                      <th className="w-[28%] px-4 py-3">Event</th>
-                      <th className="w-24 whitespace-nowrap px-4 py-3">Date</th>
+                      <th className="w-[24%] px-3 py-3">Matchup</th>
+                      <th className="w-[12%] px-3 py-3">Victory</th>
+                      <th className="w-[11%] px-3 py-3">Score</th>
+                      <th className="w-[15%] px-3 py-3">Round</th>
+                      <th className="w-14 px-3 py-3">Wt.</th>
+                      <th className="w-[19%] px-3 py-3">Event</th>
+                      <th className="w-24 whitespace-nowrap px-3 py-3">Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -648,7 +655,7 @@ export default function Results() {
                 variants={listVariants}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3"
               >
                 {items.map((m) => (
                   <MatchCard key={m.id ?? m.source_match_id} m={m} />

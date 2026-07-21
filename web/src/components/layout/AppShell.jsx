@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu, Crown } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu, Crown, Building2 } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button, Modal } from '../ui'
@@ -23,6 +23,7 @@ export function Logo({ className }) {
 const NAV = [
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/results', label: 'Results', icon: ScrollText },
+  { to: '/teams', label: 'Teams', icon: Building2 },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
   { to: '/leagues', label: 'Leagues', icon: Swords, auth: true },
