@@ -499,7 +499,7 @@ export default function Landing() {
             icon={Swords}
             eyebrow="The deep game"
             title="Season-Long Fantasy League"
-            copy="Form a league with your friends — as many as you want, though 6 to 8 is the sweet spot. Hold a snake draft to build your roster from the entire NCAA D1 field, then play out the whole season: weekly head-to-head matchups against another league member, plus a handful of marquee tournaments where the whole league competes on the same event at once."
+            copy="Form a league with your friends, draft your starting rosters, and compete in a season-long fantasy experience featuring weekly head-to-head matchups, marquee tournaments, and postseason championship play. Make trades, work the waiver wire, and manage your league with full commissioner controls."
             steps={[
               'Form a league and invite your friends, then snake draft the entire D1 field to build your roster',
               'Every week, set your active lineup and face another league member head-to-head',
