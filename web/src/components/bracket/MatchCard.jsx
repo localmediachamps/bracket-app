@@ -16,8 +16,12 @@ import { METRICS } from './bracketMath'
  *  comparePick  — { aId, bId, aPick, bPick } for compare mode
  */
 export default function MatchCard({ match, mode = 'readonly', resolved, pickedId, onPick, comparePick, fluid }) {
-  const top = mode === 'predict' ? resolved?.top : match.top?.competitor
-  const bottom = mode === 'predict' ? resolved?.bottom : match.bottom?.competitor
+  // Real, reported competitors win once they exist; until then, fall back to
+  // the pick-resolution engine's predicted participant (from the entry's own
+  // saved picks) so a submitted bracket shows the user's full predicted run,
+  // not just whichever early rounds already have a real result.
+  const top = mode === 'predict' ? resolved?.top : (match.top?.competitor ?? resolved?.top)
+  const bottom = mode === 'predict' ? resolved?.bottom : (match.bottom?.competitor ?? resolved?.bottom)
   const isFinal = match.round_code === 'champ_finals'
   const interactive = mode === 'predict' && match.status !== 'complete' && match.status !== 'corrected' && !match.is_bye
 
@@ -100,7 +104,8 @@ function Slot({ comp, slot, match, mode, interactive, picked, officialWinner, us
   const isWinnerOfficial = !!officialWinner && comp?.id === officialWinner
   const isLoserOfficial = !!officialWinner && comp?.id != null && comp?.id !== officialWinner
   const outcome = userPick?.outcome
-  const showOutcome = (mode === 'results' || mode === 'readonly') && userPick && comp && userPick.wrestler_id === comp.id
+  const hasRealResult = match.status === 'complete' || match.status === 'corrected'
+  const showOutcome = (mode === 'results' || mode === 'readonly') && hasRealResult && userPick && comp && userPick.wrestler_id === comp.id
 
   const content = (
     <>

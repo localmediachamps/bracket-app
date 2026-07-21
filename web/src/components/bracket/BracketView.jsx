@@ -24,13 +24,28 @@ export default function BracketView({ data, mode = 'readonly', picks, onPick, on
     [data?.competitors]
   )
 
-  // resolve picks through the graph (predict mode) — over ALL matches, not
-  // just the active section, since consolation/placement resolution depends
-  // on championship picks cascading through
+  // In predict mode, `picks` is the live controlled Map the caller is
+  // building as the user clicks. In results/readonly mode there's no
+  // controlled `picks` prop — derive the same shape from each match's own
+  // persisted `user_pick`, so already-submitted entries can still resolve
+  // (and display) predicted future-round participants the user picked,
+  // not just whichever rounds already have a real reported result.
+  const effectivePicks = useMemo(() => {
+    if (mode === 'predict') return picks
+    const m = new Map()
+    for (const match of matches) {
+      if (match.user_pick?.wrestler_id != null) m.set(match.id, match.user_pick.wrestler_id)
+    }
+    return m
+  }, [mode, picks, matches])
+
+  // resolve picks through the graph — over ALL matches, not just the active
+  // section, since consolation/placement resolution depends on championship
+  // picks cascading through
   const resolution = useMemo(() => {
-    if (mode !== 'predict' || !picks) return null
-    return resolvePicks(matches, picks, competitorsById)
-  }, [matches, picks, competitorsById, mode])
+    if (!effectivePicks || effectivePicks.size === 0) return null
+    return resolvePicks(matches, effectivePicks, competitorsById)
+  }, [matches, effectivePicks, competitorsById])
 
   // Section tabs: championship / consolation / placement, each its own
   // focused close-up view rather than one long horizontal scroll. Only show
