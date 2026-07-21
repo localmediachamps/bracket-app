@@ -13,6 +13,15 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
 
   const clampScale = (s) => Math.min(max, Math.max(min, s))
 
+  // Only stop the one direction that was actually a problem: dragging the
+  // content down past its own top edge, which reveals a growing dead zone
+  // of empty space above the bracket. Deliberately one-sided — pulling up
+  // (to bring later rounds/rows into view) and all horizontal movement
+  // (e.g. centering the final at the left of the screen) are legitimate
+  // and stay unconstrained.
+  const TOP_MAX = 16
+  const clampT = useCallback((next) => ({ ...next, y: Math.min(next.y, TOP_MAX) }), [])
+
   const zoomTo = useCallback((next, cx, cy) => {
     setT((prev) => {
       const scale = clampScale(next)
@@ -20,9 +29,9 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
       const rect = containerRef.current?.getBoundingClientRect()
       const px = cx !== undefined ? cx - (rect?.left ?? 0) : (rect?.width ?? 0) / 2
       const py = cy !== undefined ? cy - (rect?.top ?? 0) : (rect?.height ?? 0) / 2
-      return { scale, x: px - (px - prev.x) * k, y: py - (py - prev.y) * k }
+      return clampT({ scale, x: px - (px - prev.x) * k, y: py - (py - prev.y) * k })
     })
-  }, [])
+  }, [clampT])
 
   const zoomBy = useCallback((factor) => setT((p) => {
     const scale = clampScale(p.scale * factor)
@@ -30,8 +39,8 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
     const px = (rect?.width ?? 0) / 2
     const py = (rect?.height ?? 0) / 2
     const k = scale / p.scale
-    return { scale, x: px - (px - p.x) * k, y: py - (py - p.y) * k }
-  }), [])
+    return clampT({ scale, x: px - (px - p.x) * k, y: py - (py - p.y) * k })
+  }), [clampT])
 
   const fit = useCallback(() => {
     const c = containerRef.current
@@ -84,7 +93,7 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
       // could have already nulled out drag.current out from under it.
       const nx = d.ox + (e.clientX - d.sx)
       const ny = d.oy + (e.clientY - d.sy)
-      setT((p) => ({ ...p, x: nx, y: ny }))
+      setT((p) => clampT({ ...p, x: nx, y: ny }))
     }
     const onPointerUp = (e) => {
       drag.current = null
@@ -132,7 +141,7 @@ export default function usePanZoom({ min = 0.3, max = 1.7 } = {}) {
       el.removeEventListener('pointercancel', onPointerUp)
       el.removeEventListener('pointercancel', trackUp)
     }
-  }, [t.scale, t.x, t.y, zoomTo])
+  }, [t.scale, t.x, t.y, zoomTo, clampT])
 
   const center = useCallback((px, py, scale) => {
     const c = containerRef.current
