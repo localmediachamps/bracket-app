@@ -5,6 +5,7 @@ import { Search, Building2 } from 'lucide-react'
 import { api } from '../lib/api'
 import { Card, CardSkeleton, EmptyState } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
+import { cn } from '../lib/utils'
 
 export default function Teams() {
   const [q, setQ] = useState('')
@@ -51,9 +52,9 @@ export default function Teams() {
               <Link key={t.id} to={`/teams/${t.id}`}>
                 <Card hover className="p-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mat-800 text-gold-500">
+                    <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', t.logo_url ? 'bg-white p-1.5' : 'bg-mat-800 text-gold-500')}>
                       {t.logo_url ? (
-                        <img src={t.logo_url} alt="" className="h-7 w-7 object-contain" loading="lazy" />
+                        <img src={t.logo_url} alt="" className="h-full w-full object-contain" loading="lazy" />
                       ) : (
                         <Building2 size={18} />
                       )}

@@ -44,9 +44,9 @@ export default function TeamProfile() {
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-mat-800 text-gold-500">
+        <span className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', team.logo_url ? 'bg-white p-2' : 'bg-mat-800 text-gold-500')}>
           {team.logo_url ? (
-            <img src={team.logo_url} alt="" className="h-10 w-10 object-contain" />
+            <img src={team.logo_url} alt="" className="h-full w-full object-contain" />
           ) : (
             <Building2 size={26} />
           )}
