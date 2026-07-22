@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu, Crown, Building2 } from 'lucide-react'
+import { Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon, ScrollText, Swords, Menu, Crown, Building2, LifeBuoy } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { api } from '../../lib/api'
 import { Avatar, Button, Modal } from '../ui'
@@ -222,6 +222,19 @@ export default function AppShell() {
               <Crown size={17} />
               Pricing
             </NavLink>
+            <NavLink
+              to="/help"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                  isActive ? 'bg-mat-800 text-gold-400' : 'text-ink-300 hover:bg-mat-800 hover:text-ink-100'
+                )
+              }
+            >
+              <LifeBuoy size={17} />
+              Help Center
+            </NavLink>
             {user?.is_admin && (
               <NavLink
                 to="/admin"
@@ -287,7 +300,10 @@ export default function AppShell() {
       <footer className="hidden border-t border-mat-800 py-6 md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 text-xs text-ink-600">
           <span className="font-display uppercase tracking-wide">Mat Savvy</span>
-          <span>Built for wrestling fans · {new Date().getFullYear()}</span>
+          <div className="flex items-center gap-5">
+            <Link to="/help" className="hover:text-ink-300">Help Center</Link>
+            <span>Built for wrestling fans · {new Date().getFullYear()}</span>
+          </div>
         </div>
       </footer>
 
