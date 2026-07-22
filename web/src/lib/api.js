@@ -45,6 +45,7 @@ export const api = {
   login: (email, password) => post(XANO_AUTH, '/auth/login', { email, password }),
   me: () => get(XANO_AUTH, '/auth/me'),
   updateMe: (payload) => patch(XANO_AUTH, '/auth/me', payload),
+  resendVerification: () => post(XANO_AUTH, '/auth/resend-verification', {}),
   uploadAvatar: (file) => {
     const form = new FormData()
     form.append('avatar_file', file)

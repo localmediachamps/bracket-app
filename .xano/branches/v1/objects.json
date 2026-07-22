@@ -1934,5 +1934,26 @@
     "status": "new",
     "type": "api_endpoint",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_wrestlers_refresh_weights_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/results_wrestlers_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/authentication/auth_resend_verification_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]

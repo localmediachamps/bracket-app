@@ -309,8 +309,35 @@ function score_entry {
 
                     conditional {
                       if ($opponent != null && $opponent.canonical_wrestler_id != null) {
+                        // wrestler_composite_ranking is uniquely keyed by
+                        // (canonical_wrestler_id, weight, season_year) - a
+                        // wrestler can have a row at more than one weight in
+                        // the same season if they moved up/down, so the
+                        // lookup must also pin the weight actually wrestled
+                        // in THIS match, or a "single" query is ambiguous.
+                        var $opp_weight {
+                          value = null
+                        }
+
+                        conditional {
+                          if ($opponent.weight_class_id != null) {
+                            db.get weight_class {
+                              field_name = "id"
+                              field_value = $opponent.weight_class_id
+                            } as $opp_weight_class
+
+                            conditional {
+                              if ($opp_weight_class != null) {
+                                var.update $opp_weight {
+                                  value = $opp_weight_class.weight
+                                }
+                              }
+                            }
+                          }
+                        }
+
                         db.query wrestler_composite_ranking {
-                          where = ($db.wrestler_composite_ranking.canonical_wrestler_id == $opponent.canonical_wrestler_id) && ($db.wrestler_composite_ranking.season_year == $tournament.year)
+                          where = ($db.wrestler_composite_ranking.canonical_wrestler_id == $opponent.canonical_wrestler_id) && ($db.wrestler_composite_ranking.season_year == $tournament.year) && ($db.wrestler_composite_ranking.weight ==? $opp_weight)
                           return = {type: "single"}
                         } as $opp_ranking
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Award, BarChart3, Crown, Flame, Medal, RefreshCw, Save, TrendingUp, UserRound, Upload } from 'lucide-react'
+import { AlertTriangle, Award, BarChart3, Crown, Flame, Mail, Medal, RefreshCw, Save, TrendingUp, UserRound, Upload } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
 import { Avatar, Badge, Button, Card, EmptyState, Input, Select, Skeleton, Stat, Switch, Tabs, Textarea } from '../components/ui'
@@ -143,6 +143,12 @@ function EditTab() {
     form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name') ||
     form.show_public_submissions !== (me.show_public_submissions ?? true)
 
+  const resendMutation = useMutation({
+    mutationFn: () => api.resendVerification(),
+    onSuccess: () => toast.success('Verification email sent', { body: 'Check your inbox (and spam folder) for the link.' }),
+    onError: (err) => toast.error('Could not send email', { body: err.message }),
+  })
+
   const submit = (e) => {
     e?.preventDefault()
     mutation.mutate({
@@ -159,6 +165,30 @@ function EditTab() {
 
   return (
     <motion.form variants={stagger} initial="hidden" animate="show" onSubmit={submit} className="mx-auto max-w-2xl space-y-5">
+      {me.email_verified === false && (
+        <motion.div variants={rise}>
+          <Card className="flex flex-col gap-3 border-gold-500/30 bg-gold-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Mail size={17} className="mt-0.5 shrink-0 text-gold-400" />
+              <div>
+                <p className="text-sm font-bold text-ink-100">Verify your email</p>
+                <p className="text-xs text-ink-500">We'll send a fresh confirmation link to {me.email}.</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              onClick={() => resendMutation.mutate()}
+              loading={resendMutation.isPending}
+              disabled={resendMutation.isSuccess}
+            >
+              {resendMutation.isSuccess ? 'Sent!' : 'Resend email'}
+            </Button>
+          </Card>
+        </motion.div>
+      )}
       <motion.div variants={rise}>
         <Card className="flex items-center gap-4 p-5">
           <div className="relative shrink-0">

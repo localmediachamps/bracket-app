@@ -24,6 +24,14 @@ table canonical_wrestler {
       table = "canonical_team"
     }
 
+    // Denormalized from this wrestler's most recent wrestler_match_history
+    // row (same "current X, full history lives elsewhere" pattern as
+    // current_team_id above) - a wrestler's weight moves across a career, so
+    // this is a snapshot for library search/filter, not an identity field.
+    // Free text (matches wrestler_match_history.weight_class's own format,
+    // e.g. "133", "HWT"), refreshed via admin/wrestlers/refresh-weights.
+    text? current_weight_class? filters=trim
+
     // External-feed identifiers — matching hints, not trusted as stable
     // unique keys until cross-season stability is confirmed empirically.
     // Prefer matching on legal name + birthdate + school history when in
@@ -42,6 +50,7 @@ table canonical_wrestler {
     {type: "primary", field: [{name: "id"}]}
     {type: "btree", field: [{name: "external_wrestler_id", op: "asc"}]}
     {type: "btree", field: [{name: "current_team_id", op: "asc"}]}
+    {type: "btree", field: [{name: "current_weight_class", op: "asc"}]}
     {
       type : "btree"
       field: [
