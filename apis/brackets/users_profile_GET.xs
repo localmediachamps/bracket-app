@@ -180,14 +180,31 @@ query "users/{id}/profile" verb=GET {
           value = {}
         }
 
+        var $ple_dm_lookup {
+          value = {}
+        }
+
         foreach ($ple_rows) {
           each as $ple {
-            var $ple_key {
-              value = $ple.tournament_id|to_text|concat:$ple.source_type:"_"
-            }
+            conditional {
+              if ($ple.source_type == "dual_meet") {
+                var $ple_dm_key {
+                  value = $ple.dual_meet_id|to_text
+                }
 
-            var.update $ple_lookup {
-              value = $ple_lookup|set:$ple_key:$ple.points_awarded
+                var.update $ple_dm_lookup {
+                  value = $ple_dm_lookup|set:$ple_dm_key:$ple.points_awarded
+                }
+              }
+              else {
+                var $ple_key {
+                  value = $ple.tournament_id|to_text|concat:$ple.source_type:"_"
+                }
+
+                var.update $ple_lookup {
+                  value = $ple_lookup|set:$ple_key:$ple.points_awarded
+                }
+              }
             }
           }
         }
@@ -337,6 +354,81 @@ query "users/{id}/profile" verb=GET {
                 total_points   : $pe.total_points
                 platform_points: $pe_points
                 created_at     : $pe.created_at
+              }
+            }
+          }
+        }
+
+        db.query dual_meet_entry {
+          where = $db.dual_meet_entry.user_id == $input.id && $db.dual_meet_entry.is_public == true
+          return = {type: "list"}
+        } as $public_dual_meets
+
+        foreach ($public_dual_meets) {
+          each as $de {
+            db.get dual_meet {
+              field_name = "id"
+              field_value = $de.dual_meet_id
+              output = ["id", "name", "slug", "year"]
+            } as $de_dual_meet
+
+            var $de_t_name {
+              value = null
+            }
+
+            var $de_t_slug {
+              value = null
+            }
+
+            var $de_t_year {
+              value = null
+            }
+
+            conditional {
+              if ($de_dual_meet != null) {
+                var.update $de_t_name {
+                  value = $de_dual_meet.name
+                }
+
+                var.update $de_t_slug {
+                  value = $de_dual_meet.slug
+                }
+
+                var.update $de_t_year {
+                  value = $de_dual_meet.year
+                }
+              }
+            }
+
+            var $de_key {
+              value = $de.dual_meet_id|to_text
+            }
+
+            var $de_points {
+              value = null
+            }
+
+            conditional {
+              if ($ple_dm_lookup|has:$de_key) {
+                var.update $de_points {
+                  value = $ple_dm_lookup|get:$de_key:null
+                }
+              }
+            }
+
+            array.push $submissions {
+              value = {
+                tournament_id  : $de.dual_meet_id
+                tournament_name: $de_t_name
+                tournament_slug: $de_t_slug
+                tournament_year: $de_t_year
+                source_type    : "dual_meet"
+                entry_id       : $de.id
+                status         : $de.status
+                rank           : $de.rank
+                total_points   : $de.total_points
+                platform_points: $de_points
+                created_at     : $de.created_at
               }
             }
           }

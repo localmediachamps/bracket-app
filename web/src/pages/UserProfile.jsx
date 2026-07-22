@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { User, GraduationCap, CalendarDays, Trophy, Medal, GitBranch, Scale, Eye, EyeOff } from 'lucide-react'
+import { User, GraduationCap, CalendarDays, Trophy, Medal, GitBranch, Scale, Swords, Eye, EyeOff } from 'lucide-react'
 import { api } from '../lib/api'
 import { Avatar, Badge, Card, EmptyState, Skeleton, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
@@ -10,7 +10,9 @@ import { displayName, percentOf } from '../components/tournament/helpers'
 import { formatDate, formatPoints } from '../lib/utils'
 
 function entryViewPath(sourceType, entryId) {
-  return sourceType === 'pickem' ? `/pickem-entries/${entryId}` : `/entries/${entryId}/review`
+  if (sourceType === 'pickem') return `/pickem-entries/${entryId}`
+  if (sourceType === 'dual_meet') return `/dual-meet-entries/${entryId}`
+  return `/entries/${entryId}/review`
 }
 
 function ProfileSkeleton() {
@@ -177,7 +179,8 @@ export default function UserProfile() {
         ) : (
           <Card className="overflow-hidden">
             {submissions.map((s, i) => {
-              const ModeIcon = s.source_type === 'pickem' ? Scale : GitBranch
+              const ModeIcon = s.source_type === 'pickem' ? Scale : s.source_type === 'dual_meet' ? Swords : GitBranch
+              const modeLabel = s.source_type === 'dual_meet' ? 'Dual meet' : s.source_type === 'pickem' ? 'Pick\'em' : 'Bracket'
               const inner = (
                 <div className="flex items-center gap-4 px-5 py-3.5">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mat-800 text-gold-500">
@@ -186,7 +189,7 @@ export default function UserProfile() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink-100">{s.tournament_name ?? 'Tournament'}</p>
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
-                      <span className="capitalize">{s.source_type}</span>
+                      <span>{modeLabel}</span>
                       {s.tournament_year && <span className="font-mono">{s.tournament_year}</span>}
                       {s.rank != null && <span>#{s.rank} in event</span>}
                     </div>
