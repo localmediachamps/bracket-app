@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowLeft, Check, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Check, ExternalLink, RefreshCw } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
 import { Button, Card, EmptyState, Select, Skeleton } from '../components/ui'
@@ -154,6 +154,38 @@ export default function LeagueLineup() {
             </Button>
           )}
           {!allFilled && !locked && <p className="text-xs text-ink-500">Fill every weight class before saving.</p>}
+
+          {roster.length > 0 && (
+            <Card className="divide-y divide-mat-700 p-0">
+              <div className="p-4 pb-0 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">My roster</div>
+              {roster.map((r) => {
+                const record = r.record
+                return (
+                  <div key={r.roster_slot_id} className="flex flex-wrap items-center justify-between gap-2 p-4">
+                    <div>
+                      <div className="text-sm font-semibold text-ink-100">
+                        {r.wrestler?.display_name}
+                        {r.slot_type === 'alternate' && <span className="ml-2 text-xs font-normal text-ink-500">alternate</span>}
+                      </div>
+                      {record && (record.wins > 0 || record.losses > 0) && (
+                        <div className="font-mono text-xs text-ink-500">
+                          {record.wins}-{record.losses} · {record.falls} pins · {record.tech_falls} tech falls · {record.majors} majors
+                        </div>
+                      )}
+                    </div>
+                    <Link
+                      to={`/wrestlers/${r.wrestler?.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-gold-400 hover:text-gold-300"
+                    >
+                      Full profile <ExternalLink size={12} />
+                    </Link>
+                  </div>
+                )
+              })}
+            </Card>
+          )}
         </>
       )}
     </motion.div>

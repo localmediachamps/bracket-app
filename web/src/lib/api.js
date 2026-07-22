@@ -182,6 +182,8 @@ export const api = {
   leagueLineup: (leagueId, seasonWeekId) => get(XANO_LEAGUE, `/leagues/lineup${qs({ league_id: leagueId, season_week_id: seasonWeekId })}`),
   setLeagueLineup: (leagueId, seasonWeekId, slots) => put(XANO_LEAGUE, `/leagues/lineup`, { league_id: leagueId, season_week_id: seasonWeekId, slots }),
 
+  leagueMatchup: (leagueId, seasonWeekId) => get(XANO_LEAGUE, `/leagues/matchup${qs({ league_id: leagueId, season_week_id: seasonWeekId })}`),
+
   waiversAvailable: (leagueId, params = {}) => get(XANO_LEAGUE, `/leagues/waivers/available${qs({ league_id: leagueId, ...params })}`),
   claimWaiver: (leagueId, canonicalWrestlerId, dropRosterSlotId) =>
     post(XANO_LEAGUE, `/leagues/waiver/claim`, { league_id: leagueId, canonical_wrestler_id: canonicalWrestlerId, drop_roster_slot_id: dropRosterSlotId }),

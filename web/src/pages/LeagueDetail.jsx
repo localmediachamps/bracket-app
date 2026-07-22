@@ -199,6 +199,11 @@ export default function LeagueDetail() {
                   <ListChecks size={16} /> My lineup
                 </Button>
               </Link>
+              <Link to={`/leagues/${id}/matchup`}>
+                <Button variant="secondary" className="w-full">
+                  <Swords size={16} /> This week's matchup
+                </Button>
+              </Link>
               <Link to={`/leagues/${id}/waivers`}>
                 <Button variant="secondary" className="w-full">
                   <Users size={16} /> Waiver wire

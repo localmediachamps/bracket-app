@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowLeft, Play, RefreshCw, Search, SkipForward, Swords } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Play, RefreshCw, Search, SkipForward, Swords } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
 import { Avatar, Badge, Button, Card, EmptyState, Input, Select, Skeleton } from '../components/ui'
@@ -19,6 +19,7 @@ export default function DraftRoom() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [weightClassId, setWeightClassId] = useState('')
+  const [expandedWrestlerId, setExpandedWrestlerId] = useState(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
@@ -264,33 +265,56 @@ export default function DraftRoom() {
               </div>
             ) : (
               <div className="max-h-96 space-y-1.5 overflow-y-auto">
-                {(poolData?.wrestlers ?? []).map((w) => (
-                  <div key={w.id} className="flex items-center justify-between gap-3 rounded-lg border border-mat-700 bg-mat-800 px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-ink-100">
-                        {w.name}
-                        {w.weight != null && <span className="ml-2 text-xs text-ink-500">{w.weight} lbs</span>}
+                {(poolData?.wrestlers ?? []).map((w) => {
+                  const isExpanded = expandedWrestlerId === w.id
+                  const hasRecord = w.record && (w.record.wins > 0 || w.record.losses > 0)
+                  return (
+                    <div key={w.id} className="rounded-lg border border-mat-700 bg-mat-800">
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                          onClick={() => setExpandedWrestlerId(isExpanded ? null : w.id)}
+                        >
+                          {hasRecord && (isExpanded ? <ChevronUp size={14} className="shrink-0 text-ink-500" /> : <ChevronDown size={14} className="shrink-0 text-ink-500" />)}
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-ink-100">
+                              {w.name}
+                              {w.weight != null && <span className="ml-2 text-xs text-ink-500">{w.weight} lbs</span>}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
+                              {w.team?.name && <span className="truncate">{w.team.name}</span>}
+                              {hasRecord && (
+                                <span className="shrink-0 font-mono text-ink-400">
+                                  {w.record.wins}-{w.record.losses}
+                                  {w.record.falls > 0 && ` · ${w.record.falls} pins`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        <Button
+                          size="sm"
+                          disabled={!isMyTurn || (!isTournamentDraft && !weightClassId)}
+                          loading={pickMutation.isPending && pickMutation.variables === w.id}
+                          onClick={() => pickMutation.mutate(w.id)}
+                        >
+                          Draft
+                        </Button>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
-                        {w.team?.name && <span className="truncate">{w.team.name}</span>}
-                        {w.record && (w.record.wins > 0 || w.record.losses > 0) && (
-                          <span className="shrink-0 font-mono text-ink-400">
-                            {w.record.wins}-{w.record.losses}
-                            {w.record.falls > 0 && ` · ${w.record.falls} pins`}
+                      {isExpanded && hasRecord && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mat-700 px-3 py-2 text-xs text-ink-400">
+                          <span>
+                            {w.record.tech_falls} tech falls · {w.record.majors} majors
                           </span>
-                        )}
-                      </div>
+                          <Link to={`/wrestlers/${w.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
+                            Full profile <ExternalLink size={12} />
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      disabled={!isMyTurn || (!isTournamentDraft && !weightClassId)}
-                      loading={pickMutation.isPending && pickMutation.variables === w.id}
-                      onClick={() => pickMutation.mutate(w.id)}
-                    >
-                      Draft
-                    </Button>
-                  </div>
-                ))}
+                  )
+                })}
                 {draft.status === 'in_progress' && (poolData?.wrestlers ?? []).length === 0 && (
                   <p className="py-6 text-center text-sm text-ink-500">
                     <Search size={16} className="mx-auto mb-2" />

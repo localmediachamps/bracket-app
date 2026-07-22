@@ -1,20 +1,20 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Settings, Swords } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { api } from '../../lib/api'
 import { toast } from '../../lib/store'
 import { Badge, Button, Card, Select } from '../ui'
 
 const MODE_LABEL = {
-  roster: 'Roster stays live',
   bracket: 'Bracket challenge (full field)',
   pickem: "Pick'em (full field)",
   bracket_pickem: 'Bracket + pick\'em',
-  tournament_draft: 'Tournament mini-draft',
 }
 
-function WeekRow({ leagueId, week, isCommissioner, tournaments }) {
+// marquee_tournament weeks only - the commissioner picks a real tournament
+// + contest mode. conference/nationals weeks never take this config (they're
+// always roster-scored, no commissioner choice - see PostseasonWeekRow below).
+function MarqueeWeekRow({ leagueId, week, isCommissioner, tournaments }) {
   const qc = useQueryClient()
   const [mode, setMode] = useState(week.tournament_game_mode ?? '')
   const [tournamentId, setTournamentId] = useState(week.linked_tournament_id ?? '')
@@ -36,7 +36,7 @@ function WeekRow({ leagueId, week, isCommissioner, tournaments }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm font-bold text-ink-100">
           Week {week.week_number}
-          <span className="ml-2 text-xs font-normal text-ink-500">{week.week_type.replace(/_/g, ' ')}</span>
+          <span className="ml-2 text-xs font-normal text-ink-500">marquee tournament</span>
         </div>
         {configured ? <Badge color="gold">{MODE_LABEL[week.tournament_game_mode]}</Badge> : <Badge color="ink">Not configured</Badge>}
       </div>
@@ -66,21 +66,28 @@ function WeekRow({ leagueId, week, isCommissioner, tournaments }) {
       )}
 
       {configured && tournamentName && <p className="text-xs text-ink-500">Linked to {tournamentName}</p>}
+    </div>
+  )
+}
 
-      {week.tournament_game_mode === 'tournament_draft' && (
-        <Link to={`/leagues/${leagueId}/draft/${week.id}`}>
-          <Button variant="secondary" size="sm">
-            <Swords size={14} /> Enter tournament draft
-          </Button>
-        </Link>
-      )}
+// conference/nationals weeks - always roster-scored like a normal week, just
+// weighted more heavily in final standings. Nothing to configure.
+function PostseasonWeekRow({ week }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-mat-700 p-4 last:border-b-0">
+      <div className="text-sm font-bold text-ink-100">
+        Week {week.week_number}
+        <span className="ml-2 text-xs font-normal text-ink-500">{week.week_type}</span>
+      </div>
+      <Badge color="gold">{week.weight_multiplier}x weight</Badge>
     </div>
   )
 }
 
 /** Commissioner (and member-visible) panel for the season's non-head-to-head
- * weeks - configure which real tournament + mode each one uses, and jump
- * into that week's mini-draft if it's using one. */
+ * weeks - configure which real tournament + mode each marquee_tournament week
+ * uses, and see the weighting on conference/nationals weeks (no config, those
+ * are always roster-scored). */
 export default function WeeksPanel({ leagueId, isCommissioner }) {
   const { data: weeks, isLoading } = useQuery({
     queryKey: ['league-weeks', leagueId],
@@ -94,16 +101,29 @@ export default function WeeksPanel({ leagueId, isCommissioner }) {
   })
   const tournaments = tournamentsData?.items ?? tournamentsData?.tournaments ?? (Array.isArray(tournamentsData) ? tournamentsData : [])
 
-  const specialWeeks = (weeks ?? []).filter((w) => w.week_type !== 'head_to_head')
+  const marqueeWeeks = (weeks ?? []).filter((w) => w.week_type === 'marquee_tournament')
+  const postseasonWeeks = (weeks ?? []).filter((w) => w.week_type === 'conference' || w.week_type === 'nationals')
 
-  if (isLoading || specialWeeks.length === 0) return null
+  if (isLoading || (marqueeWeeks.length === 0 && postseasonWeeks.length === 0)) return null
 
   return (
-    <Card className="divide-y divide-mat-700 p-0">
-      <div className="p-4 pb-0 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Tournament weeks</div>
-      {specialWeeks.map((week) => (
-        <WeekRow key={week.id} leagueId={leagueId} week={week} isCommissioner={isCommissioner} tournaments={tournaments} />
-      ))}
-    </Card>
+    <div className="space-y-4">
+      {marqueeWeeks.length > 0 && (
+        <Card className="divide-y divide-mat-700 p-0">
+          <div className="p-4 pb-0 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Marquee tournament weeks</div>
+          {marqueeWeeks.map((week) => (
+            <MarqueeWeekRow key={week.id} leagueId={leagueId} week={week} isCommissioner={isCommissioner} tournaments={tournaments} />
+          ))}
+        </Card>
+      )}
+      {postseasonWeeks.length > 0 && (
+        <Card className="divide-y divide-mat-700 p-0">
+          <div className="p-4 pb-0 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Postseason weeks</div>
+          {postseasonWeeks.map((week) => (
+            <PostseasonWeekRow key={week.id} week={week} />
+          ))}
+        </Card>
+      )}
+    </div>
   )
 }
