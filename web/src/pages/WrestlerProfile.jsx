@@ -1,7 +1,7 @@
 import React from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp } from 'lucide-react'
+import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, ExternalLink } from 'lucide-react'
 import { api } from '../lib/api'
 import { Badge, Card, CardSkeleton, EmptyState, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
@@ -89,6 +89,16 @@ export default function WrestlerProfile() {
             <p className="text-sm text-ink-400">{wrestler.current_team.name}</p>
           )}
         </div>
+        {wrestler.profile_url && (
+          <a
+            href={wrestler.profile_url}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-3 py-1.5 text-xs font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
+          >
+            Official Bio <ExternalLink size={13} />
+          </a>
+        )}
       </div>
 
       <div className="mb-6 grid grid-cols-3 gap-3">

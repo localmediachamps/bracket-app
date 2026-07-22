@@ -1689,5 +1689,12 @@
     "status": "new",
     "type": "api_endpoint",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_canonical_wrestlers_set_profile_url_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]

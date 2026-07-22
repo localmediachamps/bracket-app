@@ -217,6 +217,7 @@ query "results/wrestlers/{id}" verb=GET {
       legal_last_name : $wrestler.legal_last_name
       gender          : $wrestler.gender
       current_team    : $current_team
+      profile_url     : $wrestler.profile_url
     }
     team_history  : $team_history
     overall_record: {wins: $overall_wins, losses: $overall_losses}

@@ -30,6 +30,12 @@ table canonical_wrestler {
     // doubt.
     text external_wrestler_id? filters=trim
     text external_wrestler_short_id? filters=trim
+
+    // Official athletics department player bio page - a reference link for
+    // the wrestler profile page, not a data source we scrape. Populated by
+    // hand/research from current team rosters - realistically only findable
+    // for currently-active (2025-26) wrestlers, not graduated ones.
+    text profile_url? filters=trim
   }
 
   index = [
