@@ -11,14 +11,14 @@ import { cn } from '../../lib/utils'
 
 export const SIDEBAR_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
+  { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/dual-meets', label: 'Dual Meets', icon: Swords },
-  { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
   { to: '/leagues', label: 'Leagues', icon: CalendarRange, auth: true },
-  { to: '/results', label: 'Results', icon: ScrollText },
   { to: '/teams', label: 'Teams', icon: GraduationCap },
   { to: '/wrestlers', label: 'Wrestlers', icon: UserRound },
+  { to: '/results', label: 'Results', icon: ScrollText },
 ]
 
 const COLLAPSE_KEY = 'matSavvy.sidebarCollapsed'

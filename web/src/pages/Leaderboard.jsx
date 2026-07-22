@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Trophy, Crown, Medal, ChevronLeft, ChevronRight, Search, SearchX } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuthStore } from '../lib/store'
-import { Avatar, Button, Card, CardSkeleton, EmptyState, SectionHeading, Skeleton, StatusPill, Tabs } from '../components/ui'
+import { Avatar, Button, Card, CardSkeleton, EmptyState, SectionHeading, Select, Skeleton, StatusPill, Tabs } from '../components/ui'
 import LeaderboardPanel from '../components/tournament/LeaderboardPanel'
 import { ErrorState } from '../components/tournament/Feedback'
 import { normalizeList, displayName } from '../components/tournament/helpers'
@@ -49,16 +49,43 @@ function MasterPodiumCard({ row, place, index }) {
 function MasterTab() {
   const me = useAuthStore((s) => s.user)
   const [page, setPage] = useState(1)
+  const [year, setYear] = useState(null)
+
+  const { data: yearsData } = useQuery({
+    queryKey: ['platform-leaderboard-years'],
+    queryFn: api.platformLeaderboardYears,
+    staleTime: 60000,
+  })
+  const years = yearsData?.years ?? []
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['platform-leaderboard', page],
-    queryFn: () => api.platformLeaderboard({ page, per: PER }),
+    queryKey: ['platform-leaderboard', year, page],
+    queryFn: () => api.platformLeaderboard({ year: year ?? undefined, page, per: PER }),
     staleTime: 30000,
   })
+
+  // Once the backend picks its own default year (whichever has the most
+  // entries), sync the selector to it so switching years later starts from
+  // the right place instead of null.
+  useEffect(() => {
+    if (year == null && data?.year != null) setYear(data.year)
+  }, [year, data?.year])
 
   const { items, total, totalPages } = normalizeList(data)
   const podium = page === 1 ? items.slice(0, 3) : []
   const rows = items
+
+  const yearPicker = years.length > 1 && (
+    <Select
+      value={year ?? data?.year ?? ''}
+      onChange={(e) => { setYear(Number(e.target.value)); setPage(1) }}
+      className="w-auto"
+    >
+      {years.map((y) => (
+        <option key={y.year} value={y.year}>{y.year} season</option>
+      ))}
+    </Select>
+  )
 
   if (isLoading) {
     return (
@@ -79,16 +106,20 @@ function MasterTab() {
 
   if (!items.length) {
     return (
-      <EmptyState
-        icon={<Trophy size={22} />}
-        title="No ranked entries yet"
-        body="Once players finish tournaments, their points show up here — summed across every event they've entered this season."
-      />
+      <>
+        {yearPicker && <div className="mb-4 flex justify-end">{yearPicker}</div>}
+        <EmptyState
+          icon={<Trophy size={22} />}
+          title="No ranked entries yet"
+          body={`Nobody's ranked for the ${year ?? data?.year ?? ''} season yet — once players finish tournaments, their points show up here.`}
+        />
+      </>
     )
   }
 
   return (
     <>
+      {yearPicker && <div className="mb-4 flex justify-end">{yearPicker}</div>}
       {podium.length > 0 && (
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {podium.map((row, i) => (

@@ -19,10 +19,78 @@ query "platform/leaderboard" verb=GET {
       value = $input.year
     }
 
+    // No year requested - default to whichever year actually has the most
+    // entries (not blindly "this calendar year"), since a brand new/demo
+    // platform can otherwise default to a year with zero real data while a
+    // populated season sits one param away and undiscoverable.
     conditional {
       if ($target_year == null) {
-        var.update $target_year {
+        db.query platform_leaderboard_entry {
+          return = {type: "list"}
+        } as $all_entries
+
+        var $year_counts {
+          value = {}
+        }
+
+        foreach ($all_entries) {
+          each as $e {
+            var $ykey {
+              value = $e.year|to_text
+            }
+
+            var $ycount {
+              value = 0
+            }
+
+            conditional {
+              if ($year_counts|has:$ykey) {
+                var.update $ycount {
+                  value = $year_counts|get:$ykey:0
+                }
+              }
+            }
+
+            var.update $year_counts {
+              value = $year_counts|set:$ykey:($ycount + 1)
+            }
+          }
+        }
+
+        var $best_year {
           value = (now|format_timestamp:"Y":"UTC")|to_int
+        }
+
+        var $best_count {
+          value = 0
+        }
+
+        var $year_keys {
+          value = ($year_counts|keys)
+        }
+
+        foreach ($year_keys) {
+          each as $yk {
+            var $this_count {
+              value = $year_counts|get:$yk:0
+            }
+
+            conditional {
+              if ($this_count > $best_count) {
+                var.update $best_count {
+                  value = $this_count
+                }
+
+                var.update $best_year {
+                  value = ($yk|to_int)
+                }
+              }
+            }
+          }
+        }
+
+        var.update $target_year {
+          value = $best_year
         }
       }
     }

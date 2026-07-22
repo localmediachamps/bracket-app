@@ -194,10 +194,18 @@ export default function UserProfile() {
                       {s.rank != null && <span>#{s.rank} in event</span>}
                     </div>
                   </div>
-                  {s.platform_points != null && (
+                  {(s.total_points != null || s.platform_points != null) && (
                     <span className="shrink-0 text-right">
-                      <span className="block font-mono text-sm font-bold text-gold-400">+{formatPoints(s.platform_points)}</span>
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-ink-600">to leaderboard</span>
+                      {s.total_points != null && (
+                        <span className="block font-mono text-sm font-bold text-ink-100">
+                          {formatPoints(s.total_points)} <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-ink-600">event pts</span>
+                        </span>
+                      )}
+                      {s.platform_points != null && (
+                        <span className="block font-mono text-xs font-bold text-gold-400">
+                          +{formatPoints(s.platform_points)} <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-ink-600">leaderboard</span>
+                        </span>
+                      )}
                     </span>
                   )}
                   <Eye size={14} className="shrink-0 text-ink-500" />
