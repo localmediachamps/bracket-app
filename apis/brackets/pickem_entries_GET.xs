@@ -1,9 +1,12 @@
 // Pick'em entry detail: entry plus picks with weight class info, wrestler
 // summaries, cost, points earned, and scoring breakdown. Viewable by the
-// owner, anyone (including anonymous) when the entry has opted into
-// is_public, or a site admin.
+// owner, any other logged-in user when the entry has opted into is_public,
+// or a site admin. Requires login even for the is_public case - see
+// entries_review_GET.xs's header for why $auth.id can't populate without
+// auth="user", confirmed empirically 2026-07-22.
 query "pickem-entries/{id}" verb=GET {
   api_group = "brackets"
+  auth = "user"
 
   input {
     // Pick'em entry id
@@ -11,6 +14,11 @@ query "pickem-entries/{id}" verb=GET {
   }
 
   stack {
+    precondition ($auth.id != null) {
+      error_type = "unauthorized"
+      error = "Authentication required."
+    }
+
     db.get pickem_entry {
       field_name = "id"
       field_value = $input.id

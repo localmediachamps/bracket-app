@@ -3,12 +3,16 @@
 // tournaments/{id}/bracket/{weightClassId} endpoint cannot verify entry_id
 // ownership (it has no auth context - see the KNOWN ISSUE note there), so
 // personalization is permanently disabled on that path. Viewable by the
-// entry's owner, anyone when the entry has opted into is_public, or a site
-// admin - same access rule as entries_review_GET.xs (an inline db.get +
-// precondition, not a `function.run verify_entry_ownership` indirection,
-// since that hit a masked ERROR_CODE_ACCESS_DENIED in earlier testing).
+// entry's owner, any other logged-in user when the entry has opted into
+// is_public, or a site admin - same access rule as entries_review_GET.xs
+// (an inline db.get + precondition, not a `function.run
+// verify_entry_ownership` indirection, since that hit a masked
+// ERROR_CODE_ACCESS_DENIED in earlier testing). Requires login even for the
+// is_public case - see entries_review_GET.xs's header for why $auth.id
+// can't populate without auth="user", confirmed empirically 2026-07-22.
 query "entries/{id}/bracket/{weightClassId}" verb=GET {
   api_group = "brackets"
+  auth = "user"
 
   input {
     // Entry id
@@ -19,6 +23,11 @@ query "entries/{id}/bracket/{weightClassId}" verb=GET {
   }
 
   stack {
+    precondition ($auth.id != null) {
+      error_type = "unauthorized"
+      error = "Authentication required."
+    }
+
     db.get user_bracket {
       field_name = "id"
       field_value = $input.id

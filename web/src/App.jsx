@@ -98,8 +98,8 @@ export default function App() {
             <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />
             <Route path="/tournaments/:slug/pickem" element={<RequireAuth><Pickem /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-            <Route path="/entries/:id/review" element={<EntryReview />} />
-            <Route path="/pickem-entries/:id" element={<PickemEntryView />} />
+            <Route path="/entries/:id/review" element={<RequireAuth><EntryReview /></RequireAuth>} />
+            <Route path="/pickem-entries/:id" element={<RequireAuth><PickemEntryView /></RequireAuth>} />
             <Route path="/compare/:aId/:bId" element={<RequireAuth><Compare /></RequireAuth>} />
             <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
             <Route path="/groups/new" element={<RequireAuth><GroupNew /></RequireAuth>} />

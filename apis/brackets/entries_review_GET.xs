@@ -1,9 +1,16 @@
 // Entry review: champion pick per weight class, correct/scored pick counts
 // and points earned per weight class, totals, and the count of non-bye
-// matches still missing a pick. Viewable by the owner, anyone (including
-// anonymous) when the entry has opted into is_public, or a site admin.
+// matches still missing a pick. Viewable by the owner, any other logged-in
+// user when the entry has opted into is_public, or a site admin. Requires
+// login even for the is_public case (not truly anonymous) - Xano only
+// populates $auth.id when auth="user" is declared, and declaring it means
+// login is required platform-side before the stack ever runs; there's no
+// documented "populate if present, don't require" mode. Confirmed
+// empirically 2026-07-22: a real owner's valid Bearer token was still
+// ignored (is_owner always false) when this endpoint had no auth clause.
 query "entries/{id}/review" verb=GET {
   api_group = "brackets"
+  auth = "user"
 
   input {
     // Entry id
@@ -11,6 +18,11 @@ query "entries/{id}/review" verb=GET {
   }
 
   stack {
+    precondition ($auth.id != null) {
+      error_type = "unauthorized"
+      error = "Authentication required."
+    }
+
     db.get user_bracket {
       field_name = "id"
       field_value = $input.id
