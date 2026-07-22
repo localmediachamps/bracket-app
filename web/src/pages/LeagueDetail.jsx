@@ -4,11 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, ListChecks,
-  Play, RefreshCw, Swords, Users, X,
+  Play, RefreshCw, Swords, Trophy, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
-import { Avatar, Button, Card, EmptyState, Modal, Skeleton } from '../components/ui'
+import { Avatar, Badge, Button, Card, EmptyState, Modal, Skeleton } from '../components/ui'
+import { formatPoints } from '../lib/utils'
 import { LeagueStatusBadge } from '../components/league/LeagueCard'
 import InviteMemberBox from '../components/league/InviteMemberBox'
 import WeeksPanel from '../components/league/WeeksPanel'
@@ -18,6 +19,48 @@ const rise = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 }
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
+
+// Season-long points ledger (head_to_head win/tie/loss + marquee contest
+// standings + conference/nationals roster-ranked placement, all summed) -
+// the single number that decides the eventual league champion. See
+// apis/league/leagues_standings_GET.xs.
+function LeagueStandings({ leagueId, selfId }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['league-standings', leagueId],
+    queryFn: () => api.leagueStandings(leagueId),
+  })
+  const rows = data?.standings ?? []
+
+  if (isLoading) return <Skeleton className="h-40 w-full" />
+  if (rows.length === 0) return null
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center gap-1.5 p-4 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">
+        <Trophy size={13} className="text-gold-500" /> Season standings
+      </div>
+      <div className="divide-y divide-mat-800">
+        {rows.map((r) => {
+          const isSelf = selfId != null && r.user?.id === selfId
+          return (
+            <div key={r.membership_id} className={`flex items-center gap-3 px-4 py-2.5 ${isSelf ? 'bg-gold-500/[0.06]' : ''}`}>
+              <span className={`w-6 text-center font-mono text-sm font-bold ${r.rank <= 3 ? 'text-gold-400' : 'text-ink-400'}`}>{r.rank}</span>
+              <Avatar user={r.user} size="xs" />
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-100">
+                {r.user?.display_name || r.user?.username}
+                {isSelf && <span className="ml-1.5 text-[10px] font-bold uppercase text-gold-400">you</span>}
+              </span>
+              {(r.wins > 0 || r.losses > 0) && (
+                <Badge color="ink">{r.wins}-{r.losses}</Badge>
+              )}
+              <span className="font-mono text-sm font-bold text-gold-400">{formatPoints(r.season_points)} pts</span>
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
 
 export default function LeagueDetail() {
   const { id } = useParams()
@@ -227,6 +270,12 @@ export default function LeagueDetail() {
       {isCommissioner && league.status === 'forming' && (
         <motion.section variants={rise}>
           <InviteMemberBox leagueId={id} />
+        </motion.section>
+      )}
+
+      {isActiveMember && league.status === 'active' && (
+        <motion.section variants={rise}>
+          <LeagueStandings leagueId={id} selfId={me?.id} />
         </motion.section>
       )}
 

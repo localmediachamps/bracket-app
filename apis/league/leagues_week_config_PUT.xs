@@ -3,8 +3,11 @@
 // and the per-tournament placement->points table. Picks from existing
 // tournament rows - creating the tournament itself is the normal admin
 // tournament-builder flow, unchanged here. conference/nationals weeks don't
-// use this endpoint at all - they're always roster-scored, no commissioner
-// mode choice (see the fantasy league plan's postseason redesign, 2026-07-22).
+// use this endpoint at all - they're always roster-scored, no linked
+// tournament or game mode to pick; their own placement-points table (if the
+// commissioner wants to override the default) is set via
+// leagues_week_placement_config_PUT.xs instead (see the fantasy league
+// plan's postseason redesign, 2026-07-22).
 query "leagues/week/config" verb=PUT {
   api_group = "league"
   auth = "user"

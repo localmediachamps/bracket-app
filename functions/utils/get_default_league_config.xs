@@ -1,6 +1,8 @@
 // Returns the default season-league fantasy scoring configuration (fantasy
-// league plan, Phase 6). league.scoring_config overlays this key-by-key -
-// nothing here is hardcoded into the scoring cron itself.
+// league plan, Phase 6 + the 2026-07-22 conference/nationals redesign - see
+// memory: conference_nationals_scoring_redesign). league.scoring_config
+// overlays this key-by-key - nothing here is hardcoded into the scoring
+// cron itself.
 // victory_points: base points per real match, before averaging, keyed by the
 // full victory-type enum. medal_bonus: flat bonus on top of the average for
 // wrestlers who placed at a tournament that week, keyed by placement (parsed
@@ -8,8 +10,16 @@
 // opponent_multipliers: same tier shape/starting values as the tournament
 // bracket/pickem scorer's own get_default_scoring_config.xs, for consistency
 // app-wide - a no-op (1x) until wrestler_composite_ranking has real data.
-// postseason_weight: conference/nationals week weighting, with a cap on how
-// much a single postseason week can swing the final standings.
+// head_to_head_result_points: flat points a head_to_head week's win/tie/loss
+// result adds to the season-long standings ledger (on top of, not instead
+// of, the per-match averaging that decides the winner).
+// placement_points_defaults: fallback rank->points tables, keyed by week_type
+// (marquee_tournament/conference/nationals), used only when a specific
+// season_week's own placement_points_config is null. Every week type feeds
+// the SAME season_week_tournament_result ledger - conference/nationals
+// counting for more than a regular week is entirely a function of these
+// tables' own values (e.g. nationals' 1st-place value being much higher than
+// marquee's), not a separate weight_multiplier field.
 function get_default_league_config {
   input {
   }
@@ -55,23 +65,76 @@ function get_default_league_config {
       }
     }
 
-    // conference/nationals week weighting - default_multiplier applies when
-    // a league hasn't overridden it; max_multiplier caps how high a
-    // commissioner-set override can go, so one postseason week can't swing
-    // the whole season arbitrarily far.
-    var $postseason_weight {
+    // Flat points a head-to-head result adds to the season standings ledger,
+    // on top of the per-match-average score that decided the matchup.
+    var $head_to_head_result_points {
+      value = {}
+        |set:"win":2
+        |set:"tie":1
+        |set:"loss":0
+    }
+
+    // Fallback placement->points tables per week_type, used only when a
+    // season_week's own placement_points_config is null. Values are examples
+    // from Garrett's own explanation of the relative weighting he wants
+    // (marquee 1st=6, conference 1st=12, nationals 1st=20) - fully
+    // commissioner-overridable per week, not fixed. Each table is built as
+    // its own var first (same pattern as victory_points/medal_bonus above)
+    // rather than as a nested filter chain inside an object literal.
+    var $placement_marquee {
+      value = {}
+        |set:"1":6
+        |set:"2":5
+        |set:"3":4
+        |set:"4":3
+        |set:"5":2
+        |set:"6":1
+        |set:"7":1
+        |set:"8":0.5
+        |set:"default":0
+    }
+
+    var $placement_conference {
+      value = {}
+        |set:"1":12
+        |set:"2":10
+        |set:"3":8
+        |set:"4":6
+        |set:"5":5
+        |set:"6":4
+        |set:"7":3
+        |set:"8":2
+        |set:"default":0
+    }
+
+    var $placement_nationals {
+      value = {}
+        |set:"1":20
+        |set:"2":16
+        |set:"3":13
+        |set:"4":11
+        |set:"5":9
+        |set:"6":7
+        |set:"7":5
+        |set:"8":4
+        |set:"default":0
+    }
+
+    var $placement_points_defaults {
       value = {
-        default_multiplier: 2
-        max_multiplier    : 3
+        marquee_tournament: $placement_marquee
+        conference        : $placement_conference
+        nationals         : $placement_nationals
       }
     }
 
     var $config {
       value = {
-        victory_points      : $victory_points
-        medal_bonus         : $medal_bonus
-        opponent_multipliers: $opponent_multipliers
-        postseason_weight   : $postseason_weight
+        victory_points            : $victory_points
+        medal_bonus               : $medal_bonus
+        opponent_multipliers      : $opponent_multipliers
+        head_to_head_result_points: $head_to_head_result_points
+        placement_points_defaults : $placement_points_defaults
       }
     }
   }

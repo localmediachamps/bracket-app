@@ -1,37 +1,56 @@
-// Weekly fantasy-league scoring bridge (fantasy league plan, Phase 6).
-// Modeled on tasks/lock_tournaments.xs / tasks/auto_score.xs's established
-// pattern: time-threshold query -> foreach with per-record try_catch, never
-// abort the whole run -> nested per-user notify each in its own try_catch ->
-// closing debug.log summary. Nothing else transitions season_week.status, so
-// this task owns that lifecycle end to end (upcoming/open -> locked, on
-// starts_at; locked -> complete, on ends_at + a settle buffer for
-// late-arriving results).
+// Weekly fantasy-league scoring bridge (fantasy league plan, Phase 6; the
+// conference/nationals branch was redesigned 2026-07-22 - see memory:
+// conference_nationals_scoring_redesign - to be roster-ranked rather than
+// head-to-head). Modeled on tasks/lock_tournaments.xs / tasks/auto_score.xs's
+// established pattern: time-threshold query -> foreach with per-record
+// try_catch, never abort the whole run -> nested per-user notify each in its
+// own try_catch -> closing debug.log summary. Nothing else transitions
+// season_week.status, so this task owns that lifecycle end to end
+// (upcoming/open -> locked, on starts_at; locked -> complete, on ends_at +
+// a settle buffer for late-arriving results).
 //
-// Branches by week_type:
+// EVERY week type writes into the SAME season_week_tournament_result table -
+// this is the single unified season-long points ledger the eventual league
+// champion is decided from (sum awarded_points per membership across the
+// whole season). Branches by week_type:
 //   head_to_head        - lineup/lineup_slot scoring (functions/league/
-//                          score_league_lineups_for_week), then compares
-//                          each matchup's two sides and updates
-//                          league_membership wins/losses/points_for/against.
+//                          score_league_lineups_for_week) decides each
+//                          matchup's winner (updates league_membership
+//                          wins/losses/points_for/against as before), then
+//                          the win/tie/loss result itself is converted into
+//                          flat ledger points (league.scoring_config's
+//                          head_to_head_result_points) and written as a
+//                          season_week_tournament_result row per side.
 //   marquee_tournament   - no roster/lineup scoring at all. Reads the linked
 //                          real tournament's own already-computed standings
 //                          (user_bracket / pickem_entry), filters to just
 //                          this league's own members, re-ranks 1..N among
 //                          that subset, and records season_week_tournament_
-//                          result rows via the week's placement_points_config.
+//                          result rows via the week's placement_points_config
+//                          (or the config's marquee_tournament default).
 //                          Does NOT touch wins/losses - a standings-points
 //                          addend, not a game.
-//   conference/nationals - identical lineup scoring path to head_to_head
-//                          (waivers/trades stay live right up to lock), but
-//                          no matchup row and no win/loss update - just the
-//                          resulting lineup.points, to be weighted by
-//                          season_week.weight_multiplier at final-standings
-//                          time. Building that combined standings/champion
-//                          calculation is explicitly out of scope for this
-//                          increment (open question, not yet resolved).
+//   conference/nationals - NOT head-to-head. Every member plays their own
+//                          roster independently this week - same lineup
+//                          scoring function as head_to_head (all of a
+//                          wrestler's matches count, closer to pick'em
+//                          scoring), but no matchup/win-loss at all. Members
+//                          are then ranked against each other by their own
+//                          week's lineup.points, and awarded season-standings
+//                          points from a placement table - same mechanism as
+//                          marquee weeks, just roster-ranked instead of
+//                          reading an external tournament leaderboard. These
+//                          weeks counting for more than a regular week is
+//                          entirely a function of their own placement
+//                          table's values (e.g. nationals' 1st-place value
+//                          being much higher than a regular week's) - there
+//                          is no separate weight_multiplier field anymore.
+//
+// Still not built: the actual season-standings/champion GET that sums this
+// ledger (apis/league/leagues_standings_GET.xs).
 //
 // Bye weeks (odd member count, matchup.away_membership_id null) default to
-// an automatic win for the home side at 0 away points - a placeholder
-// pending Garrett's confirmed bye-week rule (open question, not resolved).
+// an automatic win for the home side at 0 away points (confirmed 2026-07-22).
 task score_league_weeks {
   stack {
     var $now {
@@ -161,6 +180,19 @@ task score_league_weeks {
 
                     var $opponent_multipliers {
                       value = $league_overrides|get:"opponent_multipliers":$default_config.opponent_multipliers
+                    }
+
+                    // Flat points a head_to_head result adds to the season
+                    // standings ledger, and the fallback rank->points tables
+                    // used when a week's own placement_points_config is null
+                    // - both feed the same unified season_week_tournament_
+                    // result ledger every week type writes into.
+                    var $h2h_points {
+                      value = $league_overrides|get:"head_to_head_result_points":$default_config.head_to_head_result_points
+                    }
+
+                    var $placement_defaults {
+                      value = $league_overrides|get:"placement_points_defaults":$default_config.placement_points_defaults
                     }
 
                     conditional {
@@ -337,6 +369,97 @@ task score_league_weeks {
                                         }
                                       }
                                     }
+
+                                    // Convert this head_to_head result into flat
+                                    // points for the SAME unified season-long
+                                    // ledger every week type writes into (see
+                                    // season_week_tournament_result) - a
+                                    // win/loss record alone can't be summed
+                                    // against marquee/conference/nationals'
+                                    // points-shaped contributions.
+                                    var $home_result_key {
+                                      value = "tie"
+                                    }
+
+                                    conditional {
+                                      if ($result == "home") {
+                                        var.update $home_result_key {
+                                          value = "win"
+                                        }
+                                      }
+                                      elseif ($result == "away") {
+                                        var.update $home_result_key {
+                                          value = "loss"
+                                        }
+                                      }
+                                    }
+
+                                    var $home_rank {
+                                      value = 1
+                                    }
+
+                                    conditional {
+                                      if ($home_result_key == "loss") {
+                                        var.update $home_rank {
+                                          value = 2
+                                        }
+                                      }
+                                    }
+
+                                    db.add season_week_tournament_result {
+                                      data = {
+                                        created_at    : now
+                                        league_id     : $league.id
+                                        season_week_id: $week.id
+                                        membership_id : $m.home_membership_id
+                                        rank_in_league: $home_rank
+                                        awarded_points: $h2h_points|get:$home_result_key:0
+                                      }
+                                    } as $home_swtr
+
+                                    conditional {
+                                      if ($m.away_membership_id != null) {
+                                        var $away_result_key {
+                                          value = "tie"
+                                        }
+
+                                        conditional {
+                                          if ($result == "away") {
+                                            var.update $away_result_key {
+                                              value = "win"
+                                            }
+                                          }
+                                          elseif ($result == "home") {
+                                            var.update $away_result_key {
+                                              value = "loss"
+                                            }
+                                          }
+                                        }
+
+                                        var $away_rank {
+                                          value = 1
+                                        }
+
+                                        conditional {
+                                          if ($away_result_key == "loss") {
+                                            var.update $away_rank {
+                                              value = 2
+                                            }
+                                          }
+                                        }
+
+                                        db.add season_week_tournament_result {
+                                          data = {
+                                            created_at    : now
+                                            league_id     : $league.id
+                                            season_week_id: $week.id
+                                            membership_id : $m.away_membership_id
+                                            rank_in_league: $away_rank
+                                            awarded_points: $h2h_points|get:$away_result_key:0
+                                          }
+                                        } as $away_swtr
+                                      }
+                                    }
                                   }
 
                                   catch {
@@ -351,6 +474,88 @@ task score_league_weeks {
                             math.add $head_to_head_scored { value = 1 }
                           }
                           else {
+                            // Conference/nationals: NOT head-to-head - every
+                            // member played their own roster independently
+                            // this week (score_league_lineups_for_week already
+                            // ran above, same averaging math as head_to_head).
+                            // Rank members by their own week score and award
+                            // season-standings points from a placement table,
+                            // same shape/mechanism as marquee weeks below -
+                            // this is what lets conference/nationals count for
+                            // more than a regular week, entirely through this
+                            // table's own values (no separate weight field).
+                            db.query lineup {
+                              where = $db.lineup.league_id == $league.id && $db.lineup.season_week_id == $week.id
+                              return = {type: "list"}
+                            } as $week_lineups
+
+                            var $postseason_score_list {
+                              value = []
+                            }
+
+                            foreach ($week_lineups) {
+                              each as $ln {
+                                array.push $postseason_score_list {
+                                  value = {membership_id: $ln.membership_id, score: $ln.points}
+                                }
+                              }
+                            }
+
+                            var $sorted_postseason_scores {
+                              value = $postseason_score_list|sort:"score":"number"|reverse
+                            }
+
+                            var $postseason_placement_cfg {
+                              value = $placement_defaults|get:$week.week_type:{}
+                            }
+
+                            conditional {
+                              if ($week.placement_points_config != null) {
+                                var.update $postseason_placement_cfg {
+                                  value = $week.placement_points_config
+                                }
+                              }
+                            }
+
+                            var $postseason_rank_counter {
+                              value = 0
+                            }
+
+                            foreach ($sorted_postseason_scores) {
+                              each as $pentry {
+                                try_catch {
+                                  try {
+                                    math.add $postseason_rank_counter { value = 1 }
+
+                                    var $postseason_placement_key {
+                                      value = $postseason_rank_counter|to_text
+                                    }
+
+                                    var $postseason_awarded {
+                                      value = $postseason_placement_cfg|get:$postseason_placement_key:($postseason_placement_cfg|get:"default":0)
+                                    }
+
+                                    db.add season_week_tournament_result {
+                                      data = {
+                                        created_at    : now
+                                        league_id     : $league.id
+                                        season_week_id: $week.id
+                                        membership_id : $pentry.membership_id
+                                        rank_in_league: $postseason_rank_counter
+                                        awarded_points: $postseason_awarded
+                                      }
+                                    } as $postseason_swtr
+                                  }
+
+                                  catch {
+                                    debug.log {
+                                      value = {league_id: $league.id, season_week_id: $week.id, membership_id: $pentry.membership_id, error: $error.message}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+
                             math.add $postseason_scored { value = 1 }
                           }
                         }
