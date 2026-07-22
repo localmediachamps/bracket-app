@@ -25,6 +25,12 @@ table uploaded_document {
   
     // linked tournament after confirm
     int tournament_id?
+
+    // bracket_import (entrant/seed lists, the original flow) | results_import
+    // (completed match results, for backfilling an already-decided event -
+    // see functions/ai/parse_results_pdf.xs). Existing rows predate this
+    // field and are all bracket_import.
+    text doc_type?=bracket_import
   }
 
   index = [
@@ -36,4 +42,5 @@ table uploaded_document {
     }
     {type: "btree", field: [{name: "tournament_id", op: "asc"}]}
   ]
+  guid = "Ljjlhs5WSr-b3Zk5Jui2NUrJha4"
 }
