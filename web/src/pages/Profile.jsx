@@ -107,6 +107,12 @@ function EditTab() {
     if (file) avatarMutation.mutate(file)
   }
 
+  const resendMutation = useMutation({
+    mutationFn: () => api.resendVerification(),
+    onSuccess: () => toast.success('Verification email sent', { body: 'Check your inbox (and spam folder) for the link.' }),
+    onError: (err) => toast.error('Could not send email', { body: err.message }),
+  })
+
   if (isLoading || !form) {
     return (
       <div className="mx-auto max-w-2xl space-y-5">
@@ -142,12 +148,6 @@ function EditTab() {
     form.leaderboard_visible !== (me.leaderboard_visible ?? true) ||
     form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name') ||
     form.show_public_submissions !== (me.show_public_submissions ?? true)
-
-  const resendMutation = useMutation({
-    mutationFn: () => api.resendVerification(),
-    onSuccess: () => toast.success('Verification email sent', { body: 'Check your inbox (and spam folder) for the link.' }),
-    onError: (err) => toast.error('Could not send email', { body: err.message }),
-  })
 
   const submit = (e) => {
     e?.preventDefault()
