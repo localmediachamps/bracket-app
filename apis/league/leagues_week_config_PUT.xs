@@ -1,8 +1,10 @@
-// Commissioner configures a non-head-to-head week: which real tournament it's
-// tied to, and which of the 5 modes runs for it (roster / bracket / pickem /
-// bracket_pickem / tournament_draft). Picks from existing tournament rows -
-// creating the tournament itself is the normal admin tournament-builder flow,
-// unchanged here.
+// Commissioner configures a marquee_tournament week: which real tournament
+// it's tied to, which contest mode runs (bracket / pickem / bracket_pickem),
+// and the per-tournament placement->points table. Picks from existing
+// tournament rows - creating the tournament itself is the normal admin
+// tournament-builder flow, unchanged here. conference/nationals weeks don't
+// use this endpoint at all - they're always roster-scored, no commissioner
+// mode choice (see the fantasy league plan's postseason redesign, 2026-07-22).
 query "leagues/week/config" verb=PUT {
   api_group = "league"
   auth = "user"
@@ -12,6 +14,7 @@ query "leagues/week/config" verb=PUT {
     int season_week_id
     text tournament_game_mode filters=trim|lower
     int linked_tournament_id
+    json? placement_points_config?
   }
 
   stack {
@@ -20,9 +23,9 @@ query "leagues/week/config" verb=PUT {
       error = "Authentication required."
     }
 
-    precondition ($input.tournament_game_mode == "roster" || $input.tournament_game_mode == "bracket" || $input.tournament_game_mode == "pickem" || $input.tournament_game_mode == "bracket_pickem" || $input.tournament_game_mode == "tournament_draft") {
+    precondition ($input.tournament_game_mode == "bracket" || $input.tournament_game_mode == "pickem" || $input.tournament_game_mode == "bracket_pickem") {
       error_type = "inputerror"
-      error = "tournament_game_mode must be roster, bracket, pickem, bracket_pickem, or tournament_draft."
+      error = "tournament_game_mode must be bracket, pickem, or bracket_pickem."
     }
 
     db.get league {
@@ -55,9 +58,9 @@ query "leagues/week/config" verb=PUT {
       error = "That week isn't part of this league's season."
     }
 
-    precondition ($week.week_type != "head_to_head") {
+    precondition ($week.week_type == "marquee_tournament") {
       error_type = "inputerror"
-      error = "Head-to-head weeks don't use a tournament mode."
+      error = "Only marquee_tournament weeks take a commissioner-configured tournament mode."
     }
 
     db.get tournament {
@@ -74,8 +77,9 @@ query "leagues/week/config" verb=PUT {
       field_name = "id"
       field_value = $week.id
       data = {
-        linked_tournament_id : $input.linked_tournament_id
-        tournament_game_mode : $input.tournament_game_mode
+        linked_tournament_id  : $input.linked_tournament_id
+        tournament_game_mode  : $input.tournament_game_mode
+        placement_points_config: $input.placement_points_config
       }
     } as $updated_week
   }
