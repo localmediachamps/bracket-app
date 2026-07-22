@@ -420,7 +420,7 @@ export default function Landing() {
       {/* ── Live & open tournaments ──────────────────── */}
       <section className="py-16">
         <div className="flex items-end justify-between gap-4">
-          <SectionHeading sub="Real brackets, real stakes. Jump in before the lock.">Live & open tournaments</SectionHeading>
+          <SectionHeading sub="Bragging rights on the line. Jump in before the lock.">Live & open tournaments</SectionHeading>
           <Link
             to="/tournaments"
             className="mb-4 hidden shrink-0 items-center gap-1 text-sm font-bold text-gold-500 hover:text-gold-300 sm:inline-flex"
@@ -516,7 +516,7 @@ export default function Landing() {
 
       {/* ── Results library ───────────────────────────── */}
       <section className="py-16">
-        <SectionHeading sub="Every real match, searchable — score, time, and how it ended.">The Results Library</SectionHeading>
+        <SectionHeading sub="Every match, searchable — score, time, and how it ended.">The Results Library</SectionHeading>
         {resultsPreviewQ.isLoading ? (
           <CardSkeleton />
         ) : resultsPreview.length > 0 ? (
