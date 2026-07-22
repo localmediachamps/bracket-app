@@ -25,6 +25,12 @@ table canonical_team {
     // compliance note re: results provider). Populated by hand/research,
     // not guaranteed for every team.
     text roster_url? filters=trim
+
+    // Official athletics department wrestling schedule page - same
+    // reference-link convention as roster_url. Kept even though app-side
+    // schedule ingestion isn't built yet, so teams already have a place to
+    // point users once new-season schedules are released.
+    text schedule_url? filters=trim
   }
 
   index = [

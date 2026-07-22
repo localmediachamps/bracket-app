@@ -51,16 +51,28 @@ export default function TeamProfile() {
           <h1 className="font-display text-2xl text-ink-50">{team.name}</h1>
           {team.conference && <p className="text-sm text-ink-400">{team.conference}</p>}
         </div>
-        {team.roster_url && (
-          <a
-            href={team.roster_url}
-            target="_blank"
-            rel="noreferrer"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-3 py-1.5 text-xs font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
-          >
-            Official Roster <ExternalLink size={13} />
-          </a>
-        )}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {team.roster_url && (
+            <a
+              href={team.roster_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-3 py-1.5 text-xs font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
+            >
+              Official Roster <ExternalLink size={13} />
+            </a>
+          )}
+          {team.schedule_url && (
+            <a
+              href={team.schedule_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-3 py-1.5 text-xs font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
+            >
+              Official Schedule <ExternalLink size={13} />
+            </a>
+          )}
+        </div>
       </div>
 
       <Card className="mb-6 p-5">

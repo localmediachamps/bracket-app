@@ -1,0 +1,476 @@
+[
+  {
+    "name": "Air Force",
+    "schedule_url": "https://goairforcefalcons.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://goairforcefalcons.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "American",
+    "schedule_url": "https://aueagles.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://aueagles.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Appalachian State",
+    "schedule_url": "https://appstatesports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://appstatesports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Arizona State",
+    "schedule_url": "https://thesundevils.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://thesundevils.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Army West Point",
+    "schedule_url": "https://goarmywestpoint.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://goarmywestpoint.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Bellarmine",
+    "schedule_url": "https://athletics.bellarmine.edu/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://athletics.bellarmine.edu/sports/wrestling/schedule"
+  },
+  {
+    "name": "Binghamton",
+    "schedule_url": "https://binghamtonbearcats.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://binghamtonbearcats.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Bloomsburg",
+    "schedule_url": "https://buhuskies.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://bloomsburgathletics.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Brown",
+    "schedule_url": "https://brownbears.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://brownbears.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Bucknell",
+    "schedule_url": "https://bucknellbison.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://bucknellbison.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Buffalo",
+    "schedule_url": "https://ubbulls.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://ubbulls.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "CSU Bakersfield",
+    "schedule_url": "https://gorunners.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gorunners.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Cal Poly",
+    "schedule_url": "https://gopoly.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gopoly.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "California Baptist",
+    "schedule_url": "https://cbulancers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://cbulancers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Campbell",
+    "schedule_url": "https://gocamels.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gocamels.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Central Michigan",
+    "schedule_url": "https://cmuchippewas.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://cmuchippewas.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Chattanooga",
+    "schedule_url": "https://gomocs.com/sports/wr/schedule",
+    "status": 200,
+    "final_url": "https://gomocs.com/sports/wr/schedule"
+  },
+  {
+    "name": "Clarion",
+    "schedule_url": "https://clariongoldeneagles.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://clariongoldeneagles.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Cleveland State",
+    "schedule_url": "https://csuvikings.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://csuvikings.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Columbia",
+    "schedule_url": "https://gocolumbialions.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gocolumbialions.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Cornell",
+    "schedule_url": "https://cornellbigred.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://cornellbigred.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Davidson",
+    "schedule_url": "https://davidsonwildcats.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://davidsonwildcats.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Drexel",
+    "schedule_url": "https://drexeldragons.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://drexeldragons.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Duke",
+    "schedule_url": "https://goduke.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://goduke.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Edinboro",
+    "schedule_url": "https://gofightingscots.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gofightingscots.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Franklin & Marshall",
+    "schedule_url": "https://godiplomats.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://godiplomats.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Gardner-Webb",
+    "schedule_url": "https://gwusports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gwusports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "George Mason",
+    "schedule_url": "https://gomason.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gomason.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Harvard",
+    "schedule_url": "https://gocrimson.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gocrimson.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Hofstra",
+    "schedule_url": "https://gohofstra.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gohofstra.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Illinois",
+    "schedule_url": "https://fightingillini.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://fightingillini.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Indiana",
+    "schedule_url": "https://iuhoosiers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://iuhoosiers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Iowa",
+    "schedule_url": "https://hawkeyesports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://hawkeyesports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Iowa State",
+    "schedule_url": "https://cyclones.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://cyclones.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Kent State",
+    "schedule_url": "https://kentstatesports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://kentstatesports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "LIU",
+    "schedule_url": "https://www.liuathletics.com/sports/wres/schedule",
+    "status": 200,
+    "final_url": "https://www.liuathletics.com/sports/wres/schedule"
+  },
+  {
+    "name": "Lehigh",
+    "schedule_url": "https://lehighsports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://lehighsports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Little Rock",
+    "schedule_url": "https://lrtrojans.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://lrtrojans.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Lock Haven",
+    "schedule_url": "https://www.lockhavenathletics.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://www.lockhavenathletics.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Maryland",
+    "schedule_url": "https://umterps.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://umterps.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Michigan",
+    "schedule_url": "https://mgoblue.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://mgoblue.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Michigan State",
+    "schedule_url": "https://msuspartans.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://msuspartans.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Minnesota",
+    "schedule_url": "https://gophersports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gophersports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Missouri",
+    "schedule_url": "https://mutigers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://mutigers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Morgan State",
+    "schedule_url": "https://morganstatebears.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://morganstatebears.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "NC State",
+    "schedule_url": "https://gopack.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gopack.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Navy",
+    "schedule_url": "https://navysports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://navysports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Nebraska",
+    "schedule_url": "https://huskers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://huskers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "North Carolina",
+    "schedule_url": "https://goheels.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://goheels.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "North Dakota State",
+    "schedule_url": "https://gobison.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gobison.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Northern Colorado",
+    "schedule_url": "https://uncbears.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://uncbears.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Northern Illinois",
+    "schedule_url": "https://niuhuskies.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://niuhuskies.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Northern Iowa",
+    "schedule_url": "https://unipanthers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://unipanthers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Northwestern",
+    "schedule_url": "https://nusports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://nusports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Ohio",
+    "schedule_url": "https://ohiobobcats.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://ohiobobcats.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Ohio State",
+    "schedule_url": "https://ohiostatebuckeyes.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://ohiostatebuckeyes.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Oklahoma",
+    "schedule_url": "https://soonersports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://soonersports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Oklahoma State",
+    "schedule_url": "https://okstate.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://okstate.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Oregon State",
+    "schedule_url": "https://osubeavers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://osubeavers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Penn",
+    "schedule_url": "https://pennathletics.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://pennathletics.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Penn State",
+    "schedule_url": "https://gopsusports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gopsusports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Pittsburgh",
+    "schedule_url": "https://pittsburghpanthers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://pittsburghpanthers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Presbyterian",
+    "schedule_url": "https://gobluehose.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gobluehose.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Princeton",
+    "schedule_url": "https://goprincetontigers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://goprincetontigers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Purdue",
+    "schedule_url": "https://purduesports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://purduesports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Rider",
+    "schedule_url": "https://gobroncs.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gobroncs.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Rutgers",
+    "schedule_url": "https://scarletknights.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://scarletknights.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "SIU Edwardsville",
+    "schedule_url": "https://siuecougars.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://siuecougars.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Sacred Heart",
+    "schedule_url": "https://sacredheartpioneers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://sacredheartpioneers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "South Dakota State",
+    "schedule_url": "https://gojacks.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gojacks.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Stanford",
+    "schedule_url": "https://gostanford.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gostanford.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "The Citadel",
+    "schedule_url": "https://citadelsports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://citadelsports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Utah Valley",
+    "schedule_url": "https://gouvu.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gouvu.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "VMI",
+    "schedule_url": "https://vmikeydets.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://vmikeydets.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Virginia",
+    "schedule_url": "https://virginiasports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://virginiasports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Virginia Tech",
+    "schedule_url": "https://hokiesports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://hokiesports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "West Virginia",
+    "schedule_url": "https://wvusports.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://wvusports.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Wisconsin",
+    "schedule_url": "https://uwbadgers.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://uwbadgers.com/sports/wrestling/schedule"
+  },
+  {
+    "name": "Wyoming",
+    "schedule_url": "https://gowyo.com/sports/wrestling/schedule",
+    "status": 200,
+    "final_url": "https://gowyo.com/sports/wrestling/schedule"
+  }
+]
