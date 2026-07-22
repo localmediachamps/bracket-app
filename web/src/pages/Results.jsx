@@ -3,39 +3,23 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search, ScrollText, ChevronLeft, ChevronRight, X, Zap, Flame, TrendingUp,
+  Search, ScrollText, ChevronLeft, ChevronRight, X, Zap, Flame, TrendingUp, Timer,
   Trophy, Rows3, LayoutGrid, SlidersHorizontal,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { Select, Badge, CardSkeleton, EmptyState, Button, Modal } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
-import { cn, victoryLabel } from '../lib/utils'
+import { cn, classifyRawVictoryType, rawVictoryLabel, rawVictoryColor } from '../lib/utils'
 
 const WEIGHTS = ['125', '133', '141', '149', '157', '165', '174', '184', '197', '285']
 const PER_PAGE = 25
 
-// Visual weight per victory type - the more decisive/dramatic the win, the
-// more it should pop. Decision/medical-forfeit/etc fall through to a plain
-// "ink" badge with no icon (no bonus, nothing to celebrate).
-// The stored victory_type is raw scraped text ("Fall", "Technical Fall",
-// "Major Decision", "Sudden Victory - 3", ...), not a normalized enum key -
-// match on substrings rather than exact keys, checking "technical"/"major"
-// before the plain "fall" check since "Technical Fall" also contains "fall".
-const VICTORY_STYLE = {
-  fall: { color: 'blood', icon: Zap },
-  tech_fall: { color: 'gold', icon: Flame },
-  major: { color: 'gold', icon: TrendingUp },
-}
-function normalizeVictoryType(raw) {
-  if (!raw) return null
-  const s = raw.toLowerCase()
-  if (s.includes('technical')) return 'tech_fall'
-  if (s.includes('major')) return 'major'
-  if (s.includes('fall')) return 'fall'
-  return null
-}
+// Icon per finish - the more decisive/dramatic the win, the more it should
+// pop. Decision/medical-forfeit/etc fall through to a plain "ink" badge with
+// no icon (no bonus, nothing to celebrate).
+const VICTORY_ICON = { fall: Zap, tech_fall: Flame, major: TrendingUp, sudden_victory: Timer }
 function victoryStyle(victoryType) {
-  return VICTORY_STYLE[normalizeVictoryType(victoryType)] || { color: 'ink', icon: null }
+  return { color: rawVictoryColor(victoryType), icon: VICTORY_ICON[classifyRawVictoryType(victoryType)] || null }
 }
 
 // "1st/3rd/5th/7th Place Match" round labels are the whole reason a bracket
@@ -141,7 +125,7 @@ function MatchRow({ m }) {
       </td>
       <td className="px-3 py-3">
         <Badge color={color}>
-          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+          {Icon && <Icon size={11} />} {rawVictoryLabel(m.victory_type) || '—'}
         </Badge>
       </td>
       <td className="px-3 py-3">
@@ -203,7 +187,7 @@ function MatchCard({ m }) {
           just another small badge in a row. */}
       <div className="mt-3.5 flex items-center justify-between gap-2 rounded-lg border border-mat-700 bg-mat-900/60 px-3 py-2.5">
         <Badge color={color}>
-          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+          {Icon && <Icon size={11} />} {rawVictoryLabel(m.victory_type) || '—'}
         </Badge>
         <MatchDetail m={m} className="text-base font-bold text-ink-100" fallback="—" />
       </div>

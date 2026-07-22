@@ -63,6 +63,71 @@ export function victoryLabel(v) {
   return VICTORY_TYPES[v]?.label ?? v ?? ''
 }
 
+// Real wrestler_match_history.victory_type values are raw scraped text
+// ("Major Decision", "Sudden Victory - 1", "Medical FF w/Loss", ...), not the
+// clean bracket_match enum VICTORY_TYPES above keys off of - classify by
+// substring, checking specific finishes before generic ones (e.g. "Technical
+// Fall" contains "fall", "Medical Forfeit" contains "forfeit").
+export function classifyRawVictoryType(raw) {
+  if (!raw) return null
+  const s = raw.toLowerCase()
+  if (s.includes('no contest')) return 'no_contest'
+  if (s.includes('medical')) return 'medical_forfeit'
+  if (s.includes('injury') || s.trim().startsWith('default')) return 'injury_default'
+  if (s.includes('disqualif')) return 'disqualification'
+  if (s.includes('sudden victory')) return 'sudden_victory'
+  if (s.includes('tie breaker') || s.includes('tiebreaker')) return 'tie_breaker'
+  if (s.includes('forfeit')) return 'forfeit'
+  if (s.includes('technical')) return 'tech_fall'
+  if (s.includes('major')) return 'major'
+  if (s.includes('fall')) return 'fall'
+  if (s.includes('decision')) return 'decision'
+  return null
+}
+
+const RAW_VICTORY_LABEL = {
+  decision: 'Dec',
+  major: 'Major Dec.',
+  tech_fall: 'Tech Fall',
+  fall: 'Fall',
+  medical_forfeit: 'Med FFT',
+  injury_default: 'Injury Default',
+  disqualification: 'DQ',
+  forfeit: 'Forfeit',
+  sudden_victory: 'OT',
+  tie_breaker: 'TB',
+  no_contest: 'No Contest',
+}
+
+const NUMBERED_RAW_TYPES = new Set(['sudden_victory', 'tie_breaker'])
+
+// Short chip label for a raw scraped victory_type string. Falls back to the
+// raw text itself if it doesn't match any known finish, so nothing is ever
+// hidden - just possibly not shortened.
+export function rawVictoryLabel(raw) {
+  const key = classifyRawVictoryType(raw)
+  if (!key) return raw || ''
+  const base = RAW_VICTORY_LABEL[key]
+  if (NUMBERED_RAW_TYPES.has(key)) {
+    const n = /(\d+)/.exec(raw)?.[1]
+    return n ? `${base} - ${n}` : base
+  }
+  return base
+}
+
+// Chip color per finish - deliberately avoids blood (red) and pin (green),
+// since both already carry win/loss meaning elsewhere in the UI and would
+// read as implying a result rather than just naming a finish type.
+const RAW_VICTORY_COLOR = {
+  fall: 'gold',
+  sudden_victory: 'gold',
+  tech_fall: 'sky',
+  major: 'violet',
+}
+export function rawVictoryColor(raw) {
+  return RAW_VICTORY_COLOR[classifyRawVictoryType(raw)] || 'ink'
+}
+
 export function initials(name = '') {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?'
 }

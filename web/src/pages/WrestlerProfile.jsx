@@ -1,30 +1,15 @@
 import React from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, ExternalLink } from 'lucide-react'
+import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, Timer, ExternalLink } from 'lucide-react'
 import { api } from '../lib/api'
 import { Badge, Card, CardSkeleton, EmptyState, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
-import { cn, victoryLabel } from '../lib/utils'
+import { cn, classifyRawVictoryType, rawVictoryLabel, rawVictoryColor } from '../lib/utils'
 
-// Same victory-type styling convention as Results.jsx - kept local rather
-// than shared since it's a handful of small pure functions, not worth a
-// cross-file abstraction yet.
-const VICTORY_STYLE = {
-  fall: { color: 'blood', icon: Zap },
-  tech_fall: { color: 'gold', icon: Flame },
-  major: { color: 'gold', icon: TrendingUp },
-}
-function normalizeVictoryType(raw) {
-  if (!raw) return null
-  const s = raw.toLowerCase()
-  if (s.includes('technical')) return 'tech_fall'
-  if (s.includes('major')) return 'major'
-  if (s.includes('fall')) return 'fall'
-  return null
-}
+const VICTORY_ICON = { fall: Zap, tech_fall: Flame, major: TrendingUp, sudden_victory: Timer }
 function victoryStyle(victoryType) {
-  return VICTORY_STYLE[normalizeVictoryType(victoryType)] || { color: 'ink', icon: null }
+  return { color: rawVictoryColor(victoryType), icon: VICTORY_ICON[classifyRawVictoryType(victoryType)] || null }
 }
 
 function placementInfo(roundLabel) {
@@ -161,7 +146,7 @@ export default function WrestlerProfile() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-2 rounded-md border border-mat-700 bg-mat-900/60 px-2 py-1">
                         <Badge color={color}>
-                          {Icon && <Icon size={11} />} {victoryLabel(m.victory_type) || m.victory_type || '—'}
+                          {Icon && <Icon size={11} />} {rawVictoryLabel(m.victory_type) || '—'}
                         </Badge>
                         {(m.score || time) && (
                           <span className="font-mono text-sm font-bold text-ink-100">

@@ -59,6 +59,8 @@ export function Badge({ color = 'ink', pulse, className, children }) {
     gold: 'bg-gold-500/12 text-gold-400 border-gold-500/30',
     blood: 'bg-blood-500/12 text-blood-400 border-blood-500/30',
     pin: 'bg-pin-500/12 text-pin-400 border-pin-500/30',
+    sky: 'bg-sky-500/12 text-sky-400 border-sky-500/30',
+    violet: 'bg-violet-500/12 text-violet-400 border-violet-500/30',
     ink: 'bg-mat-700/60 text-ink-300 border-mat-600',
   }
   return (
