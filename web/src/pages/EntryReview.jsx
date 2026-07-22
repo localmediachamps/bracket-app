@@ -51,6 +51,11 @@ export default function EntryReview() {
     mutationFn: (isPublic) => api.setEntryVisibility(id, isPublic),
     onSuccess: (_data, isPublic) => {
       toast.success(isPublic ? 'Your bracket is now public' : 'Your bracket is now private')
+      // Patch the cached entry immediately so the toggle label updates right
+      // away, rather than waiting on invalidateQueries' background refetch.
+      qc.setQueryData(['entry-review', id], (old) =>
+        old ? { ...old, entry: { ...old.entry, is_public: isPublic } } : old
+      )
       qc.invalidateQueries({ queryKey: ['entry-review', id] })
     },
     onError: (err) => toast.error('Could not update visibility', { body: err.message }),

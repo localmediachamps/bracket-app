@@ -109,8 +109,10 @@ export default function LeaderboardPanel({ tournament }) {
   })
 
   const { items, total, totalPages } = normalizeList(data)
+  // The podium highlights the top 3; the table below is the complete ranked
+  // list and always includes them too, not just ranks 4+.
   const podium = page === 1 ? items.slice(0, 3) : []
-  const rows = page === 1 ? items.slice(3) : items
+  const rows = items
 
   const switchMode = (m) => {
     setMode(m)

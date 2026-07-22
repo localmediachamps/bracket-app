@@ -155,6 +155,9 @@ export default function Pickem() {
     mutationFn: (isPublic) => api.setPickemEntryVisibility(entry.id, isPublic),
     onSuccess: (_data, isPublic) => {
       toast.success(isPublic ? 'Your picks are now public' : 'Your picks are now private')
+      // Patch local state immediately so the toggle label updates right away,
+      // rather than waiting on invalidateQueries' background refetch.
+      setEntry((prev) => (prev ? { ...prev, is_public: isPublic } : prev))
       queryClient.invalidateQueries({ queryKey: ['pickem-entry', entry?.id] })
     },
     onError: (err) => toast.error('Could not update visibility', { body: err.message }),
