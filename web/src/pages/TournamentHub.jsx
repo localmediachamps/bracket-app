@@ -220,7 +220,7 @@ export default function TournamentHub() {
         </div>
 
         <div className="flex flex-col items-start gap-3 sm:items-end">
-          {t.status === 'open' && t.locks_at && (
+          {t.status === 'open' && t.locks_at > 0 && (
             <div className="rounded-xl border border-mat-700 bg-mat-850 px-4 py-2.5 sm:text-right">
               <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-ink-500">Picks lock in</span>
               <Countdown to={t.locks_at} className="text-lg" />

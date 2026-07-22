@@ -114,7 +114,7 @@ export default function AdminTournament() {
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-mono">{tournament?.year}</span>
             {tournament?.location && <span>{tournament.location}</span>}
-            {tournament?.locks_at && ['open', 'locked'].includes(status) && (
+            {tournament?.locks_at > 0 && ['open', 'locked'].includes(status) && (
               <span className="inline-flex items-center gap-1.5">locks in <Countdown to={tournament.locks_at} /></span>
             )}
           </span>

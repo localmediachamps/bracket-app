@@ -488,7 +488,7 @@ export default function Pickem() {
         <StatusPill status={tournament.status} />
         <StatusPill status={entry.status} />
         <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          {tournament.locks_at && (
+          {tournament.locks_at > 0 && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-500">
               <Timer size={13} className="text-gold-500" />
               <Countdown to={tournament.locks_at} />

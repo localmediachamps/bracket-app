@@ -124,7 +124,7 @@ export default function Dashboard() {
                     <p className="truncate text-sm font-bold text-ink-100">Finish your picks — {t.name}</p>
                     <p className="mt-0.5 text-xs text-ink-400">
                       {prog.total ? `${prog.picked}/${prog.total} picks made` : 'Entry still in draft'}
-                      {t.locks_at && (
+                      {t.locks_at > 0 && (
                         <>
                           {' · locks '}
                           <Countdown to={t.locks_at} />
