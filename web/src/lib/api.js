@@ -74,6 +74,16 @@ export const api = {
   teams: () => get(XANO_APP, `/results/teams`),
   teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 
+  /* ── Dual meets ─────────────────────────────────────── */
+  dualMeets: (params = {}) => get(XANO_APP, `/dual-meets${qs(params)}`),
+  dualMeet: (idOrSlug) => get(XANO_APP, `/dual-meets/${idOrSlug}`),
+  dualMeetLeaderboard: (dualMeetId, params = {}) => get(XANO_APP, `/dual-meets/${dualMeetId}/leaderboard${qs(params)}`),
+  createDualMeetEntry: (dualMeetId) => post(XANO_APP, `/dual-meets/${dualMeetId}/entry`),
+  dualMeetEntry: (entryId) => get(XANO_APP, `/dual-meet-entries/${entryId}`),
+  saveDualMeetPicks: (entryId, picks) => put(XANO_APP, `/dual-meet-entries/${entryId}`, { picks }),
+  submitDualMeetEntry: (entryId) => post(XANO_APP, `/dual-meet-entries/${entryId}/submit`),
+  setDualMeetEntryVisibility: (entryId, isPublic) => put(XANO_APP, `/dual-meet-entries/${entryId}/visibility`, { is_public: isPublic }),
+
   /* ── Player ─────────────────────────────────────────── */
   createEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/entries`),
   entry: (entryId) => get(XANO_APP, `/entries/${entryId}`),

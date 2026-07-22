@@ -29,6 +29,8 @@ const Leaderboard = lazy(() => import('./pages/Leaderboard'))
 const Help = lazy(() => import('./pages/Help'))
 const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const DualMeets = lazy(() => import('./pages/DualMeets'))
+const DualMeetDetail = lazy(() => import('./pages/DualMeetDetail'))
 const Groups = lazy(() => import('./pages/Groups'))
 const GroupNew = lazy(() => import('./pages/GroupNew'))
 const GroupDetail = lazy(() => import('./pages/GroupDetail'))
@@ -105,6 +107,8 @@ export default function App() {
             <Route path="/help" element={<Help />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/dual-meets" element={<DualMeets />} />
+            <Route path="/dual-meets/:id" element={<DualMeetDetail />} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/entries/:id/review" element={<RequireAuth><EntryReview /></RequireAuth>} />
             <Route path="/pickem-entries/:id" element={<RequireAuth><PickemEntryView /></RequireAuth>} />

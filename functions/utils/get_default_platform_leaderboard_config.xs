@@ -39,14 +39,23 @@ function get_default_platform_leaderboard_config {
       value = $percentile.scale * $dual_meet_discount_factor
     }
 
-    // Tiers as a fraction of dual_meet_scale, keyed by correctness against
-    // the weight classes that actually occurred (a predicted weight whose
-    // match never happens - e.g. an injury swap - is excluded from both the
-    // numerator and denominator entirely, never scored as a miss)
+    // Tiers keyed by correctness against the weight classes that actually
+    // occurred (a predicted weight whose match never happens - e.g. an
+    // injury swap - is excluded from both the numerator and denominator
+    // entirely, never scored as a miss - see rescore_dual_meet.xs).
+    // "perfect_card"/"all_winners" are both zero-missed-winners tiers (the
+    // difference is whether every victory-type pick also matched); miss_N
+    // keys are picked by (occurred_weight_count - correct_winner_count),
+    // so a 9-of-10 card and an 8-of-9 card (one weight nullified) both land
+    // on "miss_1" - the rubric grades against what could be predicted, not
+    // a fixed field size. 4+ misses falls through to "default".
     var $rubric_tiers {
       value = {}
         |set:"perfect_card":$dual_meet_scale
         |set:"all_winners":($dual_meet_scale * 0.7)
+        |set:"miss_1":($dual_meet_scale * 0.5)
+        |set:"miss_2":($dual_meet_scale * 0.3)
+        |set:"miss_3":($dual_meet_scale * 0.15)
         |set:"default":0
     }
 

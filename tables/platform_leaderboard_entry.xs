@@ -10,11 +10,12 @@
 //   percentile - bracket/pick'em. Ranked against the tournament's own field
 //     size, so it scales correctly whether an event has 8 entrants or 5,000.
 //     rank_in_tournament/entrants/percentile are populated, rubric_tier null.
-//   rubric - dual-meet-picks (NOT YET BUILT - this table just reserves the
-//     shape). Graded against a fixed absolute correctness rubric, not
-//     against other entrants at all (many dual-meet submissions overlap
-//     since there's much less variation possible than a full bracket).
-//     rubric_tier is populated, rank_in_tournament/entrants/percentile null.
+//   rubric - dual-meet-picks. Graded against a fixed absolute correctness
+//     rubric, not against other entrants at all (many dual-meet submissions
+//     overlap since there's much less variation possible than a full
+//     bracket). rubric_tier is populated, rank_in_tournament/entrants/
+//     percentile null. Uses dual_meet_id instead of tournament_id, and
+//     year is copied from dual_meet.year instead of tournament.year.
 //
 // Only genuinely competitive (submitted|locked) entries ever get a row here -
 // drafts never count toward the master leaderboard.
@@ -33,7 +34,12 @@ table platform_leaderboard_entry {
       table = "tournament"
     }
 
-    // bracket | pickem | dual_meet (dual_meet reserved, not producible yet)
+    // Populated instead of tournament_id when source_type == "dual_meet"
+    int? dual_meet_id? {
+      table = "dual_meet"
+    }
+
+    // bracket | pickem | dual_meet
     enum source_type {
       values = ["bracket", "pickem", "dual_meet"]
     }
@@ -68,6 +74,7 @@ table platform_leaderboard_entry {
       field: [
         {name: "user_id", op: "asc"}
         {name: "tournament_id", op: "asc"}
+        {name: "dual_meet_id", op: "asc"}
         {name: "source_type", op: "asc"}
       ]
     }
