@@ -100,7 +100,7 @@ export default function Register() {
     <AuthLayout
       quote="Champions are picked long before the whistle. Pick yours."
       attribution="— Mat Savvy scouting report"
-      title="Join the mat"
+      title="Join Mat Savvy"
       sub="One account. Every tournament. Eternal bragging rights."
       footer={
         <span>
