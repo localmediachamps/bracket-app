@@ -15,6 +15,7 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
 const Tournaments = lazy(() => import('./pages/Tournaments'))
 const Results = lazy(() => import('./pages/Results'))
 const WrestlerProfile = lazy(() => import('./pages/WrestlerProfile'))
+const Wrestlers = lazy(() => import('./pages/Wrestlers'))
 const Teams = lazy(() => import('./pages/Teams'))
 const TeamProfile = lazy(() => import('./pages/TeamProfile'))
 const Pricing = lazy(() => import('./pages/Pricing'))
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/wrestlers" element={<Wrestlers />} />
             <Route path="/wrestlers/:id" element={<WrestlerProfile />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/:id" element={<TeamProfile />} />

@@ -3,21 +3,22 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
   Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon,
   ScrollText, Swords, Crown, GraduationCap, CalendarRange, LifeBuoy,
-  ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard,
+  ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard, UserRound,
 } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { Avatar } from '../ui'
 import { cn } from '../../lib/utils'
 
 export const SIDEBAR_NAV = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/dual-meets', label: 'Dual Meets', icon: Swords },
   { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
-  { to: '/results', label: 'Results', icon: ScrollText },
-  { to: '/teams', label: 'Teams', icon: GraduationCap },
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
   { to: '/leagues', label: 'Leagues', icon: CalendarRange, auth: true },
+  { to: '/results', label: 'Results', icon: ScrollText },
+  { to: '/teams', label: 'Teams', icon: GraduationCap },
+  { to: '/wrestlers', label: 'Wrestlers', icon: UserRound },
 ]
 
 const COLLAPSE_KEY = 'matSavvy.sidebarCollapsed'
