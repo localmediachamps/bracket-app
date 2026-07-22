@@ -70,10 +70,15 @@ query "leagues/lineup" verb=GET {
               output = ["id", "display_name", "current_team_id"]
             } as $wrestler
 
+            function.run get_wrestler_record_summary {
+              input = {canonical_wrestler_id: $s.canonical_wrestler_id}
+            } as $record
+
             array.push $slot_rows {
               value = {
                 season_weight_class_id: $s.season_weight_class_id
                 wrestler              : $wrestler
+                record                : $record
                 points                : $s.points
                 match_count           : $s.match_count
                 medal_bonus           : $s.medal_bonus
@@ -108,10 +113,15 @@ query "leagues/lineup" verb=GET {
           output = ["id", "weight", "name"]
         } as $roster_weight_class
 
+        function.run get_wrestler_record_summary {
+          input = {canonical_wrestler_id: $r.canonical_wrestler_id}
+        } as $roster_record
+
         array.push $roster_rows {
           value = {
             roster_slot_id   : $r.id
             wrestler         : $roster_wrestler
+            record           : $roster_record
             drafted_weight_class: $roster_weight_class
             slot_type        : $r.slot_type
             slot_index       : $r.slot_index

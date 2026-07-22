@@ -271,7 +271,15 @@ export default function DraftRoom() {
                         {w.name}
                         {w.weight != null && <span className="ml-2 text-xs text-ink-500">{w.weight} lbs</span>}
                       </div>
-                      {w.team?.name && <div className="truncate text-xs text-ink-500">{w.team.name}</div>}
+                      <div className="flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
+                        {w.team?.name && <span className="truncate">{w.team.name}</span>}
+                        {w.record && (w.record.wins > 0 || w.record.losses > 0) && (
+                          <span className="shrink-0 font-mono text-ink-400">
+                            {w.record.wins}-{w.record.losses}
+                            {w.record.falls > 0 && ` · ${w.record.falls} pins`}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Button
                       size="sm"

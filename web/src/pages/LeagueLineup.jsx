@@ -128,15 +128,20 @@ export default function LeagueLineup() {
                   disabled={locked}
                 >
                   <option value="">— Empty —</option>
-                  {roster.map((r) => (
-                    <option
-                      key={r.roster_slot_id}
-                      value={r.wrestler?.id}
-                      disabled={usedWrestlerIds.has(r.wrestler?.id) && assignments[wc.id] !== r.wrestler?.id}
-                    >
-                      {r.wrestler?.display_name} {r.slot_type === 'alternate' ? '(alt)' : ''}
-                    </option>
-                  ))}
+                  {roster.map((r) => {
+                    const record = r.record
+                    const recordLabel = record && (record.wins > 0 || record.losses > 0) ? ` (${record.wins}-${record.losses})` : ''
+                    return (
+                      <option
+                        key={r.roster_slot_id}
+                        value={r.wrestler?.id}
+                        disabled={usedWrestlerIds.has(r.wrestler?.id) && assignments[wc.id] !== r.wrestler?.id}
+                      >
+                        {r.wrestler?.display_name}
+                        {recordLabel} {r.slot_type === 'alternate' ? '(alt)' : ''}
+                      </option>
+                    )
+                  })}
                 </Select>
               </div>
             ))}

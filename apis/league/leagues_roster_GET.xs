@@ -43,10 +43,15 @@ query "leagues/roster" verb=GET {
           output = ["id", "display_name"]
         } as $wrestler
 
+        function.run get_wrestler_record_summary {
+          input = {canonical_wrestler_id: $r.canonical_wrestler_id}
+        } as $record
+
         array.push $roster_rows {
           value = {
             roster_slot_id: $r.id
             wrestler      : $wrestler
+            record        : $record
             slot_type     : $r.slot_type
           }
         }

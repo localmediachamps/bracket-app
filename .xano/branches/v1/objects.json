@@ -1731,5 +1731,12 @@
     "status": "new",
     "type": "function",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/utils/get_wrestler_record_summary.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
   }
 ]

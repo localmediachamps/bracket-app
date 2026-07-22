@@ -96,12 +96,17 @@ query "leagues/draft/pool" verb=GET {
                   output = ["id", "weight"]
                 } as $wc
 
+                function.run get_wrestler_record_summary {
+                  input = {canonical_wrestler_id: $entry.canonical_wrestler_id}
+                } as $record
+
                 array.push $wrestlers {
                   value = {
                     id    : $entry.canonical_wrestler_id
                     name  : $entry.name
                     team  : {name: $entry.school}
                     weight: $wc.weight
+                    record: $record
                   }
                 }
               }
@@ -135,12 +140,17 @@ query "leagues/draft/pool" verb=GET {
                   output = ["id", "name"]
                 } as $team
 
+                function.run get_wrestler_record_summary {
+                  input = {canonical_wrestler_id: $candidate.id}
+                } as $record
+
                 array.push $wrestlers {
                   value = {
                     id    : $candidate.id
                     name  : $candidate.display_name
                     team  : $team
                     weight: null
+                    record: $record
                   }
                 }
               }
