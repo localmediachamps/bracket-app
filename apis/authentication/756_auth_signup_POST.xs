@@ -17,14 +17,22 @@ query "auth/signup" verb=POST {
     text password filters=min:8 {
       sensitive = true
     }
+
+    // Mandatory acceptance of the Terms of Service + Privacy Policy
+    bool terms_accepted
   }
 
   stack {
+    precondition ($input.terms_accepted == true) {
+      error_type = "inputerror"
+      error = "You must accept the Terms of Service and Privacy Policy to create an account."
+    }
+
     db.get user {
       field_name = "email"
       field_value = $input.email
     } as $existing_email
-  
+
     precondition ($existing_email == null) {
       error_type = "inputerror"
       error = "This email is already in use."
@@ -108,6 +116,7 @@ query "auth/signup" verb=POST {
         email_verified: false
         email_verify_token: $verify_token
         email_verify_expires_at: now|add_secs_to_timestamp:86400
+        terms_accepted_at: now
       }
     } as $new_user
 

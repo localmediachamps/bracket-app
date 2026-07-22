@@ -302,6 +302,8 @@ export default function AppShell() {
           <span className="font-display uppercase tracking-wide">Mat Savvy</span>
           <div className="flex items-center gap-5">
             <Link to="/help" className="hover:text-ink-300">Help Center</Link>
+            <Link to="/terms" className="hover:text-ink-300">Terms</Link>
+            <Link to="/privacy" className="hover:text-ink-300">Privacy</Link>
             <span>Built for wrestling fans · {new Date().getFullYear()}</span>
           </div>
         </div>

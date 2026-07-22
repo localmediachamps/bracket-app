@@ -43,7 +43,7 @@ function PasswordField({ label, value, onChange, error, show, onToggle, autoComp
 export default function Register() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
-  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', confirm: '', termsAccepted: false })
   const [showPw, setShowPw] = useState(false)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
@@ -62,6 +62,7 @@ export default function Register() {
         username: form.username.trim() || undefined,
         email: form.email.trim(),
         password: form.password,
+        terms_accepted: form.termsAccepted,
       }),
     onSuccess: (data) => {
       setAuth(data.authToken ?? data.token, data.user)
@@ -86,6 +87,7 @@ export default function Register() {
     if (!form.password) errs.password = 'Password is required'
     else if (form.password.length < 8) errs.password = 'At least 8 characters'
     if (form.confirm !== form.password) errs.confirm = 'Passwords do not match'
+    if (!form.termsAccepted) errs.termsAccepted = 'You must accept the Terms of Service and Privacy Policy'
     setErrors(errs)
     if (Object.keys(errs).length) {
       setShake((n) => n + 1)
@@ -161,6 +163,29 @@ export default function Register() {
             onToggle={() => setShowPw((v) => !v)}
             onChange={set('confirm')}
           />
+          <label className="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              checked={form.termsAccepted}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, termsAccepted: e.target.checked }))
+                if (errors.termsAccepted) setErrors((x) => ({ ...x, termsAccepted: undefined }))
+              }}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-mat-600 bg-mat-800 text-gold-500 focus:ring-2 focus:ring-gold-500/25"
+            />
+            <span className="text-xs leading-relaxed text-ink-400">
+              I agree to the{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-gold-500 hover:text-gold-300">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-gold-500 hover:text-gold-300">
+                Privacy Policy
+              </a>
+              .
+            </span>
+          </label>
+          {errors.termsAccepted && <span className="-mt-2 block text-xs font-semibold text-blood-400">{errors.termsAccepted}</span>}
           <Button type="submit" size="lg" className="w-full" loading={mutation.isPending}>
             <UserPlus size={16} /> Create account
           </Button>

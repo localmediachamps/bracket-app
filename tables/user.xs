@@ -60,6 +60,12 @@ table user {
     timestamp? password_reset_expires_at? {
       visibility = "private"
     }
+
+    // When the user accepted the Terms of Service + Privacy Policy - set
+    // once at signup (mandatory checkbox), never cleared. Null would mean
+    // an account somehow exists without ever accepting, which shouldn't be
+    // possible via the app's own signup flow.
+    timestamp? terms_accepted_at?
   }
 
   index = [
