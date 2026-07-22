@@ -100,8 +100,23 @@ function score_league_lineups_for_week {
 
                         conditional {
                           if ($is_winner) {
-                            var.update $base_points {
-                              value = $input.victory_points|get:$normalized_victory_type:($input.victory_points|get:"default":0)
+                            // NOT the nested |get:key:($cfg|get:"default":0)
+                            // pattern - a real XanoScript engine bug
+                            // (confirmed 2026-07-22) makes |get:key:default
+                            // return null instead of the default specifically
+                            // when that default is 0 and the key is missing.
+                            // Explicit has-checks avoid it entirely.
+                            conditional {
+                              if ($input.victory_points|has:$normalized_victory_type) {
+                                var.update $base_points {
+                                  value = $input.victory_points|get:$normalized_victory_type:0
+                                }
+                              }
+                              elseif ($input.victory_points|has:"default") {
+                                var.update $base_points {
+                                  value = $input.victory_points|get:"default":0
+                                }
+                              }
                             }
                           }
                         }
@@ -222,8 +237,21 @@ function score_league_lineups_for_week {
                                       value = $placement_num|to_text
                                     }
 
-                                    var.update $medal_amount {
-                                      value = $input.medal_bonus|get:$placement_key:($input.medal_bonus|get:"default":0)
+                                    // NOT the nested |get:key:($cfg|get:"default":0)
+                                    // pattern - see the victory_points lookup
+                                    // above for why (a real XanoScript |get:
+                                    // engine bug with a 0 default).
+                                    conditional {
+                                      if ($input.medal_bonus|has:$placement_key) {
+                                        var.update $medal_amount {
+                                          value = $input.medal_bonus|get:$placement_key:0
+                                        }
+                                      }
+                                      elseif ($input.medal_bonus|has:"default") {
+                                        var.update $medal_amount {
+                                          value = $input.medal_bonus|get:"default":0
+                                        }
+                                      }
                                     }
                                   }
                                 }

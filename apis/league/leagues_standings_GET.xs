@@ -72,8 +72,21 @@ query "leagues/{id}/standings" verb=GET {
           value = $row.membership_id|to_text
         }
 
+        // NOT $totals|get:$key:0 - a real XanoScript engine bug (confirmed
+        // 2026-07-22) makes |get:key:default return null instead of the
+        // default specifically when that default is 0 and the key is
+        // missing (any other default value works fine). Explicit has-check
+        // avoids it entirely.
         var $running {
-          value = $totals|get:$key:0
+          value = 0
+        }
+
+        conditional {
+          if ($totals|has:$key) {
+            var.update $running {
+              value = $totals|get:$key:0
+            }
+          }
         }
 
         var.update $totals {
@@ -98,8 +111,18 @@ query "leagues/{id}/standings" verb=GET {
           value = $m.id|to_text
         }
 
+        // Same has-check fix as above - $totals|get:$key:0 alone would
+        // return null (not 0) for a member with no ledger rows yet.
         var $season_points {
-          value = $totals|get:$key:0
+          value = 0
+        }
+
+        conditional {
+          if ($totals|has:$key) {
+            var.update $season_points {
+              value = $totals|get:$key:0
+            }
+          }
         }
 
         array.push $rows {

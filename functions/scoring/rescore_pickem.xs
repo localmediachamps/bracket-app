@@ -171,10 +171,91 @@ function rescore_pickem {
         } as $ranked_entry
       }
     }
+
+    // Master leaderboard: percentile-based points for genuinely competitive
+    // (submitted|locked) entries only - drafts never earn a row here.
+    // $ranked has every status mixed together (unlike rescore_tournament.xs,
+    // this function never split them into separate pools), so filter down
+    // to just submitted|locked, preserving the existing order, then use
+    // position within that filtered list as rank_in_tournament.
+    var $competitive_ranked {
+      value = $ranked|filter:$$.status == "submitted" || $$.status == "locked"
+    }
+
+    var $competitive_count {
+      value = $competitive_ranked|count
+    }
+
+    function.run get_default_platform_leaderboard_config {
+      input = {}
+    } as $platform_config
+
+    conditional {
+      if ($competitive_count > 0) {
+        for ($competitive_count) {
+          each as $pidx {
+            var $pentry {
+              value = $competitive_ranked[$pidx]
+            }
+
+            var $prank {
+              value = $pidx + 1
+            }
+
+            var $ppercentile {
+              value = ($competitive_count - $prank + 1) / $competitive_count
+            }
+
+            var $ppoints {
+              value = ($ppercentile|pow:$platform_config.percentile.curve_exponent) * $platform_config.percentile.scale
+            }
+
+            db.query platform_leaderboard_entry {
+              where = $db.platform_leaderboard_entry.user_id == $pentry.user_id && $db.platform_leaderboard_entry.tournament_id == $input.tournament_id && $db.platform_leaderboard_entry.source_type == "pickem"
+              return = {type: "single"}
+            } as $existing_ple
+
+            conditional {
+              if ($existing_ple != null) {
+                db.edit platform_leaderboard_entry {
+                  field_name = "id"
+                  field_value = $existing_ple.id
+                  data = {
+                    rank_in_tournament: $prank
+                    entrants          : $competitive_count
+                    percentile        : $ppercentile
+                    points_awarded    : $ppoints
+                    scoring_path      : "percentile"
+                    year              : $tournament.year
+                  }
+                } as $updated_ple
+              }
+              else {
+                db.add platform_leaderboard_entry {
+                  data = {
+                    created_at        : now
+                    user_id           : $pentry.user_id
+                    tournament_id     : $input.tournament_id
+                    source_type       : "pickem"
+                    scoring_path      : "percentile"
+                    rank_in_tournament: $prank
+                    entrants          : $competitive_count
+                    percentile        : $ppercentile
+                    points_awarded    : $ppoints
+                    year              : $tournament.year
+                  }
+                } as $new_ple
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   response = {
     entries_scored: $scored_count
     entries_ranked: $ranked_count
   }
+  guid = "NifMMncQyr_5eSYCVp8HmBHjfZs"
 }

@@ -531,8 +531,26 @@ task score_league_weeks {
                                       value = $postseason_rank_counter|to_text
                                     }
 
+                                    // NOT the nested |get:key:($cfg|get:"default":0)
+                                    // pattern - a real XanoScript |get: engine
+                                    // bug (confirmed 2026-07-22) returns null
+                                    // instead of the default when that
+                                    // default is 0 and the key is missing.
                                     var $postseason_awarded {
-                                      value = $postseason_placement_cfg|get:$postseason_placement_key:($postseason_placement_cfg|get:"default":0)
+                                      value = 0
+                                    }
+
+                                    conditional {
+                                      if ($postseason_placement_cfg|has:$postseason_placement_key) {
+                                        var.update $postseason_awarded {
+                                          value = $postseason_placement_cfg|get:$postseason_placement_key:0
+                                        }
+                                      }
+                                      elseif ($postseason_placement_cfg|has:"default") {
+                                        var.update $postseason_awarded {
+                                          value = $postseason_placement_cfg|get:"default":0
+                                        }
+                                      }
                                     }
 
                                     db.add season_week_tournament_result {
@@ -693,8 +711,26 @@ task score_league_weeks {
                               value = $rank_counter|to_text
                             }
 
+                            // NOT the nested |get:key:($cfg|get:"default":0)
+                            // pattern - a real XanoScript |get: engine bug
+                            // (confirmed 2026-07-22) returns null instead of
+                            // the default when that default is 0 and the key
+                            // is missing.
                             var $awarded {
-                              value = $placement_cfg|get:$placement_key:($placement_cfg|get:"default":0)
+                              value = 0
+                            }
+
+                            conditional {
+                              if ($placement_cfg|has:$placement_key) {
+                                var.update $awarded {
+                                  value = $placement_cfg|get:$placement_key:0
+                                }
+                              }
+                              elseif ($placement_cfg|has:"default") {
+                                var.update $awarded {
+                                  value = $placement_cfg|get:"default":0
+                                }
+                              }
                             }
 
                             db.add season_week_tournament_result {
