@@ -3,6 +3,9 @@
   "buildCommand": "cd web && npm install && npm run build",
   "outputDirectory": "web/dist",
   "installCommand": "npm install --prefix web",
+  "redirects": [
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "www.matsavvy.app" }], "destination": "https://matsavvy.app/$1", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
