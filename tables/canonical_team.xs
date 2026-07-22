@@ -19,6 +19,12 @@ table canonical_team {
     // the same real team was observed under two different ids in one
     // exploratory session on 2026-07-20).
     text external_team_id? filters=trim
+
+    // Official athletics department wrestling roster page - a reference
+    // link for the team profile page, not a data source we scrape (see
+    // compliance note re: results provider). Populated by hand/research,
+    // not guaranteed for every team.
+    text roster_url? filters=trim
   }
 
   index = [

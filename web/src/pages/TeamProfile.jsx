@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Building2, Calendar, Users } from 'lucide-react'
+import { ArrowLeft, Building2, Calendar, Users, ExternalLink } from 'lucide-react'
 import { api } from '../lib/api'
 import { Card, CardSkeleton, EmptyState } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
@@ -51,6 +51,16 @@ export default function TeamProfile() {
           <h1 className="font-display text-2xl text-ink-50">{team.name}</h1>
           {team.conference && <p className="text-sm text-ink-400">{team.conference}</p>}
         </div>
+        {team.roster_url && (
+          <a
+            href={team.roster_url}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-3 py-1.5 text-xs font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
+          >
+            Official Roster <ExternalLink size={13} />
+          </a>
+        )}
       </div>
 
       <Card className="mb-6 p-5">
