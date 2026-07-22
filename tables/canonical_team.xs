@@ -31,6 +31,12 @@ table canonical_team {
     // schedule ingestion isn't built yet, so teams already have a place to
     // point users once new-season schedules are released.
     text schedule_url? filters=trim
+
+    // School's primary athletics logo image (not scraped from the results
+    // provider - sourced separately, see set-logo-url endpoint). Not every
+    // team has one; a handful of PSAC/D3 schools that are D1-wrestling-only
+    // affiliates aren't covered by the source used to populate this.
+    text logo_url? filters=trim
   }
 
   index = [

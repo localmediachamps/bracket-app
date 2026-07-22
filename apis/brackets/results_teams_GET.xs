@@ -78,6 +78,7 @@ query "results/teams" verb=GET {
             name         : $t.name
             state        : $t.state
             conference   : $t.conference
+            logo_url     : $t.logo_url
             roster_count : $roster_count
           }
         }

@@ -165,6 +165,7 @@ query "results/teams/{id}" verb=GET {
       conference: $team.conference
       roster_url: $team.roster_url
       schedule_url: $team.schedule_url
+      logo_url: $team.logo_url
     }
     roster  : $roster_out
     schedule: []

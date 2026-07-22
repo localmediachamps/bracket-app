@@ -52,7 +52,11 @@ export default function Teams() {
                 <Card hover className="p-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mat-800 text-gold-500">
-                      <Building2 size={18} />
+                      {t.logo_url ? (
+                        <img src={t.logo_url} alt="" className="h-7 w-7 object-contain" loading="lazy" />
+                      ) : (
+                        <Building2 size={18} />
+                      )}
                     </span>
                     <div className="min-w-0">
                       <p className="truncate font-bold text-ink-100">{t.name}</p>
