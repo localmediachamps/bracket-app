@@ -23,6 +23,7 @@ const Predict = lazy(() => import('./pages/Predict'))
 const Pickem = lazy(() => import('./pages/Pickem'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const EntryReview = lazy(() => import('./pages/EntryReview'))
+const PickemEntryView = lazy(() => import('./pages/PickemEntryView'))
 const Compare = lazy(() => import('./pages/Compare'))
 const Groups = lazy(() => import('./pages/Groups'))
 const GroupNew = lazy(() => import('./pages/GroupNew'))
@@ -97,7 +98,8 @@ export default function App() {
             <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />
             <Route path="/tournaments/:slug/pickem" element={<RequireAuth><Pickem /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-            <Route path="/entries/:id/review" element={<RequireAuth><EntryReview /></RequireAuth>} />
+            <Route path="/entries/:id/review" element={<EntryReview />} />
+            <Route path="/pickem-entries/:id" element={<PickemEntryView />} />
             <Route path="/compare/:aId/:bId" element={<RequireAuth><Compare /></RequireAuth>} />
             <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
             <Route path="/groups/new" element={<RequireAuth><GroupNew /></RequireAuth>} />

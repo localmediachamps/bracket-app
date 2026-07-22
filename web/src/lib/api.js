@@ -81,11 +81,13 @@ export const api = {
   reviewEntry: (entryId) => get(XANO_APP, `/entries/${entryId}/review`),
   entryBracketView: (entryId, weightClassId) => get(XANO_APP, `/entries/${entryId}/bracket/${weightClassId}`),
   compareEntries: (aId, bId) => get(XANO_APP, `/entries/${aId}/compare/${bId}`),
+  setEntryVisibility: (entryId, isPublic) => put(XANO_APP, `/entries/${entryId}/visibility`, { is_public: isPublic }),
 
   createPickemEntry: (tournamentId) => post(XANO_APP, `/tournaments/${tournamentId}/pickem`),
   pickemEntry: (entryId) => get(XANO_APP, `/pickem-entries/${entryId}`),
   savePickem: (entryId, payload) => put(XANO_APP, `/pickem-entries/${entryId}`, payload),
   submitPickem: (entryId) => post(XANO_APP, `/pickem-entries/${entryId}/submit`),
+  setPickemEntryVisibility: (entryId, isPublic) => put(XANO_APP, `/pickem-entries/${entryId}/visibility`, { is_public: isPublic }),
 
   createGroup: (payload) => post(XANO_APP, `/groups`, payload),
   joinGroup: (inviteCode) => post(XANO_APP, `/groups/join`, { invite_code: inviteCode }),

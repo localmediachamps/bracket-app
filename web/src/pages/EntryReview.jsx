@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, Check, GitBranch, ListChecks, PencilLine, RefreshCw, Scale, Swords, X,
+  AlertTriangle, Check, Globe, GitBranch, Lock, ListChecks, PencilLine, RefreshCw, Scale, Swords, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
+import { toast } from '../lib/store'
 import { Avatar, Button, Card, EmptyState, Modal, Skeleton, StatusPill } from '../components/ui'
 import { cn, formatPoints, pct, plural } from '../lib/utils'
 import AnimatedNumber from '../components/profile/AnimatedNumber'
@@ -29,6 +30,7 @@ const EMPTY = {}
 export default function EntryReview() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [activeWeight, setActiveWeight] = useState(null)
   const [compareOpen, setCompareOpen] = useState(false)
 
@@ -40,8 +42,19 @@ export default function EntryReview() {
 
   const review = data ?? EMPTY
   const entry = review.entry ?? {}
+  const entryUser = review.user ?? null
+  const isOwner = review.is_owner ?? true
   const reviewWeightClasses = review.weight_classes ?? []
   const missingCount = review.missing ?? 0
+
+  const visibilityMutation = useMutation({
+    mutationFn: (isPublic) => api.setEntryVisibility(id, isPublic),
+    onSuccess: (_data, isPublic) => {
+      toast.success(isPublic ? 'Your bracket is now public' : 'Your bracket is now private')
+      qc.invalidateQueries({ queryKey: ['entry-review', id] })
+    },
+    onError: (err) => toast.error('Could not update visibility', { body: err.message }),
+  })
 
   // The review payload doesn't nest a tournament object - just tournament_id.
   // Fetch the tournament separately for the header name/year/slug link.
@@ -100,7 +113,7 @@ export default function EntryReview() {
         <EmptyState
           icon={<AlertTriangle size={26} />}
           title={denied ? 'This entry is private' : error?.status === 404 ? 'Entry not found' : 'Review failed to load'}
-          body={denied ? 'You can only review your own entries.' : error?.message}
+          body={denied ? "This player hasn't made their picks public." : error?.message}
           action={
             denied || error?.status === 404 ? (
               <Link to="/dashboard">
@@ -122,7 +135,7 @@ export default function EntryReview() {
   const correct = entry.correct_pick_count ?? 0
   const scored = entry.scored_pick_count ?? 0
   const accuracy = scored > 0 ? correct / scored : null
-  const isDraftIncomplete = entry.status === 'draft' && missingCount > 0
+  const isDraftIncomplete = isOwner && entry.status === 'draft' && missingCount > 0
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8 py-6">
@@ -131,6 +144,11 @@ export default function EntryReview() {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-gold-400">
             <GitBranch size={12} /> Bracket Challenge
+            {!isOwner && (entryUser?.display_name || entryUser?.username) && (
+              <span className="text-ink-500">
+                · {entryUser.display_name || entryUser.username}'s picks
+              </span>
+            )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <Link
@@ -167,9 +185,22 @@ export default function EntryReview() {
             )}
           </div>
         </div>
-        <Button variant="secondary" onClick={() => setCompareOpen(true)} disabled={!tournamentId}>
-          <Scale size={15} /> Compare
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {isOwner && (
+            <Button
+              variant="secondary"
+              loading={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate(!entry.is_public)}
+              title={entry.is_public ? 'Anyone with the link can view this bracket' : 'Only you can view this bracket'}
+            >
+              {entry.is_public ? <Globe size={15} /> : <Lock size={15} />}
+              {entry.is_public ? 'Public' : 'Private'}
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => setCompareOpen(true)} disabled={!tournamentId}>
+            <Scale size={15} /> Compare
+          </Button>
+        </div>
       </motion.header>
 
       {/* ── Missing picks callout ──────────────────────── */}
@@ -206,7 +237,7 @@ export default function EntryReview() {
                 <thead>
                   <tr className="border-b border-mat-700 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-ink-500">
                     <th className="w-20 px-4 py-2.5">Weight</th>
-                    <th className="px-4 py-2.5">Your champion</th>
+                    <th className="px-4 py-2.5">{isOwner ? 'Your champion' : 'Champion'}</th>
                     <th className="px-4 py-2.5 text-right">Correct</th>
                     <th className="w-48 px-4 py-2.5">Points</th>
                   </tr>
@@ -277,7 +308,7 @@ export default function EntryReview() {
       {/* ── Bracket ────────────────────────────────────── */}
       <motion.section variants={rise}>
         <h2 className="mb-4 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-100">
-          <GitBranch size={16} className="text-gold-400" /> Your bracket
+          <GitBranch size={16} className="text-gold-400" /> {isOwner ? 'Your bracket' : 'Bracket'}
         </h2>
 
         {/* weight rail */}

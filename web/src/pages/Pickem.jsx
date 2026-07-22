@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { AlertTriangle, ArrowLeft, Lock, RotateCcw, Send, Sparkles, Timer } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Globe, Lock, RotateCcw, Send, Sparkles, Timer } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
 import { Button, Card, Countdown, EmptyState, Input, Skeleton, StatusPill } from '../components/ui'
@@ -150,6 +150,15 @@ export default function Pickem() {
   const entryDetail = entryQuery.data
   const detailEntry = entryDetail?.entry ?? entryDetail
   const detailPicks = useMemo(() => entryDetail?.picks ?? [], [entryDetail])
+
+  const visibilityMutation = useMutation({
+    mutationFn: (isPublic) => api.setPickemEntryVisibility(entry.id, isPublic),
+    onSuccess: (_data, isPublic) => {
+      toast.success(isPublic ? 'Your picks are now public' : 'Your picks are now private')
+      queryClient.invalidateQueries({ queryKey: ['pickem-entry', entry?.id] })
+    },
+    onError: (err) => toast.error('Could not update visibility', { body: err.message }),
+  })
 
   useEffect(() => {
     if (!entryDetail || hydratedRef.current) return
@@ -495,6 +504,18 @@ export default function Pickem() {
             </span>
           )}
           {!readOnly && <SaveStateIndicator state={saveState} onRetry={() => doSaveRef.current?.(0)} />}
+          {entry?.id && (entry.status === 'submitted' || entry.status === 'locked') && (
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate(!entry.is_public)}
+              title={entry.is_public ? 'Anyone with the link can view your picks' : 'Only you can view your picks'}
+            >
+              {entry.is_public ? <Globe size={14} /> : <Lock size={14} />}
+              {entry.is_public ? 'Public' : 'Private'}
+            </Button>
+          )}
           {!readOnly && (
             <Button size="sm" disabled={!canSubmit} title={submitTitle} onClick={openSubmit}>
               <Send size={14} /> {entry.status === 'submitted' ? 'Resubmit' : 'Submit'}

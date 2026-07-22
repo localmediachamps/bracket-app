@@ -1752,5 +1752,19 @@
     "status": "new",
     "type": "api_endpoint",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/entries_visibility_PUT.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/pickem_entries_visibility_PUT.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]

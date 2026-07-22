@@ -1,8 +1,9 @@
-// Pick'em entry detail (owner only): entry plus picks with weight class info,
-// wrestler summaries, cost, points earned, and scoring breakdown.
+// Pick'em entry detail: entry plus picks with weight class info, wrestler
+// summaries, cost, points earned, and scoring breakdown. Viewable by the
+// owner, anyone (including anonymous) when the entry has opted into
+// is_public, or a site admin.
 query "pickem-entries/{id}" verb=GET {
   api_group = "brackets"
-  auth = "user"
 
   input {
     // Pick'em entry id
@@ -10,26 +11,53 @@ query "pickem-entries/{id}" verb=GET {
   }
 
   stack {
-    precondition ($auth.id != null) {
-      error_type = "unauthorized"
-      error = "Authentication required."
-    }
-  
     db.get pickem_entry {
       field_name = "id"
       field_value = $input.id
     } as $entry
-  
+
     precondition ($entry != null) {
       error_type = "notfound"
       error = "Pick'em entry not found."
     }
-  
-    precondition ($entry.user_id == $auth.id) {
-      error_type = "accessdenied"
-      error = "You do not own this entry."
+
+    var $is_owner {
+      value = $entry.user_id == $auth.id
     }
-  
+
+    var $can_view {
+      value = $is_owner || $entry.is_public
+    }
+
+    conditional {
+      if ($can_view == false && $auth.id != null) {
+        db.get user {
+          field_name = "id"
+          field_value = $auth.id
+          output = ["id", "is_admin"]
+        } as $requester
+
+        conditional {
+          if ($requester != null && $requester.is_admin) {
+            var.update $can_view {
+              value = true
+            }
+          }
+        }
+      }
+    }
+
+    precondition ($can_view) {
+      error_type = "accessdenied"
+      error = "This entry is private."
+    }
+
+    db.get user {
+      field_name = "id"
+      field_value = $entry.user_id
+      output = ["id", "username", "display_name", "avatar_url"]
+    } as $entry_user
+
     db.query pickem_pick {
       where = $db.pickem_pick.pickem_entry_id == $entry.id
       return = {type: "list"}
@@ -68,5 +96,6 @@ query "pickem-entries/{id}" verb=GET {
     }
   }
 
-  response = {entry: $entry, picks: $pick_rows}
+  response = {entry: $entry, user: $entry_user, is_owner: $is_owner, picks: $pick_rows}
+  guid = "I7YDiloGIlnubleReqivGap8l7o"
 }

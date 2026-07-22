@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Trophy, Crown, Medal, ChevronLeft, ChevronRight, GitBranch, Scale } from 'lucide-react'
+import { Trophy, Crown, Medal, ChevronLeft, ChevronRight, GitBranch, Scale, Eye, Lock } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useAuthStore } from '../../lib/store'
 import { Avatar, Badge, Button, Card, EmptyState, RankChange, Skeleton } from '../ui'
@@ -18,10 +18,15 @@ const PODIUM = {
   3: { card: 'border-blood-500/35', icon: Medal, iconCls: 'text-blood-400', ring: false },
 }
 
-function PodiumCard({ row, place, index }) {
+function entryViewPath(mode, entryId) {
+  return mode === 'pickem' ? `/pickem-entries/${entryId}` : `/entries/${entryId}/review`
+}
+
+function PodiumCard({ row, place, index, mode }) {
   const u = row.user ?? row
   const cfg = PODIUM[place]
   const Icon = cfg.icon
+  const entryId = row.entry_id ?? row.id
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -40,6 +45,18 @@ function PodiumCard({ row, place, index }) {
         {u.username && <span className="block max-w-full truncate text-xs text-ink-500">@{u.username}</span>}
         <span className="mt-2 font-mono text-xl font-bold text-gold-400">{formatPoints(row.total_points)}</span>
         <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-600">points</span>
+        {row.is_public && entryId != null ? (
+          <Link
+            to={entryViewPath(mode, entryId)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-mat-700 px-2.5 py-1 text-[11px] font-bold text-ink-400 hover:border-gold-500/50 hover:text-gold-400"
+          >
+            <Eye size={12} /> View picks
+          </Link>
+        ) : (
+          <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-ink-600">
+            <Lock size={11} /> Private
+          </span>
+        )}
       </Card>
     </motion.div>
   )
@@ -139,7 +156,7 @@ export default function LeaderboardPanel({ tournament }) {
           {podium.length > 0 && (
             <div className="mb-6 grid gap-4 sm:grid-cols-3">
               {podium.map((row, i) => (
-                <PodiumCard key={row.id ?? row.user?.id ?? i} row={row} place={i + 1} index={i} />
+                <PodiumCard key={row.id ?? row.user?.id ?? i} row={row} place={i + 1} index={i} mode={mode} />
               ))}
             </div>
           )}
@@ -158,6 +175,7 @@ export default function LeaderboardPanel({ tournament }) {
                       {mode === 'bracket' && <th className="hidden px-4 py-3 lg:table-cell">Accuracy</th>}
                       {mode === 'bracket' && <th className="hidden px-4 py-3 text-right lg:table-cell">Champs</th>}
                       <th className="px-4 py-3 text-right">Status</th>
+                      <th className="px-4 py-3 text-right">Picks</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -216,6 +234,20 @@ export default function LeaderboardPanel({ tournament }) {
                               <Badge color="pin">Submitted</Badge>
                             ) : (
                               <Badge color="ink">{row.status ?? 'draft'}</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {row.is_public && (row.entry_id ?? row.id) != null ? (
+                              <Link
+                                to={entryViewPath(mode, row.entry_id ?? row.id)}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-gold-500 hover:text-gold-300"
+                              >
+                                <Eye size={13} /> View
+                              </Link>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-ink-600" title="This player hasn't made their picks public">
+                                <Lock size={12} /> Private
+                              </span>
                             )}
                           </td>
                         </tr>

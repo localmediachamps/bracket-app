@@ -1,9 +1,9 @@
-// Entry review (owner only): champion pick per weight class, correct/scored pick
-// counts and points earned per weight class, totals, and the count of non-bye
-// matches still missing a pick.
+// Entry review: champion pick per weight class, correct/scored pick counts
+// and points earned per weight class, totals, and the count of non-bye
+// matches still missing a pick. Viewable by the owner, anyone (including
+// anonymous) when the entry has opted into is_public, or a site admin.
 query "entries/{id}/review" verb=GET {
   api_group = "brackets"
-  auth = "user"
 
   input {
     // Entry id
@@ -11,11 +11,6 @@ query "entries/{id}/review" verb=GET {
   }
 
   stack {
-    precondition ($auth.id != null) {
-      error_type = "unauthorized"
-      error = "Authentication required."
-    }
-  
     db.get user_bracket {
       field_name = "id"
       field_value = $input.id
@@ -26,11 +21,43 @@ query "entries/{id}/review" verb=GET {
       error = "Entry not found."
     }
 
-    precondition ($entry.user_id == $auth.id) {
-      error_type = "accessdenied"
-      error = "You do not own this entry."
+    var $is_owner {
+      value = $entry.user_id == $auth.id
     }
-  
+
+    var $can_view {
+      value = $is_owner || $entry.is_public
+    }
+
+    conditional {
+      if ($can_view == false) {
+        db.get user {
+          field_name = "id"
+          field_value = $auth.id
+          output = ["id", "is_admin"]
+        } as $requester
+
+        conditional {
+          if ($requester != null && $requester.is_admin) {
+            var.update $can_view {
+              value = true
+            }
+          }
+        }
+      }
+    }
+
+    precondition ($can_view) {
+      error_type = "accessdenied"
+      error = "This entry is private."
+    }
+
+    db.get user {
+      field_name = "id"
+      field_value = $entry.user_id
+      output = ["id", "username", "display_name", "avatar_url"]
+    } as $entry_user
+
     db.query weight_class {
       where = $db.weight_class.tournament_id == $entry.tournament_id
       sort = {weight_class.display_order: "asc"}
@@ -246,6 +273,8 @@ query "entries/{id}/review" verb=GET {
 
   response = {
     entry         : $entry
+    user          : $entry_user
+    is_owner      : $is_owner
     weight_classes: $wc_rows
     totals        : {correct: $total_correct, scored: $total_scored, points_earned: $total_points}
     missing       : $missing_count

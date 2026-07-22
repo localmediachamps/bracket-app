@@ -10,7 +10,11 @@ table user_bracket {
     int rank?
     bool is_submitted?
     timestamp submitted_at?
-  
+
+    // Owner opt-in to let other users view this entry's picks/bracket from
+    // the tournament leaderboard. Defaults to private.
+    bool is_public?=false
+
     // draft | submitted | locked
     text status?=draft
   

@@ -9,7 +9,11 @@ table pickem_entry {
   
     // draft | submitted | locked
     text status?=draft
-  
+
+    // Owner opt-in to let other users view this entry's picks from the
+    // tournament leaderboard. Defaults to private.
+    bool is_public?=false
+
     // salary-cap points spent
     int points_used?
   
