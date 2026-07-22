@@ -76,6 +76,7 @@ function EditTab() {
         bio: me.bio ?? '',
         leaderboard_visible: me.leaderboard_visible ?? true,
         leaderboard_name_mode: me.leaderboard_name_mode ?? 'display_name',
+        show_public_submissions: me.show_public_submissions ?? true,
       })
     }
   }, [me, form])
@@ -139,7 +140,8 @@ function EditTab() {
     form.favorite_school !== (me.favorite_school ?? '') ||
     form.bio !== (me.bio ?? '') ||
     form.leaderboard_visible !== (me.leaderboard_visible ?? true) ||
-    form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name')
+    form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name') ||
+    form.show_public_submissions !== (me.show_public_submissions ?? true)
 
   const submit = (e) => {
     e?.preventDefault()
@@ -151,6 +153,7 @@ function EditTab() {
       bio: form.bio.trim() || null,
       leaderboard_visible: form.leaderboard_visible,
       leaderboard_name_mode: form.leaderboard_name_mode,
+      show_public_submissions: form.show_public_submissions,
     })
   }
 
@@ -217,6 +220,16 @@ function EditTab() {
             <option value="username">Username (@{form.username || 'not set'})</option>
           </Select>
         )}
+      </motion.div>
+
+      <motion.div variants={rise} className="space-y-3">
+        <span className="block text-xs font-bold uppercase tracking-wider text-ink-500">Public profile</span>
+        <Switch
+          checked={form.show_public_submissions}
+          onChange={(v) => setForm((f) => ({ ...f, show_public_submissions: v }))}
+          label="Show my public submissions on my profile"
+          description="Lets anyone who clicks your name on the leaderboard see a list of your public bracket/pick'em entries and the points each one earned. Entries you haven't made public individually still stay hidden."
+        />
       </motion.div>
 
       <motion.div variants={rise} className="flex justify-end">

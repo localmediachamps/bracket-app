@@ -22,6 +22,7 @@ export function Logo({ className }) {
 
 const NAV = [
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { to: '/results', label: 'Results', icon: ScrollText },
   { to: '/teams', label: 'Teams', icon: Building2 },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },

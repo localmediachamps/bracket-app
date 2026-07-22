@@ -1,5 +1,11 @@
 // Public mini-profile: user card, aggregate stats (entries, best rank, average
-// accuracy across scored picks), and the 5 most recent ranked finishes.
+// accuracy across scored picks), the 5 most recent ranked finishes, and (if
+// the owner opted in via show_public_submissions) a combined list of every
+// public bracket/pick'em submission with points earned toward the master
+// leaderboard - clicking a rank on platform/leaderboard lands here, and from
+// here a viewer can click through to the actual submission (still gated by
+// that submission's own is_public + the viewer being logged in, same rule as
+// everywhere else entries are viewed).
 query "users/{id}/profile" verb=GET {
   api_group = "brackets"
 
@@ -13,21 +19,22 @@ query "users/{id}/profile" verb=GET {
       field_name = "id"
       field_value = $input.id
     } as $user
-  
+
     precondition ($user != null) {
       error_type = "notfound"
       error = "User not found."
     }
-  
+
     var $profile {
       value = {
-        id             : $user.id
-        username       : $user.username
-        display_name   : $user.display_name
-        avatar_url     : $user.avatar_url
-        bio            : $user.bio
-        favorite_school: $user.favorite_school
-        created_at     : $user.created_at
+        id                     : $user.id
+        username               : $user.username
+        display_name           : $user.display_name
+        avatar_url             : $user.avatar_url
+        bio                    : $user.bio
+        favorite_school        : $user.favorite_school
+        created_at             : $user.created_at
+        show_public_submissions: $user.show_public_submissions
       }
     }
   
@@ -147,11 +154,207 @@ query "users/{id}/profile" verb=GET {
         }
       }
     }
+
+    // Public submissions list - every bracket/pick'em entry this user has
+    // made public, each merged with its platform_leaderboard_entry points
+    // (if that tournament has been ranked into the master leaderboard yet).
+    // Gated on show_public_submissions - a separate opt-in from is_public on
+    // each individual entry, and from leaderboard_visible (which only
+    // affects showing up in leaderboard rankings, not this profile list).
+    var $submissions {
+      value = []
+    }
+
+    var $submissions_visible {
+      value = $user.show_public_submissions != false
+    }
+
+    conditional {
+      if ($submissions_visible) {
+        db.query platform_leaderboard_entry {
+          where = $db.platform_leaderboard_entry.user_id == $input.id
+          return = {type: "list"}
+        } as $ple_rows
+
+        var $ple_lookup {
+          value = {}
+        }
+
+        foreach ($ple_rows) {
+          each as $ple {
+            var $ple_key {
+              value = $ple.tournament_id|to_text|concat:$ple.source_type:"_"
+            }
+
+            var.update $ple_lookup {
+              value = $ple_lookup|set:$ple_key:$ple.points_awarded
+            }
+          }
+        }
+
+        db.query user_bracket {
+          where = $db.user_bracket.user_id == $input.id && $db.user_bracket.is_public == true
+          return = {type: "list"}
+        } as $public_brackets
+
+        foreach ($public_brackets) {
+          each as $pb {
+            db.get tournament {
+              field_name = "id"
+              field_value = $pb.tournament_id
+              output = ["id", "name", "slug", "year"]
+            } as $pb_tournament
+
+            var $pb_t_name {
+              value = null
+            }
+
+            var $pb_t_slug {
+              value = null
+            }
+
+            var $pb_t_year {
+              value = null
+            }
+
+            conditional {
+              if ($pb_tournament != null) {
+                var.update $pb_t_name {
+                  value = $pb_tournament.name
+                }
+
+                var.update $pb_t_slug {
+                  value = $pb_tournament.slug
+                }
+
+                var.update $pb_t_year {
+                  value = $pb_tournament.year
+                }
+              }
+            }
+
+            var $pb_key {
+              value = $pb.tournament_id|to_text|concat:"bracket":"_"
+            }
+
+            var $pb_points {
+              value = null
+            }
+
+            conditional {
+              if ($ple_lookup|has:$pb_key) {
+                var.update $pb_points {
+                  value = $ple_lookup|get:$pb_key:null
+                }
+              }
+            }
+
+            array.push $submissions {
+              value = {
+                tournament_id  : $pb.tournament_id
+                tournament_name: $pb_t_name
+                tournament_slug: $pb_t_slug
+                tournament_year: $pb_t_year
+                source_type    : "bracket"
+                entry_id       : $pb.id
+                status         : $pb.status
+                rank           : $pb.rank
+                total_points   : $pb.total_points
+                platform_points: $pb_points
+                created_at     : $pb.created_at
+              }
+            }
+          }
+        }
+
+        db.query pickem_entry {
+          where = $db.pickem_entry.user_id == $input.id && $db.pickem_entry.is_public == true
+          return = {type: "list"}
+        } as $public_pickems
+
+        foreach ($public_pickems) {
+          each as $pe {
+            db.get tournament {
+              field_name = "id"
+              field_value = $pe.tournament_id
+              output = ["id", "name", "slug", "year"]
+            } as $pe_tournament
+
+            var $pe_t_name {
+              value = null
+            }
+
+            var $pe_t_slug {
+              value = null
+            }
+
+            var $pe_t_year {
+              value = null
+            }
+
+            conditional {
+              if ($pe_tournament != null) {
+                var.update $pe_t_name {
+                  value = $pe_tournament.name
+                }
+
+                var.update $pe_t_slug {
+                  value = $pe_tournament.slug
+                }
+
+                var.update $pe_t_year {
+                  value = $pe_tournament.year
+                }
+              }
+            }
+
+            var $pe_key {
+              value = $pe.tournament_id|to_text|concat:"pickem":"_"
+            }
+
+            var $pe_points {
+              value = null
+            }
+
+            conditional {
+              if ($ple_lookup|has:$pe_key) {
+                var.update $pe_points {
+                  value = $ple_lookup|get:$pe_key:null
+                }
+              }
+            }
+
+            array.push $submissions {
+              value = {
+                tournament_id  : $pe.tournament_id
+                tournament_name: $pe_t_name
+                tournament_slug: $pe_t_slug
+                tournament_year: $pe_t_year
+                source_type    : "pickem"
+                entry_id       : $pe.id
+                status         : $pe.status
+                rank           : $pe.rank
+                total_points   : $pe.total_points
+                platform_points: $pe_points
+                created_at     : $pe.created_at
+              }
+            }
+          }
+        }
+
+        var.update $submissions {
+          value = $submissions|sort:"created_at":"number"|reverse
+        }
+      }
+    }
   }
 
   response = {
-    user           : $profile
-    stats          : {entries: $entries_count, best_rank: $best_rank, avg_accuracy: $avg_accuracy}
-    recent_finishes: $recent_finishes
+    user               : $profile
+    stats              : {entries: $entries_count, best_rank: $best_rank, avg_accuracy: $avg_accuracy}
+    recent_finishes    : $recent_finishes
+    submissions_visible: $submissions_visible
+    submissions        : $submissions
   }
+  guid = "28t_euRA2KqjlnGGsAhj2-eBgFY"
 }

@@ -27,6 +27,10 @@ query "auth/me" verb=PATCH {
   
     // Which name to show when visible: display_name or username
     text? leaderboard_name_mode? filters=trim|lower
+
+    // Show a public list of this user's public submissions (with points
+    // earned) on their profile page
+    bool? show_public_submissions?
   }
 
   stack {
@@ -125,14 +129,23 @@ query "auth/me" verb=PATCH {
           error_type = "inputerror"
           error = "leaderboard_name_mode must be display_name or username."
         }
-      
+
         var.update $payload {
           value = $payload
             |set:"leaderboard_name_mode":$input.leaderboard_name_mode
         }
       }
     }
-  
+
+    conditional {
+      if ($input.show_public_submissions != null) {
+        var.update $payload {
+          value = $payload
+            |set:"show_public_submissions":$input.show_public_submissions
+        }
+      }
+    }
+
     db.patch user {
       field_name = "id"
       field_value = $auth.id

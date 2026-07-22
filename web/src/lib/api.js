@@ -61,6 +61,7 @@ export const api = {
   bracketView: (tournamentId, weightClassId, entryId, withPercents) =>
     get(XANO_APP, `/tournaments/${tournamentId}/bracket/${weightClassId}${qs({ entry_id: entryId, pick_percentages: withPercents || undefined })}`),
   leaderboard: (tournamentId, params = {}) => get(XANO_APP, `/tournaments/${tournamentId}/leaderboard${qs(params)}`),
+  platformLeaderboard: (params = {}) => get(XANO_APP, `/platform/leaderboard${qs(params)}`),
   results: (tournamentId, params = {}) => get(XANO_APP, `/tournaments/${tournamentId}/results${qs(params)}`),
   pickPopularity: (tournamentId) => get(XANO_APP, `/tournaments/${tournamentId}/pick-popularity`),
   tournamentGroups: (tournamentId) => get(XANO_APP, `/tournaments/${tournamentId}/groups`),

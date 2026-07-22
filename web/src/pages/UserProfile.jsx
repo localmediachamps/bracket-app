@@ -2,12 +2,16 @@ import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { User, GraduationCap, CalendarDays, Trophy, Medal } from 'lucide-react'
+import { User, GraduationCap, CalendarDays, Trophy, Medal, GitBranch, Scale, Eye, EyeOff } from 'lucide-react'
 import { api } from '../lib/api'
 import { Avatar, Badge, Card, EmptyState, Skeleton, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
 import { displayName, percentOf } from '../components/tournament/helpers'
 import { formatDate, formatPoints } from '../lib/utils'
+
+function entryViewPath(sourceType, entryId) {
+  return sourceType === 'pickem' ? `/pickem-entries/${entryId}` : `/entries/${entryId}/review`
+}
 
 function ProfileSkeleton() {
   return (
@@ -50,6 +54,8 @@ export default function UserProfile() {
   const profile = data?.user ?? data ?? {}
   const stats = data?.stats ?? {}
   const finishes = data?.finishes ?? data?.recent_finishes ?? []
+  const submissions = data?.submissions ?? []
+  const submissionsVisible = data?.submissions_visible ?? true
   const name = displayName(profile)
   const acc = percentOf(stats.avg_accuracy ?? stats.accuracy)
   const entries = stats.entries ?? stats.total_entries ?? (finishes.length || null)
@@ -141,6 +147,64 @@ export default function UserProfile() {
                   ) : (
                     inner
                   )}
+                </div>
+              )
+            })}
+          </Card>
+        )}
+      </motion.div>
+
+      {/* ── Public submissions ───────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.22 }}
+        className="mt-5"
+      >
+        <h2 className="mb-3 font-display text-sm uppercase tracking-wide text-ink-100">Public submissions</h2>
+        {!submissionsVisible ? (
+          <EmptyState
+            icon={<EyeOff size={20} />}
+            title="Kept private"
+            body={`${name} keeps their submissions private.`}
+          />
+        ) : submissions.length === 0 ? (
+          <EmptyState
+            icon={<GitBranch size={20} />}
+            title="Nothing public yet"
+            body={`${name} hasn't made any bracket or pick'em entries public.`}
+          />
+        ) : (
+          <Card className="overflow-hidden">
+            {submissions.map((s, i) => {
+              const ModeIcon = s.source_type === 'pickem' ? Scale : GitBranch
+              const inner = (
+                <div className="flex items-center gap-4 px-5 py-3.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mat-800 text-gold-500">
+                    <ModeIcon size={15} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink-100">{s.tournament_name ?? 'Tournament'}</p>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
+                      <span className="capitalize">{s.source_type}</span>
+                      {s.tournament_year && <span className="font-mono">{s.tournament_year}</span>}
+                      {s.rank != null && <span>#{s.rank} in event</span>}
+                    </div>
+                  </div>
+                  {s.platform_points != null && (
+                    <span className="shrink-0 text-right">
+                      <span className="block font-mono text-sm font-bold text-gold-400">+{formatPoints(s.platform_points)}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-ink-600">to leaderboard</span>
+                    </span>
+                  )}
+                  <Eye size={14} className="shrink-0 text-ink-500" />
+                </div>
+              )
+              return (
+                <div key={`${s.source_type}-${s.entry_id ?? i}`} className="border-t border-mat-700/60 first:border-t-0">
+                  <Link to={entryViewPath(s.source_type, s.entry_id)} className="block transition-colors hover:bg-mat-800/50">
+                    {inner}
+                  </Link>
                 </div>
               )
             })}

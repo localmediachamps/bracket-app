@@ -343,18 +343,16 @@ export default function Landing() {
   const open = normalizeList(openQ.data)
   const live = normalizeList(liveQ.data)
   const cards = [...live.items, ...open.items].slice(0, 6)
-  const flagship = live.items[0] ?? open.items[0]
   const loading = openQ.isLoading || liveQ.isLoading
   const failed = openQ.isError && liveQ.isError
 
-  const lbQ = useQuery({
-    queryKey: ['leaderboard', 'teaser', flagship?.id],
-    queryFn: () => api.leaderboard(flagship.id, { per: 5 }),
-    enabled: !!flagship?.id,
+  const platformLbQ = useQuery({
+    queryKey: ['platform-leaderboard', 'teaser'],
+    queryFn: () => api.platformLeaderboard({ per: 5 }),
     staleTime: 60000,
     retry: 1,
   })
-  const teaserRows = normalizeList(lbQ.data).items.slice(0, 5)
+  const teaserRows = normalizeList(platformLbQ.data).items.slice(0, 5)
 
   const resultsPreviewQ = useQuery({
     queryKey: ['results', 'landing-preview'],
@@ -548,9 +546,9 @@ export default function Landing() {
       </section>
 
       {/* ── Leaderboard teaser ───────────────────────── */}
-      {flagship && teaserRows.length > 0 && (
+      {teaserRows.length > 0 && (
         <section className="py-16">
-          <SectionHeading sub={`${flagship.name} — top of the table right now`}>The chase for gold</SectionHeading>
+          <SectionHeading sub="Points summed across every bracket and pick'em entry, all season long.">The chase for gold</SectionHeading>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -559,7 +557,7 @@ export default function Landing() {
           >
             <Card className="overflow-hidden">
               {teaserRows.map((row, i) => (
-                <div key={row.id ?? row.user?.id ?? i} className="flex items-center gap-4 border-t border-mat-700/60 px-5 py-3.5 first:border-t-0">
+                <div key={row.user?.id ?? i} className="flex items-center gap-4 border-t border-mat-700/60 px-5 py-3.5 first:border-t-0">
                   <span
                     className={cn(
                       'flex w-7 shrink-0 items-center justify-center font-mono text-sm font-bold',
@@ -574,7 +572,7 @@ export default function Landing() {
                 </div>
               ))}
               <Link
-                to={`/tournaments/${flagship.slug ?? flagship.id}?tab=leaderboard`}
+                to="/leaderboard"
                 className="block border-t border-mat-700 bg-mat-900/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.14em] text-gold-500 transition-colors hover:text-gold-300"
               >
                 Full leaderboard →
