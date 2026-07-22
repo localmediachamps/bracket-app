@@ -8,6 +8,8 @@
 // documented "populate if present, don't require" mode. Confirmed
 // empirically 2026-07-22: a real owner's valid Bearer token was still
 // ignored (is_owner always false) when this endpoint had no auth clause.
+// Garrett confirmed 2026-07-22 he wants it this way regardless - viewing any
+// submission's detail requires an account, even on the free plan.
 query "entries/{id}/review" verb=GET {
   api_group = "brackets"
   auth = "user"
@@ -27,7 +29,7 @@ query "entries/{id}/review" verb=GET {
       field_name = "id"
       field_value = $input.id
     } as $entry
-  
+
     precondition ($entry != null) {
       error_type = "notfound"
       error = "Entry not found."
@@ -75,22 +77,22 @@ query "entries/{id}/review" verb=GET {
       sort = {weight_class.display_order: "asc"}
       return = {type: "list"}
     } as $classes
-  
+
     db.query user_pick {
       where = $db.user_pick.user_bracket_id == $entry.id
       return = {type: "list"}
     } as $picks
-  
+
     db.query bracket_match {
       where = $db.bracket_match.tournament_id == $entry.tournament_id
       return = {type: "list"}
     } as $matches
-  
+
     // Match lookup by id
     var $match_map {
       value = {}
     }
-  
+
     foreach ($matches) {
       each as $mm {
         var.update $match_map {
@@ -98,30 +100,30 @@ query "entries/{id}/review" verb=GET {
         }
       }
     }
-  
+
     var $wc_rows {
       value = []
     }
-  
+
     var $total_correct {
       value = 0
     }
-  
+
     var $total_scored {
       value = 0
     }
-  
+
     var $total_points {
       value = 0
     }
-  
+
     foreach ($classes) {
       each as $wc {
         // Find this weight class's championship finals match
         var $champ_match_id {
           value = null
         }
-      
+
         foreach ($matches) {
           each as $m {
             conditional {
@@ -133,7 +135,7 @@ query "entries/{id}/review" verb=GET {
             }
           }
         }
-      
+
         // Champion pick = this entry's pick on the finals match
         var $champion {
           value = null
@@ -177,26 +179,26 @@ query "entries/{id}/review" verb=GET {
             }
           }
         }
-      
+
         // Per-weight pick stats
         var $wc_correct {
           value = 0
         }
-      
+
         var $wc_scored {
           value = 0
         }
-      
+
         var $wc_points {
           value = 0
         }
-      
+
         foreach ($picks) {
           each as $wp {
             var $pick_match {
               value = null
             }
-          
+
             conditional {
               if ($match_map|has:$wp.bracket_match_id) {
                 var.update $pick_match {
@@ -204,7 +206,7 @@ query "entries/{id}/review" verb=GET {
                 }
               }
             }
-          
+
             conditional {
               if ($pick_match != null && $pick_match.weight_class_id == $wc.id) {
                 conditional {
@@ -212,16 +214,16 @@ query "entries/{id}/review" verb=GET {
                     math.add $wc_correct {
                       value = 1
                     }
-                  
+
                     math.add $wc_scored {
                       value = 1
                     }
-                  
+
                     math.add $wc_points {
                       value = $wp.points_earned|first_notnull:0
                     }
                   }
-                
+
                   elseif ($wp.outcome_status == "incorrect" || $wp.outcome_status == "eliminated") {
                     math.add $wc_scored {
                       value = 1
@@ -232,7 +234,7 @@ query "entries/{id}/review" verb=GET {
             }
           }
         }
-      
+
         array.push $wc_rows {
           value = {
             weight_class_id : $wc.id
@@ -245,35 +247,35 @@ query "entries/{id}/review" verb=GET {
             points_earned   : $wc_points
           }
         }
-      
+
         math.add $total_correct {
           value = $wc_correct
         }
-      
+
         math.add $total_scored {
           value = $wc_scored
         }
-      
+
         math.add $total_points {
           value = $wc_points
         }
       }
     }
-  
+
     // Missing = non-bye matches without a pick for this entry
     db.query bracket_match {
       where = $db.bracket_match.tournament_id == $entry.tournament_id && $db.bracket_match.is_bye == false
       return = {type: "count"}
     } as $total_matches
-  
+
     var $picked_count {
       value = $picks|count
     }
-  
+
     var $missing_count {
       value = $total_matches - $picked_count
     }
-  
+
     conditional {
       if ($missing_count < 0) {
         var.update $missing_count {

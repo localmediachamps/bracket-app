@@ -11,6 +11,7 @@ import { Avatar, Button, Card, EmptyState, Modal, Skeleton, StatusPill } from '.
 import { cn, formatPoints, pct, plural } from '../lib/utils'
 import AnimatedNumber from '../components/profile/AnimatedNumber'
 import BracketView from '../components/bracket/BracketView'
+import { asModes } from '../components/tournament/helpers'
 
 const rise = {
   hidden: { opacity: 0, y: 14 },
@@ -71,6 +72,8 @@ export default function EntryReview() {
   })
   const tournament = tData ?? {}
   const tournamentKey = tournament.slug ?? tournamentId
+  const tournamentModes = asModes(tournament.game_modes)
+  const canStartPickem = isOwner && tournament.status === 'open' && tournamentModes.includes('pickem') && !tournament.my_pickem_entry
 
   // The weight rail/breakdown come straight from the review payload itself -
   // it already has every weight class this entry could pick, no separate
@@ -205,6 +208,11 @@ export default function EntryReview() {
           <Button variant="secondary" onClick={() => setCompareOpen(true)} disabled={!tournamentId}>
             <Scale size={15} /> Compare
           </Button>
+          {canStartPickem && (
+            <Button onClick={() => navigate(`/tournaments/${tournamentKey}/pickem`)}>
+              <Scale size={15} /> Add Pick'em
+            </Button>
+          )}
         </div>
       </motion.header>
 

@@ -18,6 +18,7 @@ const FREE_FEATURES = [
   'Up to 3 tournaments with a submitted entry, ever (any mix of bracket + pick\'em)',
   'Create private groups and run your own pool with friends',
   'Full access to the Results Library',
+  'View any player\'s public bracket or pick\'em submission (free account required)',
 ]
 
 const ANNUAL_FEATURES = [
