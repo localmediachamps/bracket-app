@@ -55,6 +55,21 @@ table dual_meet {
     // uniqueness constraint (checked manually before insert instead, so a
     // deliberate re-creation for testing doesn't hit a hard conflict)
     text? source_match_key? filters=trim
+
+    // True for a dual meet reconciled in bulk from real historical
+    // wrestler_match_history rows (see functions/analytics/
+    // reconcile_dual_meets_for_range.xs) purely for browsing past results -
+    // never enters the predict/pick flow, unlike an admin-seeded or
+    // from-history dual meet meant for QA/testing picks. The frontend uses
+    // this to skip the whole Predict/Leaderboard UI and just show the
+    // final result.
+    bool? is_historical?
+
+    // Final NCAA dual-meet team score (sum of each side's bout point
+    // values - decision=3, major=4, tech fall=5, fall/forfeit/default/
+    // disqualification=6). Only populated once the dual is complete.
+    int? home_score?
+    int? away_score?
   }
 
   index = [

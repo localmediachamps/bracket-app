@@ -2067,5 +2067,61 @@
     "status": "new",
     "type": "function",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tables/season_stat_leaders.xs",
+    "status": "new",
+    "type": "table",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/utils/build_stat_leader_list.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "tasks/compute_season_stat_leaders.xs",
+    "status": "new",
+    "type": "task",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/brackets/results_stat_leaders_GET.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/analytics/compute_stat_leaders_for_season.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_stat_leaders_recompute_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "functions/analytics/reconcile_historical_dual_meets.xs",
+    "status": "new",
+    "type": "function",
+    "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/admin/admin_dual_meets_reconcile_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]

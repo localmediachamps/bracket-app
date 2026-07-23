@@ -97,17 +97,22 @@ query "dual-meets/{id}" verb=GET {
   }
 
   response = {
-    id            : $dual_meet.id
-    name          : $dual_meet.name
-    slug          : $dual_meet.slug
-    year          : $dual_meet.year
-    home_team_name: $dual_meet.home_team_name
-    away_team_name: $dual_meet.away_team_name
-    occurred_at   : $dual_meet.occurred_at
-    locks_at      : $dual_meet.locks_at
-    status        : $dual_meet.status
-    entry_count   : $dual_meet.entry_count
-    weight_slots  : $slot_out
+    id                    : $dual_meet.id
+    name                  : $dual_meet.name
+    slug                  : $dual_meet.slug
+    year                  : $dual_meet.year
+    home_team_name        : $dual_meet.home_team_name
+    away_team_name        : $dual_meet.away_team_name
+    home_canonical_team_id: $dual_meet.home_canonical_team_id
+    away_canonical_team_id: $dual_meet.away_canonical_team_id
+    occurred_at           : $dual_meet.occurred_at
+    locks_at              : $dual_meet.locks_at
+    status                : $dual_meet.status
+    entry_count           : $dual_meet.entry_count
+    is_historical         : $dual_meet.is_historical
+    home_score            : ($reveal ? $dual_meet.home_score : null)
+    away_score            : ($reveal ? $dual_meet.away_score : null)
+    weight_slots          : $slot_out
   }
   guid = "mqrNHKmFENqw4icEx39EwsdFYFM"
 }
