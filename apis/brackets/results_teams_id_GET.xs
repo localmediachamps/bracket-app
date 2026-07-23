@@ -204,6 +204,7 @@ query "results/teams/{id}" verb=GET {
             losses       : $season_losses
             career_wins  : $career_wins
             career_losses: $career_losses
+            is_starter_override: $l.is_starter_override
           }
         }
 
@@ -225,10 +226,134 @@ query "results/teams/{id}" verb=GET {
               value = $roster_by_season[$season]|sort:"weight_class":"text"
             }
 
+            var $starter_best_id {
+              value = {}
+            }
+
+            var $starter_best_score {
+              value = {}
+            }
+
+            var $starter_forced_id {
+              value = {}
+            }
+
+            foreach ($sorted) {
+              each as $sw {
+                var $sw_key {
+                  value = ($sw.weight_class|to_text)
+                }
+
+                var $sw_score {
+                  value = ($sw.wins + $sw.losses)
+                }
+
+                conditional {
+                  if ($sw.is_starter_override != null && $sw.is_starter_override == true) {
+                    var.update $starter_forced_id {
+                      value = $starter_forced_id|set:$sw_key:$sw.wrestler_id
+                    }
+                  }
+                }
+
+                var $sw_prev_score {
+                  value = $starter_best_score|get:$sw_key:null
+                }
+
+                conditional {
+                  if ($sw_prev_score == null) {
+                    var.update $starter_best_score {
+                      value = $starter_best_score|set:$sw_key:$sw_score
+                    }
+
+                    var.update $starter_best_id {
+                      value = $starter_best_id|set:$sw_key:$sw.wrestler_id
+                    }
+                  }
+                  elseif ($sw_score > $sw_prev_score) {
+                    var.update $starter_best_score {
+                      value = $starter_best_score|set:$sw_key:$sw_score
+                    }
+
+                    var.update $starter_best_id {
+                      value = $starter_best_id|set:$sw_key:$sw.wrestler_id
+                    }
+                  }
+                }
+              }
+            }
+
+            var $with_starters {
+              value = []
+            }
+
+            foreach ($sorted) {
+              each as $sw2 {
+                var $sw2_key {
+                  value = ($sw2.weight_class|to_text)
+                }
+
+                var $sw2_is_starter {
+                  value = false
+                }
+
+                conditional {
+                  if ($starter_forced_id|has:$sw2_key) {
+                    var $sw2_forced {
+                      value = $starter_forced_id|get:$sw2_key:null
+                    }
+
+                    // `int == int` is fatal here whenever either operand came
+                    // from a map |get lookup (confirmed via bisection
+                    // 2026-07-23 - crashes even null-guarded, with either
+                    // operand order; `>` on the same kind of value is fine,
+                    // see $sw_score > $sw_prev_score above). Casting both
+                    // sides to text before comparing avoids it.
+                    var.update $sw2_is_starter {
+                      value = (($sw2.wrestler_id|to_text) == ($sw2_forced|to_text))
+                    }
+                  }
+                  elseif ($sw2.is_starter_override != null && $sw2.is_starter_override == false) {
+                    var.update $sw2_is_starter {
+                      value = false
+                    }
+                  }
+                  else {
+                    var $sw2_best {
+                      value = $starter_best_id|get:$sw2_key:null
+                    }
+
+                    conditional {
+                      if ($sw2_best != null) {
+                        var.update $sw2_is_starter {
+                          value = (($sw2.wrestler_id|to_text) == ($sw2_best|to_text))
+                        }
+                      }
+                    }
+                  }
+                }
+
+                array.push $with_starters {
+                  value = {
+                    wrestler_id       : $sw2.wrestler_id
+                    display_name      : $sw2.display_name
+                    weight_class      : $sw2.weight_class
+                    match_count       : $sw2.match_count
+                    wins              : $sw2.wins
+                    losses            : $sw2.losses
+                    career_wins       : $sw2.career_wins
+                    career_losses     : $sw2.career_losses
+                    is_starter_override: $sw2.is_starter_override
+                    is_starter        : $sw2_is_starter
+                  }
+                }
+              }
+            }
+
             array.push $roster_out {
               value = {
                 season_label: $season
-                wrestlers   : $sorted
+                wrestlers   : $with_starters
               }
             }
           }
