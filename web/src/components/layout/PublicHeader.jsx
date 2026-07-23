@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Menu, Trophy, Swords, Crown, ScrollText, GraduationCap, LifeBuoy, UserRound } from 'lucide-react'
+import { Menu, Trophy, Swords, Crown, ScrollText, GraduationCap, LifeBuoy, UserRound, CalendarDays } from 'lucide-react'
 import { Button } from '../ui'
 import { cn } from '../../lib/utils'
 import { Logo } from './Logo'
@@ -17,6 +17,7 @@ const PUBLIC_NAV = [
   { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/dual-meets', label: 'Dual Meets', icon: Swords },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/teams', label: 'Teams', icon: GraduationCap },
   { to: '/wrestlers', label: 'Wrestlers', icon: UserRound },
   { to: '/results', label: 'Results', icon: ScrollText },

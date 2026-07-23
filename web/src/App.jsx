@@ -27,6 +27,7 @@ const EntryReview = lazy(() => import('./pages/EntryReview'))
 const PickemEntryView = lazy(() => import('./pages/PickemEntryView'))
 const Compare = lazy(() => import('./pages/Compare'))
 const Leaderboard = lazy(() => import('./pages/Leaderboard'))
+const CalendarPage = lazy(() => import('./pages/Calendar'))
 const Help = lazy(() => import('./pages/Help'))
 const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="/tournaments/:slug/predict" element={<RequireAuth><Predict /></RequireAuth>} />
             <Route path="/tournaments/:slug/pickem" element={<RequireAuth><Pickem /></RequireAuth>} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/help" element={<Help />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />

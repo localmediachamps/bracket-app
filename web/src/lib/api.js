@@ -74,6 +74,8 @@ export const api = {
   resultsFacets: (params = {}) => get(XANO_APP, `/results/facets${qs(params)}`),
   wrestlerProfile: (id) => get(XANO_APP, `/results/wrestlers/${id}`),
   teams: () => get(XANO_APP, `/results/teams`),
+  calendar: () => get(XANO_APP, `/calendar`),
+  calendarMySubmissions: () => get(XANO_APP, `/calendar/my-submissions`),
   wrestlerLibrary: (params = {}) => get(XANO_APP, `/results/wrestlers${qs(params)}`),
   teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 

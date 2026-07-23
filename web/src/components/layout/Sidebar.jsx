@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
   Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon,
-  ScrollText, Swords, Crown, GraduationCap, CalendarRange, LifeBuoy,
+  ScrollText, Swords, Crown, GraduationCap, CalendarRange, CalendarDays, LifeBuoy,
   ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard, UserRound,
 } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
@@ -14,6 +14,7 @@ export const SIDEBAR_NAV = [
   { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/dual-meets', label: 'Dual Meets', icon: Swords },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
   { to: '/leagues', label: 'Leagues', icon: CalendarRange, auth: true },
   { to: '/teams', label: 'Teams', icon: GraduationCap },
