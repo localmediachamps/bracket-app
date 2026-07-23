@@ -103,6 +103,18 @@ query "leagues/lineup" verb=GET {
       value = []
     }
 
+    // Real dual-meet(s) for each rostered wrestler's team that fall inside
+    // THIS week's date window - built once per distinct team, not once per
+    // wrestler, so teammates on the same roster share one lookup. Only
+    // covers weeks with real reconciled historical dual meets in range (no
+    // live/upcoming schedule data source exists yet - see results/teams/{id}
+    // for the same caveat) - a past-season league (like a mock/demo season)
+    // gets a fully populated, ACCURATE "who did they actually face this
+    // week" answer, not a speculative guess.
+    var $team_duals_cache {
+      value = {}
+    }
+
     foreach ($roster) {
       each as $r {
         db.get canonical_wrestler {
@@ -121,6 +133,63 @@ query "leagues/lineup" verb=GET {
           input = {canonical_wrestler_id: $r.canonical_wrestler_id}
         } as $roster_record
 
+        var $week_duals {
+          value = []
+        }
+
+        conditional {
+          if ($roster_wrestler != null && $roster_wrestler.current_team_id != null) {
+            var $team_key {
+              value = ($roster_wrestler.current_team_id|to_text)
+            }
+
+            conditional {
+              if ($team_duals_cache|has:$team_key) {
+                var.update $week_duals {
+                  value = $team_duals_cache|get:$team_key:[]
+                }
+              }
+              else {
+                db.query dual_meet {
+                  where = ($db.dual_meet.home_canonical_team_id == $roster_wrestler.current_team_id || $db.dual_meet.away_canonical_team_id == $roster_wrestler.current_team_id) && $db.dual_meet.occurred_at >= $season_week.starts_at && $db.dual_meet.occurred_at <= $season_week.ends_at
+                  return = {type: "list"}
+                } as $team_week_duals
+
+                var $duals_this_week {
+                  value = []
+                }
+
+                foreach ($team_week_duals) {
+                  each as $dm {
+                    var $dm_is_home {
+                      value = $dm.home_canonical_team_id == $roster_wrestler.current_team_id
+                    }
+
+                    array.push $duals_this_week {
+                      value = {
+                        dual_meet_id : $dm.id
+                        opponent_name: ($dm_is_home ? $dm.away_team_name : $dm.home_team_name)
+                        opponent_team_id: ($dm_is_home ? $dm.away_canonical_team_id : $dm.home_canonical_team_id)
+                        is_home      : $dm_is_home
+                        occurred_at  : $dm.occurred_at
+                        status       : $dm.status
+                      }
+                    }
+                  }
+                }
+
+                var.update $week_duals {
+                  value = $duals_this_week
+                }
+
+                var.update $team_duals_cache {
+                  value = $team_duals_cache|set:$team_key:$duals_this_week
+                }
+              }
+            }
+          }
+        }
+
         array.push $roster_rows {
           value = {
             roster_slot_id   : $r.id
@@ -129,6 +198,7 @@ query "leagues/lineup" verb=GET {
             drafted_weight_class: $roster_weight_class
             slot_type        : $r.slot_type
             slot_index       : $r.slot_index
+            week_duals       : $week_duals
           }
         }
       }

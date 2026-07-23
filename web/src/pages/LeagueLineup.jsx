@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowLeft, Check, ExternalLink, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Check, ExternalLink, RefreshCw, Swords } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
 import { Button, Card, EmptyState, Select, Skeleton } from '../components/ui'
@@ -160,9 +160,10 @@ export default function LeagueLineup() {
               <div className="p-4 pb-0 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">My roster</div>
               {roster.map((r) => {
                 const record = r.record
+                const duals = r.week_duals ?? []
                 return (
                   <div key={r.roster_slot_id} className="flex flex-wrap items-center justify-between gap-2 p-4">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-sm font-semibold text-ink-100">
                         {r.wrestler?.display_name}
                         {r.slot_type === 'alternate' && <span className="ml-2 text-xs font-normal text-ink-500">alternate</span>}
@@ -172,12 +173,30 @@ export default function LeagueLineup() {
                           {record.wins}-{record.losses} · {record.falls} pins · {record.tech_falls} tech falls · {record.majors} majors
                         </div>
                       )}
+                      {duals.length > 0 ? (
+                        <div className="mt-1.5 space-y-0.5">
+                          {duals.map((d) => (
+                            <div key={d.dual_meet_id} className="flex items-center gap-1.5 text-xs">
+                              <Swords size={11} className="shrink-0 text-gold-500/70" />
+                              <span className="text-ink-500">{d.is_home ? 'vs' : '@'}</span>
+                              <Link to={`/dual-meets/${d.dual_meet_id}`} className="font-semibold text-ink-300 hover:text-gold-400">
+                                {d.opponent_name}
+                              </Link>
+                              <span className="text-ink-600">
+                                {d.occurred_at ? new Date(d.occurred_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-xs text-ink-600">No dual meet on record this week.</div>
+                      )}
                     </div>
                     <Link
                       to={`/wrestlers/${r.wrestler?.id}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-gold-400 hover:text-gold-300"
+                      className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-gold-400 hover:text-gold-300"
                     >
                       Full profile <ExternalLink size={12} />
                     </Link>
