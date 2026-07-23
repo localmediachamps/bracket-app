@@ -238,6 +238,12 @@ export const api = {
     }),
   respondToTrade: (tradeId, action) => post(XANO_LEAGUE, `/leagues/trade/respond`, { trade_id: tradeId, action }),
   cancelTrade: (tradeId) => post(XANO_LEAGUE, `/leagues/trade/cancel`, { trade_id: tradeId }),
+  counterTrade: (tradeId, offeredRosterSlotIds, requestedRosterSlotIds) =>
+    post(XANO_LEAGUE, `/leagues/trade/counter`, {
+      trade_id: tradeId,
+      offered_roster_slot_ids: offeredRosterSlotIds,
+      requested_roster_slot_ids: requestedRosterSlotIds,
+    }),
 
   leagueResultsAnalystAsk: (leagueId, message) => post(XANO_LEAGUE, `/leagues/results-analyst`, { league_id: leagueId, message }),
 
