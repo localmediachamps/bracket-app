@@ -37,6 +37,12 @@ query "results/teams/{id}" verb=GET {
       value = {}
     }
 
+    // Denormalized current_weight_class - used as the 2026-27 tab's weight
+    // display, since that season has no real matches yet to derive it from.
+    var $wrestler_weight_map {
+      value = {}
+    }
+
     foreach ($links) {
       each as $l {
         conditional {
@@ -51,6 +57,10 @@ query "results/teams/{id}" verb=GET {
                 var.update $wrestler_name_map {
                   value = $wrestler_name_map|set:$w.id:$w.display_name
                 }
+
+                var.update $wrestler_weight_map {
+                  value = $wrestler_weight_map|set:$w.id:$w.current_weight_class
+                }
               }
             }
           }
@@ -58,9 +68,10 @@ query "results/teams/{id}" verb=GET {
       }
     }
 
-    // Group roster links by season, newest season first
+    // Group roster links by season, newest (including the not-yet-started
+    // upcoming season) first
     var $season_order {
-      value = ["2025-26", "2024-25", "2023-24", "2022-23"]
+      value = ["2026-27", "2025-26", "2024-25", "2023-24", "2022-23"]
     }
 
     // Same academic-year windows as results/wrestlers/{id} - used to find a
@@ -143,14 +154,56 @@ query "results/teams/{id}" verb=GET {
           }
         }
 
+        // The 2026-27 season hasn't started - no matches exist to derive a
+        // weight from yet (fall back to the wrestler's denormalized current
+        // weight) or a season record from. Pull forward their career record
+        // instead so the tab isn't just a wall of 0-0s.
+        var $career_wins { value = null }
+        var $career_losses { value = null }
+
+        conditional {
+          if ($l.season_label == "2026-27") {
+            conditional {
+              if ($weight_class == null) {
+                var.update $weight_class {
+                  value = $wrestler_weight_map[$l.canonical_wrestler_id]
+                }
+              }
+            }
+
+            db.query wrestler_match_history {
+              where = ($db.wrestler_match_history.winner_canonical_wrestler_id == $l.canonical_wrestler_id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $l.canonical_wrestler_id)
+              return = {type: "list"}
+            } as $career_matches
+
+            var.update $career_wins { value = 0 }
+            var.update $career_losses { value = 0 }
+
+            foreach ($career_matches) {
+              each as $cm {
+                conditional {
+                  if ($cm.winner_canonical_wrestler_id == $l.canonical_wrestler_id) {
+                    math.add $career_wins { value = 1 }
+                  }
+                  else {
+                    math.add $career_losses { value = 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+
         array.push $season_list {
           value = {
-            wrestler_id : $l.canonical_wrestler_id
-            display_name: $wrestler_name_map[$l.canonical_wrestler_id]
-            weight_class: $weight_class
-            match_count : $l.match_count
-            wins        : $season_wins
-            losses      : $season_losses
+            wrestler_id  : $l.canonical_wrestler_id
+            display_name : $wrestler_name_map[$l.canonical_wrestler_id]
+            weight_class : $weight_class
+            match_count  : $l.match_count
+            wins         : $season_wins
+            losses       : $season_losses
+            career_wins  : $career_wins
+            career_losses: $career_losses
           }
         }
 
