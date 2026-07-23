@@ -2130,5 +2130,12 @@
     "status": "new",
     "type": "api_endpoint",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_trade_counter_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]
