@@ -88,6 +88,15 @@ function RequireAdmin({ children }) {
   return children
 }
 
+// The marketing page is only for signed-out visitors - a logged-in user
+// hitting "/" (e.g. clicking the logo, or just landing here after login)
+// should see their dashboard instead, not the pitch page again.
+function Root() {
+  const token = useAuthStore((s) => s.token)
+  if (token) return <Navigate to="/dashboard" replace />
+  return <Landing />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -95,7 +104,7 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<AppShell />}>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Root />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
