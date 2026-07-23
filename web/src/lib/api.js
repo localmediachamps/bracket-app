@@ -84,6 +84,11 @@ export const api = {
   userRankings: (userId, params = {}) => get(XANO_APP, `/users/${userId}/rankings${qs(params)}`),
   teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 
+  /* ── Trophies ───────────────────────────────────────── */
+  userTrophies: (userId) => get(XANO_APP, `/users/${userId}/trophies`),
+  myUnseenTrophies: () => get(XANO_APP, `/me/trophies/unseen`),
+  markTrophySeen: (id) => post(XANO_APP, `/trophies/${id}/seen`, {}),
+
   /* ── Dual meets ─────────────────────────────────────── */
   dualMeets: (params = {}) => get(XANO_APP, `/dual-meets${qs(params)}`),
   dualMeet: (idOrSlug) => get(XANO_APP, `/dual-meets/${idOrSlug}`),

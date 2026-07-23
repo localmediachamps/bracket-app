@@ -279,9 +279,20 @@ query "admin/tournaments/{id}/status" verb=POST {
         var.update $notify_type {
           value = "tournament_completed"
         }
-      
+
         var.update $notify_title {
           value = "Tournament completed: " ~ $tournament.name
+        }
+
+        try_catch {
+          try {
+            function.run award_tournament_trophies {
+              input = {tournament_id: $input.id, tournament_name: $tournament.name}
+            } as $trophy_result
+          }
+
+          catch {
+          }
         }
       }
     }
@@ -334,4 +345,5 @@ query "admin/tournaments/{id}/status" verb=POST {
     rescored      : $did_rescore
     rescore       : $rescore_summary
   }
+  guid = "_OJSkh7JIDhpERaEQmBqfHgqpUg"
 }

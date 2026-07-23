@@ -46,6 +46,13 @@ export default function UserProfile() {
   const rankedWeights = (rankingsData?.weights ?? []).filter((w) => w.entries?.length)
   const rankingsVisible = rankingsData?.rankings_visible ?? true
 
+  const { data: trophiesData } = useQuery({
+    queryKey: ['user-trophies', id],
+    queryFn: () => api.userTrophies(id),
+    staleTime: 60000,
+  })
+  const trophies = trophiesData?.trophies ?? []
+
   if (isLoading) return <ProfileSkeleton />
 
   if (isError) {
@@ -111,6 +118,48 @@ export default function UserProfile() {
         <Stat label="Best rank" value={bestRank != null ? `#${bestRank}` : '—'} icon={<Medal size={14} />} />
         <Stat label="Avg accuracy" value={acc != null ? `${Math.round(acc)}%` : '—'} />
       </motion.div>
+
+      {/* ── Trophy case ───────────────────────────────── */}
+      {trophies.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.12 }}
+          className="mt-5"
+        >
+          <h2 className="mb-3 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-100">
+            <Trophy size={15} className="text-gold-400" /> Trophy Case
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {trophies.map((t) => {
+              const placementLabel = t.placement === 1 ? '1st' : t.placement === 2 ? '2nd' : t.placement === 3 ? '3rd' : `#${t.placement}`
+              const inner = (
+                <Card className="flex h-full flex-col items-center gap-2 p-3 text-center">
+                  <img
+                    src={t.image_url}
+                    alt={`${placementLabel} place trophy`}
+                    className="h-28 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                    loading="lazy"
+                  />
+                  <div>
+                    <Badge color={t.placement === 1 ? 'gold' : 'ink'}>{placementLabel} Place</Badge>
+                    <p className="mt-1.5 truncate text-xs font-semibold text-ink-200" title={t.context_name ?? undefined}>
+                      {t.context_name ?? 'Tournament'}
+                    </p>
+                  </div>
+                </Card>
+              )
+              return t.context_slug ? (
+                <Link key={t.id} to={`/tournaments/${t.context_slug}`} className="block h-full transition-opacity hover:opacity-90">
+                  {inner}
+                </Link>
+              ) : (
+                <div key={t.id}>{inner}</div>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Recent finishes ────────────────────────────── */}
       <motion.div
