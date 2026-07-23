@@ -62,6 +62,77 @@ function LeagueStandings({ leagueId, selfId }) {
   )
 }
 
+// Every head-to-head week's full slate of results, league-wide - not just
+// the viewer's own matchup. Collapsed to the most recent completed week by
+// default; older weeks expand on demand so this doesn't turn into an
+// enormous always-open scroll for a long season.
+function LeagueWeeklyMatchups({ leagueId, selfId }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['league-matchups-all', leagueId],
+    queryFn: () => api.leagueMatchupsAll(leagueId),
+  })
+  const weeks = (data?.weeks ?? []).filter((w) => w.matchups.length > 0)
+  const firstCompleted = weeks.find((w) => w.status === 'complete')?.season_week_id
+  const [openWeek, setOpenWeek] = useState(null)
+
+  if (isLoading) return <Skeleton className="h-40 w-full" />
+  if (weeks.length === 0) return null
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center gap-1.5 p-4 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">
+        <Swords size={13} className="text-gold-500" /> Weekly matchups
+      </div>
+      <div className="divide-y divide-mat-800">
+        {weeks.map((w) => {
+          const isOpen = openWeek === w.season_week_id || (openWeek === null && w.season_week_id === firstCompleted)
+          return (
+            <div key={w.season_week_id}>
+              <button
+                type="button"
+                onClick={() => setOpenWeek(isOpen ? -1 : w.season_week_id)}
+                className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left hover:bg-mat-850/60"
+              >
+                <span className="text-sm font-semibold text-ink-200">Week {w.week_number}</span>
+                <Badge color={w.status === 'complete' ? 'pin' : 'ink'}>{w.status}</Badge>
+              </button>
+              {isOpen && (
+                <div className="space-y-1.5 px-4 pb-3">
+                  {w.matchups.map((m) => {
+                    const involvesMe = selfId != null && (m.home_user?.id === selfId || m.away_user?.id === selfId)
+                    const homeWon = m.result === 'home'
+                    const awayWon = m.result === 'away'
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${involvesMe ? 'border-gold-500/30 bg-gold-500/[0.04]' : 'border-mat-800 bg-mat-900/40'}`}
+                      >
+                        <span className={`min-w-0 flex-1 truncate ${homeWon ? 'font-bold text-ink-100' : 'text-ink-400'}`}>
+                          {m.home_user?.display_name || m.home_user?.username || '—'}
+                        </span>
+                        <span className={`w-14 shrink-0 text-center font-mono text-xs font-bold ${homeWon ? 'text-gold-400' : 'text-ink-500'}`}>
+                          {formatPoints(m.home_points)}
+                        </span>
+                        <span className="shrink-0 text-ink-700">–</span>
+                        <span className={`w-14 shrink-0 text-center font-mono text-xs font-bold ${awayWon ? 'text-gold-400' : 'text-ink-500'}`}>
+                          {formatPoints(m.away_points)}
+                        </span>
+                        <span className={`min-w-0 flex-1 truncate text-right ${awayWon ? 'font-bold text-ink-100' : 'text-ink-400'}`}>
+                          {m.away_user?.display_name || m.away_user?.username || 'Bye'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
 export default function LeagueDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -281,6 +352,12 @@ export default function LeagueDetail() {
       {isActiveMember && league.status === 'active' && (
         <motion.section variants={rise}>
           <LeagueStandings leagueId={id} selfId={me?.id} />
+        </motion.section>
+      )}
+
+      {isActiveMember && league.status === 'active' && (
+        <motion.section variants={rise}>
+          <LeagueWeeklyMatchups leagueId={id} selfId={me?.id} />
         </motion.section>
       )}
 

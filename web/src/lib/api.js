@@ -228,6 +228,7 @@ export const api = {
     post(XANO_LEAGUE, `/leagues/waiver/claim`, { league_id: leagueId, canonical_wrestler_id: canonicalWrestlerId, drop_roster_slot_id: dropRosterSlotId }),
 
   leagueTrades: (leagueId) => get(XANO_LEAGUE, `/leagues/trades${qs({ league_id: leagueId })}`),
+  leagueMatchupsAll: (leagueId) => get(XANO_LEAGUE, `/leagues/matchups/all${qs({ league_id: leagueId })}`),
   leagueRoster: (leagueId, membershipId) => get(XANO_LEAGUE, `/leagues/roster${qs({ league_id: leagueId, membership_id: membershipId })}`),
   proposeTrade: (leagueId, receiverMembershipId, offeredRosterSlotIds, requestedRosterSlotIds) =>
     post(XANO_LEAGUE, `/leagues/trade/propose`, {
