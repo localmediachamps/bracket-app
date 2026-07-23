@@ -2,10 +2,12 @@ import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowLeft, RefreshCw, Scale } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Download, RefreshCw, Scale } from 'lucide-react'
 import { api } from '../lib/api'
 import { Button, Card, EmptyState, Skeleton, StatusPill } from '../components/ui'
 import { formatPoints } from '../lib/utils'
+import { exportPickemPDF } from '../lib/pdfExport'
+import { toast } from '../lib/store'
 
 const rise = {
   hidden: { opacity: 0, y: 14 },
@@ -39,6 +41,20 @@ export default function PickemEntryView() {
   })
   const tournament = tData ?? {}
   const tournamentKey = tournament.slug ?? tournamentId
+
+  const handleDownloadPdf = () => {
+    try {
+      exportPickemPDF({
+        tournamentName: tournament.name,
+        tournamentYear: tournament.year,
+        ownerName: !isOwner ? (entryUser?.display_name || entryUser?.username) : null,
+        entry,
+        picks,
+      })
+    } catch (err) {
+      toast.error('Could not generate PDF', { body: err.message })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -117,6 +133,9 @@ export default function PickemEntryView() {
             )}
           </div>
         </div>
+        <Button variant="secondary" onClick={handleDownloadPdf} disabled={picks.length === 0}>
+          <Download size={15} /> Download PDF
+        </Button>
       </motion.header>
 
       <motion.section variants={rise}>

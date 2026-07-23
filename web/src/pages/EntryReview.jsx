@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, Check, Globe, GitBranch, Lock, ListChecks, PencilLine, RefreshCw, Scale, Swords, X,
+  AlertTriangle, Check, Download, Globe, GitBranch, Lock, ListChecks, PencilLine, RefreshCw, Scale, Swords, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
@@ -12,6 +12,7 @@ import { cn, formatPoints, pct, plural } from '../lib/utils'
 import AnimatedNumber from '../components/profile/AnimatedNumber'
 import BracketView from '../components/bracket/BracketView'
 import { asModes } from '../components/tournament/helpers'
+import { drawBracketSectionPage, createBracketPdfDoc, saveBracketPdf } from '../lib/pdfExport'
 
 const rise = {
   hidden: { opacity: 0, y: 14 },
@@ -34,6 +35,7 @@ export default function EntryReview() {
   const qc = useQueryClient()
   const [activeWeight, setActiveWeight] = useState(null)
   const [compareOpen, setCompareOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['entry-review', id],
@@ -111,6 +113,48 @@ export default function EntryReview() {
     const maxEarned = Math.max(1, ...rows.map((r) => (r.earned ?? 0) + (r.possible ?? 0)))
     return rows.map((r) => ({ ...r, barMax: maxEarned }))
   }, [reviewWeightClasses])
+
+  // Full-bracket PDF export: fetches each weight class's raw match data and
+  // hand-draws it as vector graphics - boxes, lines, text - rather than
+  // screenshotting the on-screen dark UI (a rasterized dark theme wastes
+  // ink and doesn't read as a real bracket sheet). One landscape page for
+  // the championship bracket per weight, plus a second page for the
+  // consolation bracket where one exists - it carries the 3rd/5th/7th
+  // placement bouts inline, the same grouping as the app's own Consolation
+  // tab (see BracketView.jsx's sectionMatches).
+  const handleDownloadBracketPdf = async () => {
+    if (!weightClasses.length) return
+    setExporting(true)
+    try {
+      const doc = createBracketPdfDoc()
+      let first = true
+      for (const w of weightClasses) {
+        const wData = await api.entryBracketView(id, w.id)
+        const matches = wData?.matches ?? []
+        const champMatches = matches.filter((m) => m.section === 'championship')
+        const consMatches = matches.filter((m) => m.section === 'consolation' || m.section === 'placement')
+
+        const pageOpts = {
+          weightLabel: w.name ?? weightLabel(w.weight),
+          tournamentName: tournament.name,
+          tournamentYear: tournament.year,
+          ownerName: !isOwner ? (entryUser?.display_name || entryUser?.username) : null,
+        }
+
+        drawBracketSectionPage(doc, champMatches, { ...pageOpts, sectionLabel: 'Championship', isFirstPage: first })
+        first = false
+
+        if (consMatches.length) {
+          drawBracketSectionPage(doc, consMatches, { ...pageOpts, sectionLabel: 'Consolation', isFirstPage: false })
+        }
+      }
+      saveBracketPdf(doc, tournament.name)
+    } catch (err) {
+      toast.error('Could not generate PDF', { body: err.message })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (isLoading) return <ReviewSkeleton />
 
@@ -207,6 +251,9 @@ export default function EntryReview() {
           )}
           <Button variant="secondary" onClick={() => setCompareOpen(true)} disabled={!tournamentId}>
             <Scale size={15} /> Compare
+          </Button>
+          <Button variant="secondary" onClick={handleDownloadBracketPdf} loading={exporting} disabled={!weightClasses.length}>
+            <Download size={15} /> Download PDF
           </Button>
           {canStartPickem && (
             <Button onClick={() => navigate(`/tournaments/${tournamentKey}/pickem`)}>
