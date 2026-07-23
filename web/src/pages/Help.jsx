@@ -97,6 +97,19 @@ function FaqItem({ q, children }) {
 export default function Help() {
   const [active, setActive] = useState(SECTIONS[0].key)
 
+  // Client-side navigation (<Link to="/help#leagues">) doesn't get the
+  // browser's native hash-scroll behavior since the page never reloads -
+  // scroll to the target section manually once it's actually in the DOM.
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '')
+    if (!hash) return
+    const el = document.getElementById(hash)
+    if (el) {
+      el.scrollIntoView({ block: 'start' })
+      setActive(hash)
+    }
+  }, [])
+
   useEffect(() => {
     const onScroll = () => {
       const offsets = SECTIONS.map((s) => {
@@ -318,15 +331,30 @@ export default function Help() {
             </p>
             <h3>Draft & roster</h3>
             <p>
-              Commissioners set up the league and invite members. A snake draft fills every team with <strong>10
-              starters (one per weight class) plus 2 alternates</strong>. Once drafted, a wrestler is exclusive to your
+              Commissioners set up the league and invite members (see <strong>Commissioner Settings</strong> from any
+              league you own or co-run — league info, roster size, season-week scoring, and invites all live there). A
+              snake draft fills every team with <strong>10 starters (one per weight class) plus 1 alternate per weight
+              class</strong> — 20 roster spots total. The draft runs starters-first, then alternates, but you choose
+              which open weight to fill in any order within each phase. Once drafted, a wrestler is exclusive to your
               league — no one else can draft them.
             </p>
             <h3>Weekly lineups & waivers</h3>
             <p>
-              Each week, set your active 10 from your 12-man roster. If a starter isn't competing that week, swap in an
-              alternate. If both alternates are also out, you'll need to drop someone to the waiver wire to make room —
-              a dropped wrestler becomes claimable by any other league member.
+              Each week, set your active 10 from your full 20-man roster. If a starter isn't competing that week —
+              or you'd simply rather start your alternate because of who they're facing — swap in the alternate at
+              that weight. If a weight class has no one available at all, you'll need to drop someone to the waiver
+              wire to make room — a dropped wrestler becomes claimable by any other league member. The waiver wire and
+              trade center both let you filter by weight/team and see a wrestler's record and notable results before
+              you act.
+            </p>
+            <h3>Trades</h3>
+            <p>
+              Propose a trade with any other member — pick what you're offering and what you want from their roster.
+              The receiving side can <strong>accept</strong>, <strong>reject</strong>, or send back a{' '}
+              <strong>counter-offer</strong> with different wrestlers (pre-filled from the original offer, fully
+              editable) — a real back-and-forth negotiation, not an instant swap. A countered trade keeps its own
+              history; the original offer is marked "countered" once a counter goes out. All trade activity in a
+              league is visible to every member, not just the two sides involved.
             </p>
             <h3>Head-to-head scoring</h3>
             <p>Each week you're paired against one other league member. Every one of your 10 starters scores from their real matches that week:</p>
@@ -355,6 +383,11 @@ export default function Help() {
               placement from a commissioner-configurable table. These weeks are intentionally worth more than a normal
               week — nationals' 1st-place value is over 3× a normal marquee week's — so a strong postseason can move you
               up the final standings.
+            </p>
+            <h3>Standings & weekly results</h3>
+            <p>
+              The league dashboard shows the full season standings for every member, plus a week-by-week scoreboard of
+              every matchup in the league that week (not just your own) — expand any week to see how everyone did.
             </p>
             <h3>The champion</h3>
             <p>

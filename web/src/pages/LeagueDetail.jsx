@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, Layers, ListChecks,
+  AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, Layers, LifeBuoy, ListChecks,
   Play, RefreshCw, Shield, Swords, Trophy, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
@@ -259,7 +259,10 @@ export default function LeagueDetail() {
             {league.description && <p className="mt-2 max-w-2xl text-sm text-ink-400">{league.description}</p>}
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link to="/help#leagues" className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-500 hover:text-gold-400">
+            <LifeBuoy size={14} /> How this works
+          </Link>
           {isActiveMember && !isOwner && (
             <Button variant="danger" size="sm" onClick={() => setLeaveOpen(true)}>
               <DoorOpen size={14} /> Leave
