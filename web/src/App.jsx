@@ -43,6 +43,7 @@ const LeagueDetail = lazy(() => import('./pages/LeagueDetail'))
 const DraftRoom = lazy(() => import('./pages/DraftRoom'))
 const LeagueLineup = lazy(() => import('./pages/LeagueLineup'))
 const LeagueMatchup = lazy(() => import('./pages/LeagueMatchup'))
+const LeagueCalendar = lazy(() => import('./pages/LeagueCalendar'))
 const LeagueWaivers = lazy(() => import('./pages/LeagueWaivers'))
 const LeagueTrades = lazy(() => import('./pages/LeagueTrades'))
 const Profile = lazy(() => import('./pages/Profile'))
@@ -130,6 +131,7 @@ export default function App() {
             <Route path="/leagues/:id/draft/:seasonWeekId" element={<RequireAuth><DraftRoom /></RequireAuth>} />
             <Route path="/leagues/:id/lineup" element={<RequireAuth><LeagueLineup /></RequireAuth>} />
             <Route path="/leagues/:id/matchup" element={<RequireAuth><LeagueMatchup /></RequireAuth>} />
+            <Route path="/leagues/:id/calendar" element={<RequireAuth><LeagueCalendar /></RequireAuth>} />
             <Route path="/leagues/:id/waivers" element={<RequireAuth><LeagueWaivers /></RequireAuth>} />
             <Route path="/leagues/:id/trades" element={<RequireAuth><LeagueTrades /></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />

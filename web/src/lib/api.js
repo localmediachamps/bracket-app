@@ -76,6 +76,7 @@ export const api = {
   teams: () => get(XANO_APP, `/results/teams`),
   calendar: () => get(XANO_APP, `/calendar`),
   calendarMySubmissions: () => get(XANO_APP, `/calendar/my-submissions`),
+  leagueCalendar: (leagueId) => get(XANO_LEAGUE, `/leagues/calendar?league_id=${leagueId}`),
   wrestlerLibrary: (params = {}) => get(XANO_APP, `/results/wrestlers${qs(params)}`),
   teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 

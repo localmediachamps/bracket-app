@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, ListChecks,
+  AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, Layers, ListChecks,
   Play, RefreshCw, Swords, Trophy, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
@@ -245,6 +245,11 @@ export default function LeagueDetail() {
               <Link to={`/leagues/${id}/matchup`}>
                 <Button variant="secondary" className="w-full">
                   <Swords size={16} /> This week's matchup
+                </Button>
+              </Link>
+              <Link to={`/leagues/${id}/calendar`}>
+                <Button variant="secondary" className="w-full">
+                  <Layers size={16} /> Season calendar
                 </Button>
               </Link>
               <Link to={`/leagues/${id}/waivers`}>

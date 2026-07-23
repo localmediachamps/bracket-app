@@ -1,23 +1,24 @@
 import React, { useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { List, Grid3x3, Trophy, Swords } from 'lucide-react'
+import { ArrowLeft, List, Grid3x3, Layers, Trophy } from 'lucide-react'
 import { api } from '../lib/api'
-import { useAuthStore } from '../lib/store'
 import { CardSkeleton, EmptyState } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
 import { ListView, MonthView, groupByDate } from '../components/calendar/CalendarViews'
 import { cn } from '../lib/utils'
 
 function eventPath(e) {
-  return e.type === 'dual_meet' ? `/dual-meets/${e.id}` : `/tournaments/${e.slug}`
+  if (e.week_type === 'marquee_tournament' && e.tournament_slug) return `/tournaments/${e.tournament_slug}`
+  return `/leagues/${e.league_id}/matchup`
 }
 
 function eventIcon(e) {
-  return e.type === 'dual_meet' ? Swords : Trophy
+  return e.week_type === 'marquee_tournament' ? Trophy : Layers
 }
 
-export default function CalendarPage() {
-  const token = useAuthStore((s) => s.token)
+export default function LeagueCalendar() {
+  const { id } = useParams()
   const [view, setView] = useState('list')
   const [monthCursor, setMonthCursor] = useState(() => {
     const d = new Date()
@@ -25,47 +26,38 @@ export default function CalendarPage() {
   })
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['calendar'],
-    queryFn: api.calendar,
-    staleTime: 60000,
+    queryKey: ['league-calendar', id],
+    queryFn: () => api.leagueCalendar(id),
   })
-
-  const { data: subsData } = useQuery({
-    queryKey: ['calendar-submissions'],
-    queryFn: api.calendarMySubmissions,
-    enabled: !!token,
-    staleTime: 30000,
-  })
-
-  const submittedSet = useMemo(() => {
-    const s = new Set()
-    ;(subsData?.tournament_ids ?? []).forEach((id) => s.add(`tournament-${id}`))
-    ;(subsData?.dual_meet_ids ?? []).forEach((id) => s.add(`dual_meet-${id}`))
-    return s
-  }, [subsData])
 
   const events = data?.events ?? []
-  const hasSubmitted = (e) => submittedSet.has(`${e.type}-${e.id}`)
   const byDate = useMemo(() => groupByDate(events), [events])
   const sortedDates = useMemo(() => [...byDate.keys()].sort(), [byDate])
 
   if (isLoading) {
     return (
-      <div>
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <CardSkeleton />
       </div>
     )
   }
 
-  if (isError) return <ErrorState error={error} onRetry={refetch} title="Couldn't load the calendar" />
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <ErrorState error={error} onRetry={refetch} title="Couldn't load the league calendar" />
+      </div>
+    )
+  }
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <Link to={`/leagues/${id}`} className="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-400 hover:text-gold-400">
+        <ArrowLeft size={15} /> Back to {data?.league?.name ?? 'League'}
+      </Link>
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl uppercase tracking-wide text-ink-100">Competition Calendar</h1>
-          <p className="mt-1 text-sm text-ink-500">Every tournament and dual meet on the platform, in one place.</p>
-        </div>
+        <h1 className="font-display text-2xl uppercase tracking-wide text-ink-100">Season Calendar</h1>
         <div className="flex rounded-lg border border-mat-700 p-0.5">
           <button
             onClick={() => setView('list')}
@@ -83,9 +75,9 @@ export default function CalendarPage() {
       </div>
 
       {events.length === 0 ? (
-        <EmptyState icon={<Trophy size={22} />} title="Nothing on the calendar yet" body="Tournaments and dual meets will show up here once they're created." />
+        <EmptyState icon={<Layers size={22} />} title="No weeks scheduled yet" body="Once the commissioner sets up the season timeline, weeks will show up here." />
       ) : view === 'list' ? (
-        <ListView dates={sortedDates} byDate={byDate} hasSubmitted={hasSubmitted} eventIcon={eventIcon} eventPath={eventPath} />
+        <ListView dates={sortedDates} byDate={byDate} eventIcon={eventIcon} eventPath={eventPath} />
       ) : (
         <MonthView cursor={monthCursor} setCursor={setMonthCursor} byDate={byDate} eventIcon={eventIcon} eventPath={eventPath} />
       )}
