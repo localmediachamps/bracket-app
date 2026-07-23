@@ -148,6 +148,7 @@ export const api = {
   adminAuditLogs: (params = {}) => get(XANO_ADMIN, `/admin/audit-logs${qs(params)}`),
   adminRankings: (params = {}) => get(XANO_ADMIN, `/admin/rankings${qs(params)}`),
   saveAdminRankings: (weight, payload) => put(XANO_ADMIN, `/admin/rankings/${weight}`, payload),
+  adminRankingsPool: (params = {}) => get(XANO_ADMIN, `/admin/rankings/pool${qs(params)}`),
   adminExport: (tournamentId) => get(XANO_ADMIN, `/admin/tournaments/${tournamentId}/export`),
 
   /* ── Admin ingestion (external results) ─────────────── */

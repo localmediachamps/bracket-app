@@ -47,10 +47,10 @@ export default function AdminRankings() {
   const rankedIds = useMemo(() => new Set((rows ?? []).map((r) => r.canonical_wrestler_id)), [rows])
 
   const { data: poolData, isLoading: poolLoading } = useQuery({
-    queryKey: ['admin-rankings-pool', weight, qDebounced],
-    queryFn: () => api.wrestlerLibrary({ weight_class: weight, q: qDebounced || undefined, per: 20 }),
+    queryKey: ['admin-rankings-pool', weight, seasonYear, qDebounced],
+    queryFn: () => api.adminRankingsPool({ weight: Number(weight), season_year: seasonYear, q: qDebounced || undefined }),
   })
-  const pool = (poolData?.items ?? []).filter((w) => !rankedIds.has(w.id))
+  const pool = (poolData?.items ?? []).filter((w) => !rankedIds.has(w.id)).slice(0, 30)
 
   function addWrestler(w) {
     setRows((prev) => [...(prev ?? []), { canonical_wrestler_id: w.id, display_name: w.display_name, team_name: w.current_team?.name ?? null }])
@@ -230,11 +230,20 @@ export default function AdminRankings() {
                 <button
                   key={w.id}
                   onClick={() => addWrestler(w)}
-                  className="flex w-full items-center gap-3 border-t border-mat-700/60 px-4 py-2.5 text-left first:border-t-0 hover:bg-mat-800/50"
+                  className="flex w-full items-start gap-3 border-t border-mat-700/60 px-4 py-2.5 text-left first:border-t-0 hover:bg-mat-800/50"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink-100">{w.display_name}</p>
-                    <p className="truncate text-xs text-ink-500">{w.current_team?.name ?? 'Unknown school'}</p>
+                    <p className="truncate text-xs text-ink-500">
+                      {w.current_team?.name ?? 'Unknown school'}
+                      {w.record_season && ` · ${w.record_wins}-${w.record_losses} (${w.record_season})`}
+                    </p>
+                    {w.has_beaten_ranked && (
+                      <p className="mt-1 truncate text-[11px] font-bold text-pin-400">
+                        Beat {w.wins_over_ranked[0].opponent_name} (#{w.wins_over_ranked[0].opponent_rank})
+                        {w.wins_over_ranked.length > 1 && ` +${w.wins_over_ranked.length - 1} more`}
+                      </p>
+                    )}
                   </div>
                   <span className="shrink-0 text-xs font-bold text-gold-400">+ Add</span>
                 </button>
