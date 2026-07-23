@@ -24,7 +24,7 @@ query "my/rankings/pool" verb=GET {
     db.query canonical_wrestler {
       where = ($db.canonical_wrestler.current_weight_class == $weight_text) && ($input.q == null || (($db.canonical_wrestler.display_name|to_lower) includes $q_lower))
       return = {type: "list"}
-    } as $candidates
+    } as $candidates_all
 
     // Current top-15 at this weight/season - who a "win over" counts against
     db.query wrestler_composite_ranking {
@@ -103,14 +103,63 @@ query "my/rankings/pool" verb=GET {
       }
     }
 
+    // Filter to roster members BEFORE capping - $candidates_all is ordered
+    // alphabetically by ANY wrestler whose denormalized current_weight_class
+    // happens to match (including long-graduated ones, per the same stale-
+    // field issue that let Matt Ramos-style bad rows through elsewhere), so
+    // an arbitrary slice of the first N would mostly miss actual roster
+    // members. This filter is cheap (just map lookups, no DB calls).
+    var $roster_candidates {
+      value = []
+    }
+
+    foreach ($candidates_all) {
+      each as $ca {
+        conditional {
+          if ($on_2026_27_roster|has:($ca.id|to_text)) {
+            array.push $roster_candidates {
+              value = $ca
+            }
+          }
+        }
+      }
+    }
+
+    // The panel only ever shows 30 results, so with no search typed there's
+    // no reason to run the expensive per-candidate record/h2h computation
+    // below for the full weight-wide roster pool - cap it to a generous
+    // multiple of what's actually displayed. A real search query already
+    // narrows $candidates_all by name first, so it's left uncapped.
+    var $candidates {
+      value = ($input.q == null ? ($roster_candidates|slice:0:60) : $roster_candidates)
+    }
+
     var $out {
       value = []
     }
 
     foreach ($candidates) {
       each as $c {
+        var $c_key {
+          value = ($c.id|to_text)
+        }
+
+        // Skip the whole expensive per-candidate computation (full match
+        // history, season-by-season record, wins-over-ranked scan) for
+        // anyone not on the 2026-27 roster - was previously computed for
+        // EVERY wrestler at this weight system-wide and only checked at the
+        // very end, which is what made this endpoint slow to load.
+        conditional {
+          if ($on_2026_27_roster|has:$c_key) {
+
+        // Bounded to the same 2022-23-onward window $season_bounds already
+        // covers (older matches can never land in any of those buckets, and
+        // a currently top-15 wrestler's relevant "beat someone ranked" win
+        // is realistically recent anyway) - fetching a wrestler's entire
+        // untruncated career per candidate was the main cost of this
+        // endpoint across ~200+ candidates per weight class.
         db.query wrestler_match_history {
-          where = ($db.wrestler_match_history.winner_canonical_wrestler_id == $c.id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $c.id)
+          where = (($db.wrestler_match_history.winner_canonical_wrestler_id == $c.id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $c.id)) && $db.wrestler_match_history.occurred_at >= 1659312000000
           sort = {wrestler_match_history.occurred_at: "desc"}
           return = {type: "list"}
         } as $all_matches
@@ -253,10 +302,6 @@ query "my/rankings/pool" verb=GET {
           value = null
         }
 
-        var $c_key {
-          value = ($c.id|to_text)
-        }
-
         conditional {
           if ($ranked_elsewhere_lookup|has:$c_key) {
             var $existing_rank {
@@ -273,22 +318,21 @@ query "my/rankings/pool" verb=GET {
           }
         }
 
-        conditional {
-          if ($on_2026_27_roster|has:$c_key) {
-            array.push $out {
-              value = {
-                id                : $c.id
-                display_name      : $c.display_name
-                current_team      : ($team_name == null ? null : {name: $team_name})
-                record_wins       : $record_wins
-                record_losses     : $record_losses
-                record_season     : $record_season
-                win_pct           : $win_pct
-                wins_over_ranked  : $wins_over_ranked
-                has_beaten_ranked : (($wins_over_ranked|count) > 0)
-                ranked_elsewhere  : $ranked_elsewhere
-              }
-            }
+        array.push $out {
+          value = {
+            id                : $c.id
+            display_name      : $c.display_name
+            current_team      : ($team_name == null ? null : {name: $team_name})
+            record_wins       : $record_wins
+            record_losses     : $record_losses
+            record_season     : $record_season
+            win_pct           : $win_pct
+            wins_over_ranked  : $wins_over_ranked
+            has_beaten_ranked : (($wins_over_ranked|count) > 0)
+            ranked_elsewhere  : $ranked_elsewhere
+          }
+        }
+
           }
         }
       }
