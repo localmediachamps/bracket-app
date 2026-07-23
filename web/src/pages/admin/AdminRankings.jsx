@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { GripVertical, Search, Trash2, Save, Crown } from 'lucide-react'
+import { GripVertical, Search, Trash2, Save, Crown, ChevronDown, Swords } from 'lucide-react'
 import { api } from '../../lib/api'
 import { toast } from '../../lib/store'
 import { Button, Card, Select } from '../../components/ui'
@@ -18,6 +18,16 @@ export default function AdminRankings() {
   const [q, setQ] = useState('')
   const [qDebounced, setQDebounced] = useState('')
   const [saving, setSaving] = useState(false)
+  const [expanded, setExpanded] = useState(() => new Set())
+
+  function toggleExpanded(id) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q.trim()), 300)
@@ -31,6 +41,7 @@ export default function AdminRankings() {
 
   useEffect(() => {
     setRows(data?.rankings ?? [])
+    setExpanded(new Set())
   }, [data])
 
   const rankedIds = useMemo(() => new Set((rows ?? []).map((r) => r.canonical_wrestler_id)), [rows])
@@ -128,33 +139,70 @@ export default function AdminRankings() {
             <div className="p-6 text-sm text-ink-500">No one ranked at {weight} lbs yet — add someone from the roster on the right.</div>
           ) : (
             <ul>
-              {rows.map((r, i) => (
-                <li
-                  key={r.canonical_wrestler_id}
-                  draggable
-                  onDragStart={() => onDragStart(i)}
-                  onDragOver={(e) => onDragOver(e, i)}
-                  onDragEnd={onDragEnd}
-                  className={cn(
-                    'flex items-center gap-3 border-t border-mat-700/60 px-4 py-2.5 first:border-t-0',
-                    dragIndex === i && 'opacity-40'
-                  )}
-                >
-                  <GripVertical size={15} className="shrink-0 cursor-grab text-ink-600" />
-                  <span className="w-7 shrink-0 font-mono text-sm font-bold text-ink-500">{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink-100">{r.display_name}</p>
-                    {r.team_name && <p className="truncate text-xs text-ink-500">{r.team_name}</p>}
-                  </div>
-                  <button
-                    onClick={() => removeWrestler(i)}
-                    className="shrink-0 rounded-lg p-1.5 text-ink-600 hover:bg-blood-500/10 hover:text-blood-400"
-                    aria-label={`Remove ${r.display_name}`}
+              {rows.map((r, i) => {
+                const h2h = r.head_to_head ?? []
+                const isExpanded = expanded.has(r.canonical_wrestler_id)
+                return (
+                  <li
+                    key={r.canonical_wrestler_id}
+                    draggable
+                    onDragStart={() => onDragStart(i)}
+                    onDragOver={(e) => onDragOver(e, i)}
+                    onDragEnd={onDragEnd}
+                    className={cn('border-t border-mat-700/60 first:border-t-0', dragIndex === i && 'opacity-40')}
                   >
-                    <Trash2 size={14} />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <GripVertical size={15} className="shrink-0 cursor-grab text-ink-600" />
+                      <span className="w-7 shrink-0 font-mono text-sm font-bold text-ink-500">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-ink-100">{r.display_name}</p>
+                        {r.team_name && <p className="truncate text-xs text-ink-500">{r.team_name}</p>}
+                      </div>
+                      {h2h.length > 0 && (
+                        <button
+                          onClick={() => toggleExpanded(r.canonical_wrestler_id)}
+                          className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-ink-400 hover:bg-mat-850 hover:text-gold-400"
+                          title="Head-to-head vs other top-12 wrestlers"
+                        >
+                          <Swords size={12} /> {h2h.length}
+                          <ChevronDown size={12} className={cn('transition-transform', isExpanded && 'rotate-180')} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => removeWrestler(i)}
+                        className="shrink-0 rounded-lg p-1.5 text-ink-600 hover:bg-blood-500/10 hover:text-blood-400"
+                        aria-label={`Remove ${r.display_name}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+
+                    {isExpanded && h2h.length > 0 && (
+                      <div className="border-t border-mat-800 bg-mat-900/40 px-4 py-2.5 pl-14">
+                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-600">
+                          Vs. other top-12 wrestlers — most recent first
+                        </p>
+                        <div className="space-y-1.5">
+                          {h2h.map((m, mi) => (
+                            <div key={mi} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                              <span className={cn('font-bold', m.is_winner ? 'text-pin-400' : 'text-blood-400')}>
+                                {m.is_winner ? 'W' : 'L'}
+                              </span>
+                              <span className="text-ink-200">vs #{m.opponent_rank} {m.opponent_name}</span>
+                              <span className="text-ink-500">
+                                {m.victory_type}{m.score ? ` ${m.score}` : ''}
+                              </span>
+                              <span className="text-ink-600">
+                                {m.occurred_at ? new Date(m.occurred_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </Card>

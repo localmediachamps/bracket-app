@@ -63,10 +63,103 @@ query "admin/rankings" verb=GET {
         }
       }
     }
+
+    // Top-12 head-to-head cross-reference - "justifies the ranking" by
+    // surfacing any match (ever, not just this season) between two
+    // currently top-12-ranked wrestlers at this weight. Only ranks 1-12
+    // qualify (the ranks the opponent-quality multiplier tiers actually
+    // use), cross-referenced only against other top-12 wrestlers, not the
+    // full top-16 board.
+    var $top12_lookup {
+      value = {}
+    }
+
+    foreach ($out) {
+      each as $o {
+        conditional {
+          if ($o.rank <= 12) {
+            var.update $top12_lookup {
+              value = $top12_lookup|set:($o.canonical_wrestler_id|to_text):{rank: $o.rank, display_name: $o.display_name}
+            }
+          }
+        }
+      }
+    }
+
+    var $out_with_h2h {
+      value = []
+    }
+
+    foreach ($out) {
+      each as $o {
+        var $h2h {
+          value = []
+        }
+
+        conditional {
+          if ($o.rank <= 12) {
+            db.query wrestler_match_history {
+              where = ($db.wrestler_match_history.winner_canonical_wrestler_id == $o.canonical_wrestler_id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $o.canonical_wrestler_id)
+              sort = {wrestler_match_history.occurred_at: "desc"}
+              return = {type: "list"}
+            } as $all_matches
+
+            foreach ($all_matches) {
+              each as $m {
+                var $is_winner {
+                  value = ($m.winner_canonical_wrestler_id == $o.canonical_wrestler_id)
+                }
+
+                var $opponent_id {
+                  value = $m.loser_canonical_wrestler_id
+                }
+
+                conditional {
+                  if ($is_winner == false) {
+                    var.update $opponent_id {
+                      value = $m.winner_canonical_wrestler_id
+                    }
+                  }
+                }
+
+                var $opponent_key {
+                  value = ($opponent_id|to_text)
+                }
+
+                conditional {
+                  if ($opponent_id != null && ($top12_lookup|has:$opponent_key)) {
+                    var $opponent_info {
+                      value = $top12_lookup|get:$opponent_key:null
+                    }
+
+                    array.push $h2h {
+                      value = {
+                        is_winner      : $is_winner
+                        opponent_id    : $opponent_id
+                        opponent_name  : $opponent_info.display_name
+                        opponent_rank  : $opponent_info.rank
+                        victory_type   : $m.victory_type
+                        score          : $m.score
+                        event_name     : $m.event_name
+                        occurred_at    : $m.occurred_at
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        array.push $out_with_h2h {
+          value = $o|set:"head_to_head":$h2h
+        }
+      }
+    }
   }
 
   response = {
-    rankings: $out
+    rankings: $out_with_h2h
   }
   guid = "K7wRp2ZsQm9TnCvXo5LhBd4FeUy3"
 }
