@@ -117,16 +117,19 @@ export default function EntryReview() {
   // Full-bracket PDF export: fetches each weight class's raw match data and
   // hand-draws it as vector graphics - boxes, lines, text - rather than
   // screenshotting the on-screen dark UI (a rasterized dark theme wastes
-  // ink and doesn't read as a real bracket sheet). One landscape page for
-  // the championship bracket per weight, plus a second page for the
-  // consolation bracket where one exists - it carries the 3rd/5th/7th
-  // placement bouts inline, the same grouping as the app's own Consolation
-  // tab (see BracketView.jsx's sectionMatches).
+  // ink and doesn't read as a real bracket sheet). One page for the
+  // championship bracket per weight (portrait - few columns but many
+  // round-1 rows, so portrait fits it at a bigger scale than landscape),
+  // plus a landscape page for the consolation bracket where one exists -
+  // it's wider (extra R-cycle/placement columns) and needs the width. The
+  // consolation page carries the 3rd/5th/7th placement bouts inline, same
+  // grouping as the app's own Consolation tab (see BracketView.jsx's
+  // sectionMatches).
   const handleDownloadBracketPdf = async () => {
     if (!weightClasses.length) return
     setExporting(true)
     try {
-      const doc = createBracketPdfDoc()
+      const doc = createBracketPdfDoc('portrait')
       let first = true
       for (const w of weightClasses) {
         const wData = await api.entryBracketView(id, w.id)
@@ -141,11 +144,11 @@ export default function EntryReview() {
           ownerName: !isOwner ? (entryUser?.display_name || entryUser?.username) : null,
         }
 
-        drawBracketSectionPage(doc, champMatches, { ...pageOpts, sectionLabel: 'Championship', isFirstPage: first })
+        drawBracketSectionPage(doc, champMatches, { ...pageOpts, sectionLabel: 'Championship', isFirstPage: first, orientation: 'portrait' })
         first = false
 
         if (consMatches.length) {
-          drawBracketSectionPage(doc, consMatches, { ...pageOpts, sectionLabel: 'Consolation', isFirstPage: false })
+          drawBracketSectionPage(doc, consMatches, { ...pageOpts, sectionLabel: 'Consolation', isFirstPage: false, orientation: 'landscape' })
         }
       }
       saveBracketPdf(doc, tournament.name)

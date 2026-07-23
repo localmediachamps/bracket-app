@@ -135,14 +135,15 @@ export function exportPickemPDF({ tournamentName, tournamentYear, ownerName, ent
   doc.save(filename)
 }
 
-// Landscape letter - a bracket tree reads left-to-right by round, so a wide
-// page fits far more rounds side-by-side at a legible size than a portrait
-// one (the official NCAA bracket sheets stay portrait, but only by using a
-// dense print-shop typesetting this app doesn't have; landscape is the
-// straightforward way to get the same "fits on one page" result here).
-const BPAGE_W = 792
-const BPAGE_H = 612
+// Championship brackets are tall-ish and narrow (few columns, many round-1
+// rows) so portrait actually gives them a bigger scale than landscape would;
+// consolation brackets are wide (extra pigtail/R-cycle columns plus the
+// placement column) and genuinely need landscape's width to stay legible.
 const BMARGIN = 26
+
+function pageDims(orientation) {
+  return orientation === 'portrait' ? { w: 612, h: 792 } : { w: 792, h: 612 }
+}
 
 function drawConnector(doc, srcPos, dstPos, slot, originX, originY, scale) {
   const { MATCH_W, MATCH_H } = METRICS
@@ -262,64 +263,79 @@ function drawMatchBox(doc, match, pos, originX, originY, scale) {
   doc.setLineWidth(isFinal ? 1.25 : 0.75)
   doc.rect(x, y, w, h)
 
-  // meta chip: match number / FINAL + result
+  // Meta strip (match number / FINAL + result) lives INSIDE the box's own
+  // top edge, not floating above it - floating above only has the row gap
+  // to work with, and an early NCAA round can pack 16 boxes tight enough
+  // that the gap is smaller than the text, overlapping the row above.
+  const metaFont = Math.max(5, 6 * scale)
+  const metaH = Math.min(h * 0.24, metaFont + 5)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(Math.max(5, 6 * scale))
+  doc.setFontSize(metaFont)
   doc.setTextColor(isFinal ? GOLD : INK_MUTED)
-  doc.text(isFinal ? 'FINAL' : `#${match.match_number}`, x + 4 * scale, y - 2)
+  const leftLabel = isFinal ? 'FINAL' : `#${match.match_number}`
+  doc.text(leftLabel, x + 4 * scale, y + metaH - 3)
   if ((match.status === 'complete' || match.status === 'corrected') && (match.victory_type || match.score)) {
-    doc.setTextColor(INK_MUTED)
-    doc.text(
-      `${victoryLabel(match.victory_type)}${match.score ? ` ${match.score}` : ''}`,
-      x + w - 4 * scale,
-      y - 2,
-      { align: 'right' }
-    )
+    const rightLabel = `${victoryLabel(match.victory_type)}${match.score ? ` ${match.score}` : ''}`
+    // Only draw the result if it actually fits next to the match number -
+    // at extreme compression (early rounds) a narrow box has room for one
+    // or the other, not both, and a dropped result beats overlapping text.
+    const gap = 6 * scale
+    if (doc.getTextWidth(leftLabel) + doc.getTextWidth(rightLabel) + gap < w - 8 * scale) {
+      doc.setTextColor(INK_MUTED)
+      doc.text(rightLabel, x + w - 4 * scale, y + metaH - 3, { align: 'right' })
+    }
   }
 
-  drawSlot(doc, match, 'top', match.top?.competitor, x, y, w, h / 2, scale)
+  const slotH = (h - metaH) / 2
+  drawSlot(doc, match, 'top', match.top?.competitor, x, y + metaH, w, slotH, scale)
   doc.setDrawColor(LINE)
   doc.setLineWidth(0.4)
-  doc.line(x + 4 * scale, y + h / 2, x + w - 4 * scale, y + h / 2)
-  drawSlot(doc, match, 'bottom', match.bottom?.competitor, x, y + h / 2, w, h / 2, scale)
+  doc.line(x + 4 * scale, y + metaH + slotH, x + w - 4 * scale, y + metaH + slotH)
+  drawSlot(doc, match, 'bottom', match.bottom?.competitor, x, y + metaH + slotH, w, slotH, scale)
 
   if (match.is_bye) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(Math.max(5, 6 * scale))
     doc.setTextColor(INK_MUTED)
-    doc.text('BYE', x + w - 6 * scale, y + h / 2 + 2, { align: 'right' })
+    doc.text('BYE', x + w - 6 * scale, y + metaH + slotH + 2, { align: 'right' })
   }
 }
 
 /**
  * Renders one bracket section (championship, or consolation+placement) for
- * one weight class as its own landscape page(s) of pure vector drawing -
- * boxes, lines and text laid out with the app's own layoutBracket() math,
- * not a screenshot of the on-screen dark UI. Keeps the PDF small, sharp at
- * any zoom, and printer-friendly (white page, ink-light).
+ * one weight class as its own page(s) of pure vector drawing - boxes, lines
+ * and text laid out with the app's own layoutBracket() math, not a
+ * screenshot of the on-screen dark UI. Keeps the PDF small, sharp at any
+ * zoom, and printer-friendly (white page, ink-light).
+ *
+ * orientation ('portrait' | 'landscape') should match the section's actual
+ * shape: championship brackets are narrow-and-tall (few columns, many
+ * round-1 rows) so portrait fits them at a bigger scale, while consolation
+ * brackets are wide (extra R-cycle/placement columns) and need landscape.
  *
  * isFirstPage must be true only for the very first call against a fresh
- * jsPDF doc (which already starts with one blank page) - every later
- * section/weight adds its own page.
+ * jsPDF doc (which already starts with one blank page matching that first
+ * call's own orientation) - every later section/weight adds its own page.
  */
-export function drawBracketSectionPage(doc, matches, { sectionLabel, weightLabel, tournamentName, tournamentYear, ownerName, isFirstPage }) {
-  if (!isFirstPage) doc.addPage('letter', 'landscape')
+export function drawBracketSectionPage(doc, matches, { sectionLabel, weightLabel, tournamentName, tournamentYear, ownerName, isFirstPage, orientation = 'landscape' }) {
+  const { w: pageW, h: pageH } = pageDims(orientation)
+  if (!isFirstPage) doc.addPage('letter', orientation)
   const subtitle = [tournamentName, tournamentYear].filter(Boolean).join(' · ') + (ownerName ? ` — ${ownerName}'s bracket` : '')
-  const y0 = addBrandedHeader(doc, `${weightLabel} — ${sectionLabel}`, subtitle, BPAGE_W, BMARGIN)
+  const y0 = addBrandedHeader(doc, `${weightLabel} — ${sectionLabel}`, subtitle, pageW, BMARGIN)
 
   if (!matches.length) {
     doc.setFont('helvetica', 'italic')
     doc.setFontSize(10)
     doc.setTextColor(INK_MUTED)
     doc.text('No matches in this bracket section.', BMARGIN, y0 + 20)
-    addFooter(doc, undefined, BPAGE_W, BMARGIN)
+    addFooter(doc, undefined, pageW, BMARGIN)
     return
   }
 
   const layout = layoutBracket(matches)
   const headerRowH = 16
-  const availW = BPAGE_W - BMARGIN * 2
-  const availH = BPAGE_H - y0 - 24 - headerRowH
+  const availW = pageW - BMARGIN * 2
+  const availH = pageH - y0 - 24 - headerRowH
   const scale = Math.min(availW / layout.width, availH / layout.height, 1.15)
   const originX = BMARGIN + Math.max(0, (availW - layout.width * scale) / 2)
   const originY = y0 + headerRowH + Math.max(0, (availH - layout.height * scale) / 2)
@@ -361,11 +377,11 @@ export function drawBracketSectionPage(doc, matches, { sectionLabel, weightLabel
     if (p) drawMatchBox(doc, m, p, originX, originY, scale)
   }
 
-  addFooter(doc, undefined, BPAGE_W, BMARGIN)
+  addFooter(doc, undefined, pageW, BMARGIN)
 }
 
-export function createBracketPdfDoc() {
-  return new jsPDF({ unit: 'pt', format: 'letter', orientation: 'landscape' })
+export function createBracketPdfDoc(firstPageOrientation = 'landscape') {
+  return new jsPDF({ unit: 'pt', format: 'letter', orientation: firstPageOrientation })
 }
 
 export function saveBracketPdf(doc, tournamentName) {
