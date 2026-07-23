@@ -93,6 +93,28 @@ query "admin/rankings/pool" verb=GET {
       ]
     }
 
+    // "Active" now means "on the official 2026-27 roster" (from the school's
+    // own site, via admin/roster/import) - ground truth, replacing the old
+    // "wrestled in 2025-26" heuristic that both wrongly excluded injured/
+    // redshirt wrestlers who didn't compete last season and wrongly included
+    // seniors who graduated but still had a recent match on file.
+    db.query canonical_wrestler_team {
+      where = $db.canonical_wrestler_team.season_label == "2026-27"
+      return = {type: "list"}
+    } as $roster_2026_27_rows
+
+    var $on_2026_27_roster {
+      value = {}
+    }
+
+    foreach ($roster_2026_27_rows) {
+      each as $rr2 {
+        var.update $on_2026_27_roster {
+          value = $on_2026_27_roster|set:($rr2.canonical_wrestler_id|to_text):true
+        }
+      }
+    }
+
     var $out {
       value = []
     }
@@ -239,11 +261,6 @@ query "admin/rankings/pool" verb=GET {
           }
         }
 
-        // Only surface wrestlers active in the most recent completed season
-        // (2025-26) - no class-year data exists yet to know exactly who
-        // graduated, but "hasn't appeared in the most recent season at all"
-        // is a reliable enough signal to exclude someone whose last known
-        // activity is multiple years stale (e.g. last wrestled 2022-23).
         var $ranked_elsewhere {
           value = null
         }
@@ -269,7 +286,7 @@ query "admin/rankings/pool" verb=GET {
         }
 
         conditional {
-          if ($record_season == "2025-26") {
+          if ($on_2026_27_roster|has:$c_key) {
             array.push $out {
               value = {
                 id                : $c.id
