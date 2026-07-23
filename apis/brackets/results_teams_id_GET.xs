@@ -235,6 +235,144 @@ query "results/teams/{id}" verb=GET {
         }
       }
     }
+
+    // Real dual-meet schedule + results, built from the historical dual_meet
+    // rows reconciled from wrestler_match_history (functions/analytics/
+    // reconcile_historical_dual_meets.xs) - these are actual past events, not
+    // a forward-looking schedule (no prospective-schedule data source exists
+    // yet - see the module docstring), so this covers "how did they do this
+    // season" for completed seasons, not upcoming matchups.
+    db.query dual_meet {
+      where = ($db.dual_meet.home_canonical_team_id == $input.id || $db.dual_meet.away_canonical_team_id == $input.id) && $db.dual_meet.is_historical == true
+      sort = {dual_meet.occurred_at: "desc"}
+      return = {type: "list"}
+    } as $dual_meets
+
+    var $schedule_by_season {
+      value = {}
+    }
+
+    foreach ($dual_meets) {
+      each as $dm {
+        var $is_home {
+          value = $dm.home_canonical_team_id == $input.id
+        }
+
+        var $opponent_name {
+          value = ($is_home ? $dm.away_team_name : $dm.home_team_name)
+        }
+
+        var $opponent_team_id {
+          value = ($is_home ? $dm.away_canonical_team_id : $dm.home_canonical_team_id)
+        }
+
+        var $own_score {
+          value = ($is_home ? $dm.home_score : $dm.away_score)
+        }
+
+        var $opp_score {
+          value = ($is_home ? $dm.away_score : $dm.home_score)
+        }
+
+        var $dm_result {
+          value = "pending"
+        }
+
+        conditional {
+          if ($own_score != null && $opp_score != null) {
+            conditional {
+              if ($own_score > $opp_score) {
+                var.update $dm_result { value = "win" }
+              }
+              elseif ($own_score < $opp_score) {
+                var.update $dm_result { value = "loss" }
+              }
+              else {
+                var.update $dm_result { value = "tie" }
+              }
+            }
+          }
+        }
+
+        // Same academic-year season windows already used for the roster tabs
+        var $dm_season {
+          value = null
+        }
+
+        foreach ($season_order) {
+          each as $season_key {
+            conditional {
+              if ($dm_season == null && ($season_bounds|has:$season_key)) {
+                var $sb {
+                  value = $season_bounds[$season_key]
+                }
+
+                conditional {
+                  if ($dm.occurred_at != null && $dm.occurred_at >= $sb.start && $dm.occurred_at <= $sb.end) {
+                    var.update $dm_season {
+                      value = $season_key
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        conditional {
+          if ($dm_season != null) {
+            var $dm_list {
+              value = []
+            }
+
+            conditional {
+              if ($schedule_by_season|has:$dm_season) {
+                var.update $dm_list {
+                  value = $schedule_by_season[$dm_season]
+                }
+              }
+            }
+
+            array.push $dm_list {
+              value = {
+                dual_meet_id   : $dm.id
+                slug           : $dm.slug
+                opponent_name  : $opponent_name
+                opponent_team_id: $opponent_team_id
+                is_home        : $is_home
+                occurred_at    : $dm.occurred_at
+                own_score      : $own_score
+                opp_score      : $opp_score
+                result         : $dm_result
+              }
+            }
+
+            var.update $schedule_by_season {
+              value = $schedule_by_season|set:$dm_season:$dm_list
+            }
+          }
+        }
+      }
+    }
+
+    var $schedule_out {
+      value = []
+    }
+
+    foreach ($season_order) {
+      each as $season {
+        conditional {
+          if ($schedule_by_season|has:$season) {
+            array.push $schedule_out {
+              value = {
+                season_label: $season
+                duals       : $schedule_by_season[$season]
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   response = {
@@ -248,7 +386,7 @@ query "results/teams/{id}" verb=GET {
       logo_url: $team.logo_url
     }
     roster  : $roster_out
-    schedule: []
+    schedule: $schedule_out
   }
   guid = "Nq7tXpZv5RwCmYkLbFo2DjH6uAe"
 }

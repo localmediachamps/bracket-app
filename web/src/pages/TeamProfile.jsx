@@ -36,6 +36,7 @@ export default function TeamProfile() {
   const { team, roster, schedule } = data
   const season = activeSeason ?? roster[0]?.season_label
   const rosterForSeason = roster.find((r) => r.season_label === season)
+  const scheduleForSeason = schedule.find((s) => s.season_label === season)
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -133,18 +134,58 @@ export default function TeamProfile() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Schedule</h2>
-        {schedule.length ? (
-          <div className="space-y-2">
-            {schedule.map((ev, i) => (
-              <div key={i} className="text-sm text-ink-300">{ev.name}</div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Dual meet schedule</h2>
+          {schedule.length > 1 && (
+            <div className="flex flex-wrap gap-1.5">
+              {schedule.map((s) => (
+                <button
+                  key={s.season_label}
+                  type="button"
+                  onClick={() => setActiveSeason(s.season_label)}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-[11px] font-bold',
+                    season === s.season_label
+                      ? 'border-gold-500/60 bg-gold-500/10 text-gold-400'
+                      : 'border-mat-700 text-ink-500 hover:text-ink-200'
+                  )}
+                >
+                  {s.season_label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {scheduleForSeason?.duals.length ? (
+          <div className="space-y-1">
+            {scheduleForSeason.duals.map((d) => (
+              <div key={d.dual_meet_id} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-sm hover:bg-mat-800">
+                <Link to={`/dual-meets/${d.dual_meet_id}`} className="w-16 shrink-0 font-mono text-[11px] text-ink-500 hover:text-gold-400">
+                  {d.occurred_at ? new Date(d.occurred_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                </Link>
+                <span className="w-10 shrink-0 text-[10px] font-bold uppercase text-ink-600">{d.is_home ? 'vs' : '@'}</span>
+                <Link to={`/teams/${d.opponent_team_id}`} className="min-w-0 flex-1 truncate font-semibold text-ink-100 hover:text-gold-400">
+                  {d.opponent_name}
+                </Link>
+                <Link to={`/dual-meets/${d.dual_meet_id}`} className="shrink-0 font-mono text-xs font-bold text-ink-300 hover:text-gold-400">
+                  {d.own_score != null && d.opp_score != null ? `${d.own_score}-${d.opp_score}` : '—'}
+                </Link>
+                <span
+                  className={cn(
+                    'w-9 shrink-0 rounded px-1.5 py-0.5 text-center text-[10px] font-bold uppercase',
+                    d.result === 'win' ? 'bg-pin-500/15 text-pin-400' : d.result === 'loss' ? 'bg-blood-500/15 text-blood-400' : 'bg-mat-700 text-ink-500'
+                  )}
+                >
+                  {d.result === 'win' ? 'W' : d.result === 'loss' ? 'L' : d.result === 'tie' ? 'T' : '—'}
+                </span>
+              </div>
             ))}
           </div>
         ) : (
           <EmptyState
             icon={<Calendar size={22} />}
-            title="Schedule not available yet"
-            body="This team's upcoming schedule hasn't been added yet."
+            title="No dual meets on record"
+            body="No reconciled dual-meet results for this season yet."
           />
         )}
       </Card>
