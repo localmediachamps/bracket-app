@@ -338,7 +338,10 @@ export function drawBracketSectionPage(doc, matches, { sectionLabel, weightLabel
   const availH = pageH - y0 - 24 - headerRowH
   const scale = Math.min(availW / layout.width, availH / layout.height, 1.15)
   const originX = BMARGIN + Math.max(0, (availW - layout.width * scale) / 2)
-  const originY = y0 + headerRowH + Math.max(0, (availH - layout.height * scale) / 2)
+  // Top-anchored, not vertically centered - the column-header row should
+  // sit right under the page header with no dead space between them, same
+  // as a real bracket sheet. Any leftover room falls to the bottom instead.
+  const originY = y0 + headerRowH
 
   // Column headers: one shared label per (band, col) for championship/
   // consolation rounds (every match in that column shares a round), but
