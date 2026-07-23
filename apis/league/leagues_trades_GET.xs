@@ -1,5 +1,8 @@
-// Every trade (any status) involving my membership in this league, most
-// recent first, with the wrestler moving each direction resolved for display.
+// Every trade (any status) in this league, most recent first, with the
+// wrestler moving each direction resolved for display - a real trade
+// center shows the league's whole trade history, not just the viewer's
+// own deals (any active member can see every trade, same as matchups/
+// standings - trades aren't private between the two parties).
 query "leagues/trades" verb=GET {
   api_group = "league"
   auth = "user"
@@ -35,7 +38,7 @@ query "leagues/trades" verb=GET {
     }
 
     db.query trade {
-      where = $db.trade.league_id == $league.id && ($db.trade.proposer_membership_id == $my_membership.id || $db.trade.receiver_membership_id == $my_membership.id)
+      where = $db.trade.league_id == $league.id
       sort = {trade.created_at: "desc"}
       return = {type: "list"}
     } as $trades
