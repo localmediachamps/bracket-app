@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, Layers, ListChecks,
-  Play, RefreshCw, Swords, Trophy, Users, X,
+  Play, RefreshCw, Shield, Swords, Trophy, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
@@ -12,7 +12,6 @@ import { Avatar, Badge, Button, Card, EmptyState, Modal, Skeleton } from '../com
 import { formatPoints } from '../lib/utils'
 import { LeagueStatusBadge } from '../components/league/LeagueCard'
 import InviteMemberBox from '../components/league/InviteMemberBox'
-import WeeksPanel from '../components/league/WeeksPanel'
 
 const rise = {
   hidden: { opacity: 0, y: 14 },
@@ -340,6 +339,13 @@ export default function LeagueDetail() {
               </Link>
             </>
           )}
+          {isCommissioner && (
+            <Link to={`/leagues/${id}/settings`}>
+              <Button variant="ghost" className="w-full">
+                <Shield size={16} /> Commissioner settings
+              </Button>
+            </Link>
+          )}
         </motion.section>
       )}
 
@@ -361,11 +367,6 @@ export default function LeagueDetail() {
         </motion.section>
       )}
 
-      {isActiveMember && league.status === 'active' && (
-        <motion.section variants={rise}>
-          <WeeksPanel leagueId={id} isCommissioner={isCommissioner} />
-        </motion.section>
-      )}
 
       {members.length > 0 && (
         <motion.section variants={rise} aria-label="Members">
