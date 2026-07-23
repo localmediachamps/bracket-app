@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { GripVertical, Search, Trash2, Save, Crown, ChevronDown, Swords } from 'lucide-react'
+import { GripVertical, Search, Trash2, Save, Crown, ChevronDown, Swords, AlertTriangle } from 'lucide-react'
 import { toast } from '../../lib/store'
 import { Button, Card, Select } from '../ui'
 import { cn } from '../../lib/utils'
 
 const WEIGHTS = ['125', '133', '141', '149', '157', '165', '174', '184', '197', '285']
 const DEFAULT_SEASON_YEAR = 2027
+
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
+}
 
 // Shared by the admin Composite Rankings page and the per-user "My Rankings"
 // page - same drag-to-reorder list + smart "who to add" pool + top-12
@@ -216,8 +222,8 @@ export default function RankingsEditor({
           )}
         </Card>
 
-        <Card className="p-0">
-          <div className="border-b border-mat-700 px-4 py-3">
+        <Card className="flex max-h-[calc(100vh-96px)] flex-col p-0 lg:sticky lg:top-6">
+          <div className="shrink-0 border-b border-mat-700 px-4 py-3">
             <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-200">{poolTitle ?? `Add from ${weight} lbs roster`}</h2>
             <div className="relative">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
@@ -229,7 +235,7 @@ export default function RankingsEditor({
               />
             </div>
           </div>
-          <div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {poolLoading ? (
               <div className="p-4 text-sm text-ink-500">Loading…</div>
             ) : pool.length === 0 ? (
@@ -247,6 +253,12 @@ export default function RankingsEditor({
                       {w.current_team?.name ?? 'Unknown school'}
                       {w.record_season && ` · ${w.record_wins}-${w.record_losses} (${w.record_season})`}
                     </p>
+                    {w.ranked_elsewhere && (
+                      <p className="mt-1 flex items-center gap-1 truncate text-[11px] font-bold text-blood-400">
+                        <AlertTriangle size={11} className="shrink-0" />
+                        Already ranked {ordinal(w.ranked_elsewhere.rank)} at {w.ranked_elsewhere.weight} lbs
+                      </p>
+                    )}
                     {w.has_beaten_ranked && (
                       <p className="mt-1 truncate text-[11px] font-bold text-pin-400">
                         Beat {w.wins_over_ranked[0].opponent_name} (#{w.wins_over_ranked[0].opponent_rank})

@@ -55,6 +55,35 @@ query "admin/rankings/pool" verb=GET {
       }
     }
 
+    // Every ranking this SAME wrestler already holds at a DIFFERENT weight
+    // this season - the FloWrestling seed (and any manual ranking) already
+    // knows which weight a guy actually competes at, which is more
+    // trustworthy than current_weight_class's "most recent match" guess.
+    // Surfaced as a warning chip so adding someone already ranked elsewhere
+    // is a deliberate choice, not an accident. Filtered to weight != this
+    // request's weight up front (not just "any ranking") - a wrestler can
+    // only have one row per weight (unique index), but building the lookup
+    // from ALL weights and keying purely by wrestler id would let whichever
+    // row processes last silently overwrite the others, hiding a real
+    // conflict whenever that surviving row happens to match the weight
+    // being viewed.
+    db.query wrestler_composite_ranking {
+      where = ($db.wrestler_composite_ranking.season_year == $input.season_year) && ($db.wrestler_composite_ranking.weight != $input.weight)
+      return = {type: "list"}
+    } as $all_ranked_rows
+
+    var $ranked_elsewhere_lookup {
+      value = {}
+    }
+
+    foreach ($all_ranked_rows) {
+      each as $arr {
+        var.update $ranked_elsewhere_lookup {
+          value = $ranked_elsewhere_lookup|set:($arr.canonical_wrestler_id|to_text):{weight: $arr.weight, rank: $arr.rank}
+        }
+      }
+    }
+
     var $season_bounds {
       value = [
         {label: "2025-26", start: 1754006400000, end: 1785628799000}
@@ -215,6 +244,30 @@ query "admin/rankings/pool" verb=GET {
         // graduated, but "hasn't appeared in the most recent season at all"
         // is a reliable enough signal to exclude someone whose last known
         // activity is multiple years stale (e.g. last wrestled 2022-23).
+        var $ranked_elsewhere {
+          value = null
+        }
+
+        var $c_key {
+          value = ($c.id|to_text)
+        }
+
+        conditional {
+          if ($ranked_elsewhere_lookup|has:$c_key) {
+            var $existing_rank {
+              value = $ranked_elsewhere_lookup|get:$c_key:null
+            }
+
+            conditional {
+              if ($existing_rank.weight != $input.weight) {
+                var.update $ranked_elsewhere {
+                  value = $existing_rank
+                }
+              }
+            }
+          }
+        }
+
         conditional {
           if ($record_season == "2025-26") {
             array.push $out {
@@ -228,6 +281,7 @@ query "admin/rankings/pool" verb=GET {
                 win_pct           : $win_pct
                 wins_over_ranked  : $wins_over_ranked
                 has_beaten_ranked : (($wins_over_ranked|count) > 0)
+                ranked_elsewhere  : $ranked_elsewhere
               }
             }
           }

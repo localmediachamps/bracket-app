@@ -49,6 +49,29 @@ query "my/rankings/pool" verb=GET {
       }
     }
 
+    // Every ranking I've ALREADY given this same wrestler at a DIFFERENT
+    // weight this season - warns before creating an accidental conflict
+    // (e.g. ranking someone at 133 who's already on my own list at 149).
+    // Filtered to weight != this weight up front so a same-wrestler row at
+    // the CURRENT weight can never overwrite/hide a real conflict at
+    // another weight in the id-keyed lookup below.
+    db.query user_wrestler_ranking {
+      where = ($db.user_wrestler_ranking.user_id == $auth.id) && ($db.user_wrestler_ranking.season_year == $input.season_year) && ($db.user_wrestler_ranking.weight != $input.weight)
+      return = {type: "list"}
+    } as $my_ranked_rows
+
+    var $ranked_elsewhere_lookup {
+      value = {}
+    }
+
+    foreach ($my_ranked_rows) {
+      each as $mrr {
+        var.update $ranked_elsewhere_lookup {
+          value = $ranked_elsewhere_lookup|set:($mrr.canonical_wrestler_id|to_text):{weight: $mrr.weight, rank: $mrr.rank}
+        }
+      }
+    }
+
     var $season_bounds {
       value = [
         {label: "2025-26", start: 1754006400000, end: 1785628799000}
@@ -204,6 +227,30 @@ query "my/rankings/pool" verb=GET {
           }
         }
 
+        var $ranked_elsewhere {
+          value = null
+        }
+
+        var $c_key {
+          value = ($c.id|to_text)
+        }
+
+        conditional {
+          if ($ranked_elsewhere_lookup|has:$c_key) {
+            var $existing_rank {
+              value = $ranked_elsewhere_lookup|get:$c_key:null
+            }
+
+            conditional {
+              if ($existing_rank.weight != $input.weight) {
+                var.update $ranked_elsewhere {
+                  value = $existing_rank
+                }
+              }
+            }
+          }
+        }
+
         // Only surface wrestlers active in the most recent completed season
         // (2025-26) - no class-year data exists yet to know exactly who
         // graduated, but "hasn't appeared in the most recent season at all"
@@ -222,6 +269,7 @@ query "my/rankings/pool" verb=GET {
                 win_pct           : $win_pct
                 wins_over_ranked  : $wins_over_ranked
                 has_beaten_ranked : (($wins_over_ranked|count) > 0)
+                ranked_elsewhere  : $ranked_elsewhere
               }
             }
           }
