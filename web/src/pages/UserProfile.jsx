@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { User, GraduationCap, CalendarDays, Trophy, Medal, GitBranch, Scale, Swords, Eye, EyeOff } from 'lucide-react'
+import { User, GraduationCap, CalendarDays, Trophy, Medal, GitBranch, Scale, Swords, Eye, EyeOff, Crown } from 'lucide-react'
 import { api } from '../lib/api'
 import { Avatar, Badge, Card, EmptyState, Skeleton, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
@@ -37,6 +37,13 @@ export default function UserProfile() {
     retry: (count, e) => (e?.status === 404 ? false : count < 2),
     staleTime: 60000,
   })
+
+  const { data: rankingsData } = useQuery({
+    queryKey: ['user-rankings', id],
+    queryFn: () => api.userRankings(id),
+    staleTime: 60000,
+  })
+  const rankedWeights = (rankingsData?.weights ?? []).filter((w) => w.entries?.length)
 
   if (isLoading) return <ProfileSkeleton />
 
@@ -155,6 +162,34 @@ export default function UserProfile() {
           </Card>
         )}
       </motion.div>
+
+      {/* ── Personal rankings ─────────────────────────────── */}
+      {rankedWeights.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-6">
+          <h2 className="mb-1 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-100">
+            <Crown size={15} className="text-gold-400" /> {name}'s Rankings
+          </h2>
+          <p className="mb-3 text-xs text-ink-500">Their own personal top-15 per weight class.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {rankedWeights.map((wt) => (
+              <Card key={wt.weight} className="p-0">
+                <div className="border-b border-mat-700 px-4 py-2.5">
+                  <h3 className="font-mono text-sm font-bold text-gold-400">{wt.weight} lbs</h3>
+                </div>
+                <ol className="divide-y divide-mat-700/60">
+                  {wt.entries.slice(0, 5).map((e) => (
+                    <li key={e.rank} className="flex items-center gap-2.5 px-4 py-2 text-sm">
+                      <span className="w-5 shrink-0 font-mono font-bold text-ink-500">{e.rank}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold text-ink-100">{e.display_name}</span>
+                      {e.team_name && <span className="shrink-0 truncate text-xs text-ink-500">{e.team_name}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Public submissions ───────────────────────────── */}
       <motion.div

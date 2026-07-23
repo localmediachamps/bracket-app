@@ -1,0 +1,167 @@
+// My own personal ranking for one weight+season - same shape as
+// admin/rankings (including the top-12 head-to-head cross-reference vs the
+// OFFICIAL composite ranking, so a user gets the exact same "justify this
+// pick" evidence the admin rankings UI shows) but scoped to $auth.id
+// instead of admin-gated.
+query "my/rankings" verb=GET {
+  api_group = "brackets"
+  auth = "user"
+
+  input {
+    int weight
+    int season_year
+  }
+
+  stack {
+    db.query user_wrestler_ranking {
+      where = ($db.user_wrestler_ranking.user_id == $auth.id) && ($db.user_wrestler_ranking.weight == $input.weight) && ($db.user_wrestler_ranking.season_year == $input.season_year)
+      sort = {user_wrestler_ranking.rank: "asc"}
+      return = {type: "list"}
+    } as $rows
+
+    var $out {
+      value = []
+    }
+
+    foreach ($rows) {
+      each as $r {
+        db.get canonical_wrestler {
+          field_name = "id"
+          field_value = $r.canonical_wrestler_id
+        } as $w
+
+        var $team_name {
+          value = null
+        }
+
+        conditional {
+          if ($w != null && $w.current_team_id != null) {
+            db.get canonical_team {
+              field_name = "id"
+              field_value = $w.current_team_id
+            } as $t
+
+            conditional {
+              if ($t != null) {
+                var.update $team_name {
+                  value = $t.name
+                }
+              }
+            }
+          }
+        }
+
+        array.push $out {
+          value = {
+            id                   : $r.id
+            canonical_wrestler_id: $r.canonical_wrestler_id
+            display_name         : $w|get:"display_name":null
+            team_name            : $team_name
+            rank                 : $r.rank
+          }
+        }
+      }
+    }
+
+    // Top-12 head-to-head cross-reference vs the OFFICIAL composite ranking
+    // (same reference point admin/rankings uses) - "justifies" a pick with
+    // real evidence regardless of who's building the list.
+    db.query wrestler_composite_ranking {
+      where = ($db.wrestler_composite_ranking.weight == $input.weight) && ($db.wrestler_composite_ranking.season_year == $input.season_year) && ($db.wrestler_composite_ranking.rank <= 15)
+      return = {type: "list"}
+    } as $official_ranked
+
+    var $ranked_lookup {
+      value = {}
+    }
+
+    foreach ($official_ranked) {
+      each as $orr {
+        db.get canonical_wrestler {
+          field_name = "id"
+          field_value = $orr.canonical_wrestler_id
+        } as $orw
+
+        var.update $ranked_lookup {
+          value = $ranked_lookup|set:($orr.canonical_wrestler_id|to_text):{rank: $orr.rank, display_name: $orw|get:"display_name":null}
+        }
+      }
+    }
+
+    var $out_with_h2h {
+      value = []
+    }
+
+    foreach ($out) {
+      each as $o {
+        var $h2h {
+          value = []
+        }
+
+        conditional {
+          if ($o.rank <= 12) {
+            db.query wrestler_match_history {
+              where = ($db.wrestler_match_history.winner_canonical_wrestler_id == $o.canonical_wrestler_id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $o.canonical_wrestler_id)
+              sort = {wrestler_match_history.occurred_at: "desc"}
+              return = {type: "list"}
+            } as $all_matches
+
+            foreach ($all_matches) {
+              each as $m {
+                var $is_winner {
+                  value = ($m.winner_canonical_wrestler_id == $o.canonical_wrestler_id)
+                }
+
+                var $opponent_id {
+                  value = $m.loser_canonical_wrestler_id
+                }
+
+                conditional {
+                  if ($is_winner == false) {
+                    var.update $opponent_id {
+                      value = $m.winner_canonical_wrestler_id
+                    }
+                  }
+                }
+
+                var $opponent_key {
+                  value = ($opponent_id|to_text)
+                }
+
+                conditional {
+                  if ($opponent_id != null && ($ranked_lookup|has:$opponent_key) && $opponent_id != $o.canonical_wrestler_id) {
+                    var $opponent_info {
+                      value = $ranked_lookup|get:$opponent_key:null
+                    }
+
+                    array.push $h2h {
+                      value = {
+                        is_winner    : $is_winner
+                        opponent_id  : $opponent_id
+                        opponent_name: $opponent_info.display_name
+                        opponent_rank: $opponent_info.rank
+                        victory_type : $m.victory_type
+                        score        : $m.score
+                        event_name   : $m.event_name
+                        occurred_at  : $m.occurred_at
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        array.push $out_with_h2h {
+          value = $o|set:"head_to_head":$h2h
+        }
+      }
+    }
+  }
+
+  response = {
+    rankings: $out_with_h2h
+  }
+  guid = "T3wYq7XtBn5McLpRo8HbFd2GkSj9"
+}

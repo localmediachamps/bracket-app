@@ -190,6 +190,19 @@ function EditTab() {
         </motion.div>
       )}
       <motion.div variants={rise}>
+        <Link to="/my-rankings">
+          <Card hover className="flex items-center gap-3 p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mat-800 text-gold-500">
+              <Crown size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-ink-100">My Rankings</p>
+              <p className="text-xs text-ink-500">Build your own top-15 per weight class and show it off on your profile.</p>
+            </div>
+          </Card>
+        </Link>
+      </motion.div>
+      <motion.div variants={rise}>
         <Card className="flex items-center gap-4 p-5">
           <div className="relative shrink-0">
             <Avatar user={{ ...me, ...form }} size="xl" ring />

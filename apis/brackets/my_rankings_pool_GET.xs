@@ -1,11 +1,9 @@
-// Candidate pool for the admin rankings "add" panel - every wrestler at
-// this weight, enriched with their most-recent-season record and any wins
-// over a CURRENTLY top-15-ranked wrestler at this weight (career-wide, not
-// season-scoped, same as the top-12 head-to-head cross-reference). Sorted
-// so the strongest candidates surface first: beat a ranked wrestler > best
-// record > alphabetical.
-query "admin/rankings/pool" verb=GET {
-  api_group = "admin"
+// Candidate pool for MY personal rankings "add" panel - identical logic to
+// admin/rankings/pool (every wrestler at this weight, enriched with record +
+// wins over the OFFICIAL top-15, sorted strongest-first) but usable by any
+// logged-in user, not admin-gated.
+query "my/rankings/pool" verb=GET {
+  api_group = "brackets"
   auth = "user"
 
   input {
@@ -15,10 +13,6 @@ query "admin/rankings/pool" verb=GET {
   }
 
   stack {
-    function.run validate_admin {
-      input = {user_id: $auth.id}
-    } as $admin
-
     var $q_lower {
       value = $input.q|to_lower
     }
@@ -214,7 +208,7 @@ query "admin/rankings/pool" verb=GET {
         // (2025-26) - no class-year data exists yet to know exactly who
         // graduated, but "hasn't appeared in the most recent season at all"
         // is a reliable enough signal to exclude someone whose last known
-        // activity is multiple years stale (e.g. last wrestled 2022-23).
+        // activity is multiple years stale.
         conditional {
           if ($record_season == "2025-26") {
             array.push $out {
@@ -277,5 +271,5 @@ query "admin/rankings/pool" verb=GET {
   response = {
     items: $final
   }
-  guid = "M6vXn9RtQs3YcLpBo4HbFd8GkTj7"
+  guid = "F2wRq6XvNs9TcYpLo4HbFd7GkVi3"
 }

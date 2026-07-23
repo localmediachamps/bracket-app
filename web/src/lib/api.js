@@ -78,6 +78,10 @@ export const api = {
   calendarMySubmissions: () => get(XANO_APP, `/calendar/my-submissions`),
   leagueCalendar: (leagueId) => get(XANO_LEAGUE, `/leagues/calendar?league_id=${leagueId}`),
   wrestlerLibrary: (params = {}) => get(XANO_APP, `/results/wrestlers${qs(params)}`),
+  myRankings: (params = {}) => get(XANO_APP, `/my/rankings${qs(params)}`),
+  myRankingsPool: (params = {}) => get(XANO_APP, `/my/rankings/pool${qs(params)}`),
+  saveMyRankings: (weight, payload) => put(XANO_APP, `/my/rankings/${weight}`, payload),
+  userRankings: (userId, params = {}) => get(XANO_APP, `/users/${userId}/rankings${qs(params)}`),
   teamProfile: (id) => get(XANO_APP, `/results/teams/${id}`),
 
   /* ── Dual meets ─────────────────────────────────────── */
