@@ -77,6 +77,7 @@ function EditTab() {
         leaderboard_visible: me.leaderboard_visible ?? true,
         leaderboard_name_mode: me.leaderboard_name_mode ?? 'display_name',
         show_public_submissions: me.show_public_submissions ?? true,
+        show_public_rankings: me.show_public_rankings ?? true,
       })
     }
   }, [me, form])
@@ -147,7 +148,8 @@ function EditTab() {
     form.bio !== (me.bio ?? '') ||
     form.leaderboard_visible !== (me.leaderboard_visible ?? true) ||
     form.leaderboard_name_mode !== (me.leaderboard_name_mode ?? 'display_name') ||
-    form.show_public_submissions !== (me.show_public_submissions ?? true)
+    form.show_public_submissions !== (me.show_public_submissions ?? true) ||
+    form.show_public_rankings !== (me.show_public_rankings ?? true)
 
   const submit = (e) => {
     e?.preventDefault()
@@ -160,6 +162,7 @@ function EditTab() {
       leaderboard_visible: form.leaderboard_visible,
       leaderboard_name_mode: form.leaderboard_name_mode,
       show_public_submissions: form.show_public_submissions,
+      show_public_rankings: form.show_public_rankings,
     })
   }
 
@@ -272,6 +275,12 @@ function EditTab() {
           onChange={(v) => setForm((f) => ({ ...f, show_public_submissions: v }))}
           label="Show my public submissions on my profile"
           description="Lets anyone who clicks your name on the leaderboard see a list of your public bracket/pick'em entries and the points each one earned. Entries you haven't made public individually still stay hidden."
+        />
+        <Switch
+          checked={form.show_public_rankings}
+          onChange={(v) => setForm((f) => ({ ...f, show_public_rankings: v }))}
+          label="Show my personal rankings on my profile"
+          description="Lets anyone who visits your profile see your own top-15 rankings per weight class - the 'show off your point of view' rankings you build separately from official ones."
         />
       </motion.div>
 

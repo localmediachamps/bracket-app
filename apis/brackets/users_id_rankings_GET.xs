@@ -12,10 +12,32 @@ query "users/{id}/rankings" verb=GET {
   }
 
   stack {
+    db.get user {
+      field_name = "id"
+      field_value = $input.id
+    } as $owner
+
+    precondition ($owner != null) {
+      error_type = "notfound"
+      error = "User not found."
+    }
+
+    var $rankings_visible {
+      value = $owner.show_public_rankings != false
+    }
+
     db.query user_wrestler_ranking {
       where = $db.user_wrestler_ranking.user_id == $input.id
       return = {type: "list"}
     } as $all_rows
+
+    conditional {
+      if ($rankings_visible == false) {
+        var.update $all_rows {
+          value = []
+        }
+      }
+    }
 
     var $target_year {
       value = $input.season_year
@@ -149,8 +171,9 @@ query "users/{id}/rankings" verb=GET {
   }
 
   response = {
-    season_year: $target_year
-    weights    : $sorted_out
+    season_year      : $target_year
+    weights          : $sorted_out
+    rankings_visible : $rankings_visible
   }
   guid = "K5vTn8ZqRs3YcWpBo7HbFd9GkLm2"
 }

@@ -31,6 +31,9 @@ query "auth/me" verb=PATCH {
     // Show a public list of this user's public submissions (with points
     // earned) on their profile page
     bool? show_public_submissions?
+
+    // Show this user's personal wrestler rankings on their public profile
+    bool? show_public_rankings?
   }
 
   stack {
@@ -142,6 +145,15 @@ query "auth/me" verb=PATCH {
         var.update $payload {
           value = $payload
             |set:"show_public_submissions":$input.show_public_submissions
+        }
+      }
+    }
+
+    conditional {
+      if ($input.show_public_rankings != null) {
+        var.update $payload {
+          value = $payload
+            |set:"show_public_rankings":$input.show_public_rankings
         }
       }
     }

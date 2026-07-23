@@ -44,6 +44,7 @@ export default function UserProfile() {
     staleTime: 60000,
   })
   const rankedWeights = (rankingsData?.weights ?? []).filter((w) => w.entries?.length)
+  const rankingsVisible = rankingsData?.rankings_visible ?? true
 
   if (isLoading) return <ProfileSkeleton />
 
@@ -164,7 +165,7 @@ export default function UserProfile() {
       </motion.div>
 
       {/* ── Personal rankings ─────────────────────────────── */}
-      {rankedWeights.length > 0 && (
+      {rankingsVisible && rankedWeights.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-6">
           <h2 className="mb-1 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-100">
             <Crown size={15} className="text-gold-400" /> {name}'s Rankings

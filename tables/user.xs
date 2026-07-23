@@ -37,6 +37,12 @@ table user {
     // appearing in leaderboard rankings, not what shows on the profile.
     bool show_public_submissions?=true
 
+    // Show this user's personal wrestler rankings (the "my rankings" /
+    // "show off your point of view" feature, stored in user_wrestler_ranking)
+    // on their public profile. Independent of leaderboard_visible and
+    // show_public_submissions - a separate opt-in for a separate section.
+    bool show_public_rankings?=true
+
     // Email verification - signup sends a verify link immediately, but
     // being unverified doesn't block login/play, just gates whatever the
     // frontend chooses to gate later (e.g. notifications). Token+expiry
