@@ -6,6 +6,8 @@ query "admin/dual-meets/reconcile" verb=POST {
   auth = "user"
 
   input {
+    // Debug/perf-testing aid: only process the first N event groups
+    int? limit_groups?
   }
 
   stack {
@@ -14,7 +16,7 @@ query "admin/dual-meets/reconcile" verb=POST {
     } as $admin
 
     function.run reconcile_historical_dual_meets {
-      input = {}
+      input = {limit_groups: $input.limit_groups}
     } as $result
   }
 
