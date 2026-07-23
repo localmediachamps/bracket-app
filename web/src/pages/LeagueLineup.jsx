@@ -176,15 +176,22 @@ export default function LeagueLineup() {
                       {duals.length > 0 ? (
                         <div className="mt-1.5 space-y-0.5">
                           {duals.map((d) => (
-                            <div key={d.dual_meet_id} className="flex items-center gap-1.5 text-xs">
-                              <Swords size={11} className="shrink-0 text-gold-500/70" />
-                              <span className="text-ink-500">{d.is_home ? 'vs' : '@'}</span>
-                              <Link to={`/dual-meets/${d.dual_meet_id}`} className="font-semibold text-ink-300 hover:text-gold-400">
-                                {d.opponent_name}
-                              </Link>
-                              <span className="text-ink-600">
-                                {d.occurred_at ? new Date(d.occurred_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
-                              </span>
+                            <div key={d.dual_meet_id}>
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <Swords size={11} className="shrink-0 text-gold-500/70" />
+                                <span className="text-ink-500">{d.is_home ? 'vs' : '@'}</span>
+                                <Link to={`/dual-meets/${d.dual_meet_id}`} className="font-semibold text-ink-300 hover:text-gold-400">
+                                  {d.opponent_name}
+                                </Link>
+                                <span className="text-ink-600">
+                                  {d.occurred_at ? new Date(d.occurred_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
+                                </span>
+                              </div>
+                              {d.projected_opponent && (
+                                <div className="ml-[19px] text-[11px] text-ink-600">
+                                  Projected: <span className="font-semibold text-ink-400">{d.projected_opponent.display_name}</span>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

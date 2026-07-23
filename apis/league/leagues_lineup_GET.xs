@@ -99,6 +99,23 @@ query "leagues/lineup" verb=GET {
       return = {type: "list"}
     } as $roster
 
+    // For the "projected opponent" preview below: this league's own season,
+    // used to look up each opponent team's starters for THAT season (a mock/
+    // demo league built around e.g. 2025-26 must compare against that
+    // season's actual starters, not whatever's most recent).
+    db.get season {
+      field_name = "id"
+      field_value = $league.season_id
+    } as $league_season
+
+    function.run season_label_from_year {
+      input = {year: $league_season.year}
+    } as $league_season_label
+
+    var $opponent_starters_cache {
+      value = {}
+    }
+
     var $roster_rows {
       value = []
     }
@@ -190,6 +207,69 @@ query "leagues/lineup" verb=GET {
           }
         }
 
+        // Projected opponent preview: for each real dual this wrestler's team
+        // has this week, who does the OPPONENT team actually start at THIS
+        // wrestler's weight (same starter heuristic as the team profile
+        // page) - deliberately name-only, no score/result, since this is
+        // built from real historical dual-meet data standing in for a
+        // forward-looking schedule (see module docstring on results/teams/
+        // {id} - no live schedule source exists yet).
+        var $week_duals_with_projection {
+          value = []
+        }
+
+        var $my_weight_key {
+          value = ($roster_weight_class != null ? ($roster_weight_class.weight|to_text) : null)
+        }
+
+        foreach ($week_duals) {
+          each as $wd {
+            var $projected_opponent {
+              value = null
+            }
+
+            conditional {
+              if ($my_weight_key != null && $wd.opponent_team_id != null) {
+                var $opp_cache_key {
+                  value = ($wd.opponent_team_id|to_text)
+                }
+
+                conditional {
+                  if (($opponent_starters_cache|has:$opp_cache_key) == false) {
+                    function.run compute_team_starters_by_weight {
+                      input = {team_id: $wd.opponent_team_id, season_label: $league_season_label}
+                    } as $opp_starters
+
+                    var.update $opponent_starters_cache {
+                      value = $opponent_starters_cache|set:$opp_cache_key:$opp_starters
+                    }
+                  }
+                }
+
+                var $opp_starters_map {
+                  value = $opponent_starters_cache|get:$opp_cache_key:{}
+                }
+
+                var.update $projected_opponent {
+                  value = $opp_starters_map|get:$my_weight_key:null
+                }
+              }
+            }
+
+            array.push $week_duals_with_projection {
+              value = {
+                dual_meet_id     : $wd.dual_meet_id
+                opponent_name    : $wd.opponent_name
+                opponent_team_id : $wd.opponent_team_id
+                is_home          : $wd.is_home
+                occurred_at      : $wd.occurred_at
+                status           : $wd.status
+                projected_opponent: $projected_opponent
+              }
+            }
+          }
+        }
+
         array.push $roster_rows {
           value = {
             roster_slot_id   : $r.id
@@ -198,7 +278,7 @@ query "leagues/lineup" verb=GET {
             drafted_weight_class: $roster_weight_class
             slot_type        : $r.slot_type
             slot_index       : $r.slot_index
-            week_duals       : $week_duals
+            week_duals       : $week_duals_with_projection
           }
         }
       }
