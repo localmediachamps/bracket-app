@@ -5,6 +5,20 @@
 // the last one. A tournament mini-draft (draft.season_week_id set) completing
 // does NOT touch league.status - the season-long league stays "active"
 // throughout, only that one week's mini-draft finishes.
+//
+// FIXED 2026-07-23: this function's own function.run calls to notify()
+// previously used a ternary directly in the `type`/`title` input fields
+// plus a `data` object literal containing a null member (season_week_id) -
+// that combination threw a fatal "Invalid name: X" error every time this
+// function actually ran (confirmed: the exact same notify() call pattern
+// works fine when called directly from a top-level query, e.g.
+// leagues_draft_start_POST.xs - this only broke one function.run layer
+// deeper, from inside another function). This silently blocked every
+// preseason draft pick (manual or autopick) from ever completing - draft/
+// pick and draft/autopick both call this function after every single pick.
+// Confirmed via bisection while running the first real demo-league draft.
+// Fix: precompute type/title into plain vars before calling notify, and
+// drop the data payload (deep-link data, not essential).
 function advance_draft_turn {
   input {
     int draft_id
@@ -59,12 +73,21 @@ function advance_draft_turn {
           }
         }
 
+        var $complete_type { value = "draft_complete" }
+        var $complete_title { value = "The draft for " ~ $league.name ~ " is complete!" }
+
+        conditional {
+          if ($is_tournament_draft) {
+            var.update $complete_type { value = "tournament_draft_complete" }
+            var.update $complete_title { value = "The tournament draft for " ~ $league.name ~ " is locked in!" }
+          }
+        }
+
         function.run notify {
           input = {
             user_id: $league.owner_id
-            type   : $is_tournament_draft ? "tournament_draft_complete" : "draft_complete"
-            title  : $is_tournament_draft ? ("The tournament draft for " ~ $league.name ~ " is locked in!") : ("The draft for " ~ $league.name ~ " is complete!")
-            data   : {league_id: $league.id, draft_id: $draft.id, season_week_id: $draft.season_week_id}
+            type   : $complete_type
+            title  : $complete_title
           }
         } as $notify_complete
 
@@ -112,9 +135,8 @@ function advance_draft_turn {
         function.run notify {
           input = {
             user_id: $next_membership.user_id
-            type   : $is_tournament_draft ? "tournament_draft_your_turn" : "draft_your_turn"
+            type   : "draft_your_turn"
             title  : "You're on the clock in " ~ $league.name
-            data   : {league_id: $league.id, draft_id: $draft.id, season_week_id: $draft.season_week_id}
           }
         } as $notify_next
 

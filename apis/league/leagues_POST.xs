@@ -106,7 +106,7 @@ query leagues verb=POST {
       each {
         function.run invite_code as $candidate
 
-        db.has "" {
+        db.has league {
           field_name = "invite_code"
           field_value = $candidate
         } as $code_taken
