@@ -57,6 +57,7 @@ const AdminScoring = lazy(() => import('./pages/admin/AdminScoring'))
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminIngestion = lazy(() => import('./pages/admin/AdminIngestion'))
 const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'))
+const AdminRankings = lazy(() => import('./pages/admin/AdminRankings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function PageLoader() {
@@ -143,6 +144,7 @@ export default function App() {
               <Route path="tournaments/:id/scoring" element={<AdminScoring />} />
               <Route path="tournaments/:id/analytics" element={<AdminAnalytics />} />
               <Route path="audit" element={<AdminAudit />} />
+              <Route path="rankings" element={<AdminRankings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

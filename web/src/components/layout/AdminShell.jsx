@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
-import { LayoutDashboard, Trophy, FileUp, ListChecks, SlidersHorizontal, BarChart3, ScrollText, Hammer, Satellite } from 'lucide-react'
+import { LayoutDashboard, Trophy, FileUp, ListChecks, SlidersHorizontal, BarChart3, ScrollText, Hammer, Satellite, Crown } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 /**
@@ -12,6 +12,7 @@ export default function AdminShell() {
   const items = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/admin/tournaments/new', label: 'New Tournament', icon: Trophy },
+    { to: '/admin/rankings', label: 'Rankings', icon: Crown },
     ...(id
       ? [
           { to: `/admin/tournaments/${id}`, label: 'Overview', icon: Trophy, end: true },
