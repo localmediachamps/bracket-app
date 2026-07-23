@@ -51,9 +51,13 @@ query "leagues/lineup" verb=PUT {
       field_value = $input.season_week_id
     } as $season_week
 
-    precondition ($season_week != null && $season_week.week_type == "head_to_head") {
+    var $is_lineup_week {
+      value = $season_week != null && ($season_week.week_type == "head_to_head" || $season_week.week_type == "conference" || $season_week.week_type == "nationals")
+    }
+
+    precondition ($is_lineup_week) {
       error_type = "inputerror"
-      error = "This isn't a head-to-head lineup week."
+      error = "This week doesn't take a roster lineup."
     }
 
     precondition ($season_week.status == "upcoming" || $season_week.status == "open") {

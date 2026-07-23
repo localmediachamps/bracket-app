@@ -2123,5 +2123,12 @@
     "status": "new",
     "type": "api_endpoint",
     "staged": false
+  },
+  {
+    "id": 0,
+    "path": "apis/league/leagues_schedule_generate_POST.xs",
+    "status": "new",
+    "type": "api_endpoint",
+    "staged": false
   }
 ]
