@@ -93,4 +93,5 @@ function get_default_pickem_config {
   }
 
   response = $config
+  guid = "PD3J_1JlLvLSdynlFj3Oj4LvPss"
 }

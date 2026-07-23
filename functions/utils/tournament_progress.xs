@@ -48,4 +48,5 @@ function tournament_progress {
     picked        : $picked
     complete_count: $complete_count
   }
+  guid = "l0Jh3U6ucCj4XZrHH5OfBk3kmJs"
 }

@@ -361,4 +361,5 @@ function reset_test_tournaments {
     deleted_tournament_ids: $doomed_ids
     counts: $counts
   }
+  guid = "wBvTx1l3P_YbRGX4tDGGYlO0VCY"
 }
