@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, Timer, ExternalLink } from 'lucide-react'
+import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, Timer, ExternalLink, Search, X } from 'lucide-react'
 import { api } from '../lib/api'
 import { Badge, Card, CardSkeleton, EmptyState, Stat } from '../components/ui'
 import { ErrorState } from '../components/tournament/Feedback'
@@ -33,11 +33,26 @@ function formatMatchTime(seconds) {
 
 export default function WrestlerProfile() {
   const { id } = useParams()
+  const [seasonFilter, setSeasonFilter] = useState(null)
+  const [resultFilter, setResultFilter] = useState('all') // all | win | loss
+  const [opponentQuery, setOpponentQuery] = useState('')
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['wrestler-profile', id],
     queryFn: () => api.wrestlerProfile(id),
   })
+
+  const matches = data?.matches ?? []
+  const opponentQueryLower = opponentQuery.trim().toLowerCase()
+  const filteredMatches = useMemo(() => {
+    return matches.filter((m) => {
+      if (seasonFilter && m.season_label !== seasonFilter) return false
+      if (resultFilter === 'win' && !m.is_winner) return false
+      if (resultFilter === 'loss' && m.is_winner) return false
+      if (opponentQueryLower && !(m.opponent_name || '').toLowerCase().includes(opponentQueryLower)) return false
+      return true
+    })
+  }, [matches, seasonFilter, resultFilter, opponentQueryLower])
 
   if (isLoading) {
     return (
@@ -55,8 +70,11 @@ export default function WrestlerProfile() {
     )
   }
 
-  const { wrestler, team_history: teamHistory, overall_record: record, season_records: seasonRecords, matches } = data
+  const { wrestler, team_history: teamHistory, overall_record: record, season_records: seasonRecords } = data
   const winPct = record.wins + record.losses > 0 ? Math.round((100 * record.wins) / (record.wins + record.losses)) : null
+
+  const activeFilterCount = (seasonFilter ? 1 : 0) + (resultFilter !== 'all' ? 1 : 0) + (opponentQueryLower ? 1 : 0)
+  const clearFilters = () => { setSeasonFilter(null); setResultFilter('all'); setOpponentQuery('') }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -111,25 +129,82 @@ export default function WrestlerProfile() {
 
       {seasonRecords.length > 0 && (
         <Card className="mb-6 p-5">
-          <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Season Records</h2>
+          <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
+            Season Records <span className="normal-case text-ink-600">— click to filter match history below</span>
+          </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {seasonRecords.map((s) => (
-              <div key={s.season_label} className="rounded-lg border border-mat-700 bg-mat-900/50 px-3 py-2 text-center">
-                <div className="font-mono text-[10px] text-ink-600">{s.season_label}</div>
-                <div className="mt-0.5 font-mono text-lg font-bold text-ink-100">{s.wins}-{s.losses}</div>
-              </div>
-            ))}
+            {seasonRecords.map((s) => {
+              const active = seasonFilter === s.season_label
+              return (
+                <button
+                  key={s.season_label}
+                  onClick={() => setSeasonFilter(active ? null : s.season_label)}
+                  className={cn(
+                    'rounded-lg border px-3 py-2 text-center transition-colors',
+                    active ? 'border-gold-500 bg-gold-500/10' : 'border-mat-700 bg-mat-900/50 hover:border-mat-500'
+                  )}
+                >
+                  <div className={cn('font-mono text-[10px]', active ? 'text-gold-400' : 'text-ink-600')}>{s.season_label}</div>
+                  <div className="mt-0.5 font-mono text-lg font-bold text-ink-100">{s.wins}-{s.losses}</div>
+                </button>
+              )
+            })}
           </div>
         </Card>
       )}
 
       <Card className="p-5">
-        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Match History</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Match History</h2>
+          {activeFilterCount > 0 && (
+            <button onClick={clearFilters} className="flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-ink-200">
+              <X size={12} /> Clear filters ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
+        {matches.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-mat-700 p-0.5">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'win', label: 'Wins' },
+                { key: 'loss', label: 'Losses' },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setResultFilter(opt.key)}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-xs font-bold transition-colors',
+                    resultFilter === opt.key ? 'bg-mat-800 text-gold-400' : 'text-ink-500 hover:text-ink-200'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="relative flex-1 min-w-[180px]">
+              <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-500" />
+              <input
+                value={opponentQuery}
+                onChange={(e) => setOpponentQuery(e.target.value)}
+                placeholder="Search opponent…"
+                className="w-full rounded-lg border border-mat-700 bg-mat-850 py-1.5 pl-8 pr-3 text-xs text-ink-100 placeholder:text-ink-600 focus:border-gold-500/50 focus:outline-none"
+              />
+            </div>
+            {seasonFilter && (
+              <Badge color="gold">{seasonFilter}</Badge>
+            )}
+          </div>
+        )}
+
         {matches.length === 0 ? (
           <EmptyState icon={<Trophy size={22} />} title="No matches on record" body="This wrestler doesn't have any results linked yet." />
+        ) : filteredMatches.length === 0 ? (
+          <EmptyState icon={<Search size={20} />} title="No matches found" body="Try clearing a filter." />
         ) : (
           <div className="divide-y divide-mat-700">
-            {matches.map((m) => {
+            {filteredMatches.map((m) => {
               const { color, icon: Icon } = victoryStyle(m.victory_type)
               const placement = placementInfo(m.round_label)
               const time = formatMatchTime(m.time_seconds)
