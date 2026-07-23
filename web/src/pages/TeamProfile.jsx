@@ -114,7 +114,14 @@ export default function TeamProfile() {
                 className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm hover:bg-mat-800"
               >
                 <span className="w-9 shrink-0 font-mono text-xs font-bold text-gold-500">{w.weight_class || '—'}</span>
-                <span className="min-w-0 flex-1 truncate font-semibold text-ink-100">{w.display_name}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold text-ink-100">
+                  {w.display_name}
+                  {w.is_starter && (
+                    <span className="ml-1.5 rounded bg-gold-500/15 px-1 py-0.5 align-middle text-[9px] font-bold uppercase tracking-wide text-gold-400">
+                      Starter
+                    </span>
+                  )}
+                </span>
                 {w.career_wins != null ? (
                   <span className="shrink-0 text-right font-mono text-xs font-bold text-ink-300">
                     <span className="block">{w.wins}-{w.losses} <span className="text-ink-600">szn</span></span>
