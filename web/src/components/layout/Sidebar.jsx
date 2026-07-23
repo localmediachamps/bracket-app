@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
   Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon,
   ScrollText, Swords, Crown, GraduationCap, CalendarRange, CalendarDays, LifeBuoy,
-  ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard, UserRound,
+  ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard, UserRound, ListOrdered,
 } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { Avatar } from '../ui'
@@ -12,6 +12,7 @@ import { cn } from '../../lib/utils'
 export const SIDEBAR_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, auth: true },
   { to: '/leaderboard', label: 'Leaderboard', icon: Crown },
+  { to: '/rankings', label: 'Rankings', icon: ListOrdered },
   { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   { to: '/dual-meets', label: 'Dual Meets', icon: Swords },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },

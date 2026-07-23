@@ -1,6 +1,9 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
+import { Crown } from 'lucide-react'
 import { api } from '../lib/api'
 import RankingsEditor from '../components/rankings/RankingsEditor'
+import { Button } from '../components/ui'
 
 export default function MyRankings() {
   return (
@@ -13,6 +16,13 @@ export default function MyRankings() {
       subtitle="Build your own top-15 per weight class — show everyone your point of view. Public on your profile once you save."
       poolTitle="Add from the roster"
       emptyBody="You haven't ranked anyone at this weight yet — add someone from the roster on the right."
+      headerAction={
+        <Link to="/rankings">
+          <Button variant="secondary">
+            <Crown size={15} /> See Mat Savvy Rankings
+          </Button>
+        </Link>
+      }
     />
   )
 }

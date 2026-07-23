@@ -26,6 +26,7 @@ export default function RankingsEditor({
   subtitle,
   poolTitle,
   emptyBody,
+  headerAction,
 }) {
   const qc = useQueryClient()
   const [weight, setWeight] = useState('125')
@@ -113,8 +114,13 @@ export default function RankingsEditor({
 
   return (
     <div>
-      <h1 className="font-display text-2xl text-ink-50">{title}</h1>
-      <p className="mt-1 text-sm text-ink-400">{subtitle}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-ink-50">{title}</h1>
+          <p className="mt-1 text-sm text-ink-400">{subtitle}</p>
+        </div>
+        {headerAction}
+      </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <Select value={seasonYear} onChange={(e) => setSeasonYear(Number(e.target.value))} className="w-auto">

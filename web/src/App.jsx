@@ -48,6 +48,7 @@ const LeagueWaivers = lazy(() => import('./pages/LeagueWaivers'))
 const LeagueTrades = lazy(() => import('./pages/LeagueTrades'))
 const Profile = lazy(() => import('./pages/Profile'))
 const MyRankings = lazy(() => import('./pages/MyRankings'))
+const Rankings = lazy(() => import('./pages/Rankings'))
 const UserProfile = lazy(() => import('./pages/UserProfile'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -136,6 +137,7 @@ export default function App() {
             <Route path="/leagues/:id/waivers" element={<RequireAuth><LeagueWaivers /></RequireAuth>} />
             <Route path="/leagues/:id/trades" element={<RequireAuth><LeagueTrades /></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+            <Route path="/rankings" element={<RequireAuth><Rankings /></RequireAuth>} />
             <Route path="/my-rankings" element={<RequireAuth><MyRankings /></RequireAuth>} />
             <Route path="/users/:id" element={<UserProfile />} />
             <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
