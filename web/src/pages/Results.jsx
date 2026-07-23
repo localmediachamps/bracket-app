@@ -96,7 +96,7 @@ function WrestlerName({ name, canonicalId, className }) {
   if (!name) return null
   if (!canonicalId) return <span className={className}>{name}</span>
   return (
-    <Link to={`/wrestlers/${canonicalId}`} className={cn(className, 'hover:underline')} onClick={(e) => e.stopPropagation()}>
+    <Link to={`/wrestlers/${canonicalId}`} state={{ from: 'results' }} className={cn(className, 'hover:underline')} onClick={(e) => e.stopPropagation()}>
       {name}
     </Link>
   )

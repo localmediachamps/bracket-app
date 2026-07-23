@@ -14,7 +14,7 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
-// Shared by the admin Composite Rankings page and the per-user "My Rankings"
+// Shared by the admin Mat Savvy Rankings page and the per-user "My Rankings"
 // page - same drag-to-reorder list + smart "who to add" pool + top-12
 // head-to-head justification, parameterized by which endpoints back it.
 export default function RankingsEditor({

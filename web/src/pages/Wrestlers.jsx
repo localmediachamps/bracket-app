@@ -117,7 +117,7 @@ export default function Wrestlers() {
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((w) => (
-                <Link key={w.id} to={`/wrestlers/${w.id}`}>
+                <Link key={w.id} to={`/wrestlers/${w.id}`} state={{ from: 'wrestlers' }}>
                   <Card hover className="p-4">
                     <div className="flex items-center gap-3">
                       <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', w.current_team?.logo_url ? 'bg-white p-1.5' : 'bg-mat-800 text-gold-500')}>

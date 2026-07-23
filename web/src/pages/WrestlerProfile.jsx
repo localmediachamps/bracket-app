@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, User, Trophy, Zap, Flame, TrendingUp, Timer, ExternalLink, Search, X } from 'lucide-react'
 import { api } from '../lib/api'
@@ -31,8 +31,16 @@ function formatMatchTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+const BACK_LINKS = {
+  wrestlers: { to: '/wrestlers', label: 'Back to Wrestler Library' },
+  results: { to: '/results', label: 'Back to Results' },
+}
+
 export default function WrestlerProfile() {
   const { id } = useParams()
+  const location = useLocation()
+  const fromKey = location.state?.from in BACK_LINKS ? location.state.from : 'results'
+  const back = BACK_LINKS[fromKey]
   const [seasonFilter, setSeasonFilter] = useState(null)
   const [resultFilter, setResultFilter] = useState('all') // all | win | loss
   const [opponentQuery, setOpponentQuery] = useState('')
@@ -70,7 +78,7 @@ export default function WrestlerProfile() {
     )
   }
 
-  const { wrestler, team_history: teamHistory, overall_record: record, season_records: seasonRecords } = data
+  const { wrestler, season_rows: seasonRows, overall_record: record, overall_bonus_pct: bonusPct } = data
   const winPct = record.wins + record.losses > 0 ? Math.round((100 * record.wins) / (record.wins + record.losses)) : null
 
   const activeFilterCount = (seasonFilter ? 1 : 0) + (resultFilter !== 'all' ? 1 : 0) + (opponentQueryLower ? 1 : 0)
@@ -78,8 +86,8 @@ export default function WrestlerProfile() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <Link to="/results" className="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-400 hover:text-gold-400">
-        <ArrowLeft size={15} /> Back to Results
+      <Link to={back.to} className="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-400 hover:text-gold-400">
+        <ArrowLeft size={15} /> {back.label}
       </Link>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -104,48 +112,45 @@ export default function WrestlerProfile() {
         )}
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Record" value={`${record.wins}-${record.losses}`} />
         <Stat label="Win %" value={winPct != null ? `${winPct}%` : '—'} />
-        <Stat label="Seasons" value={teamHistory.length} />
+        <Stat label="Bonus %" value={bonusPct != null ? `${bonusPct}%` : '—'} />
+        <Stat label="Seasons" value={seasonRows.length} />
       </div>
 
-      {teamHistory.length > 0 && (
-        <Card className="mb-6 p-5">
-          <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Team History</h2>
-          <div className="space-y-2">
-            {teamHistory.map((t) => (
-              <div key={`${t.team_id}-${t.season_label}`} className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-ink-600">{t.season_label}</span>
-                  <span className="font-semibold text-ink-100">{t.team_name}</span>
-                </span>
-                <span className="text-xs text-ink-500">{t.match_count} matches</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {seasonRecords.length > 0 && (
+      {seasonRows.length > 0 && (
         <Card className="mb-6 p-5">
           <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
-            Season Records <span className="normal-case text-ink-600">— click to filter match history below</span>
+            Season by Season <span className="normal-case text-ink-600">— click a season to filter match history below</span>
           </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {seasonRecords.map((s) => {
+          <div className="divide-y divide-mat-700">
+            {seasonRows.map((s) => {
               const active = seasonFilter === s.season_label
+              const wb = s.win_breakdown
+              const lb = s.loss_breakdown
               return (
                 <button
                   key={s.season_label}
                   onClick={() => setSeasonFilter(active ? null : s.season_label)}
                   className={cn(
-                    'rounded-lg border px-3 py-2 text-center transition-colors',
-                    active ? 'border-gold-500 bg-gold-500/10' : 'border-mat-700 bg-mat-900/50 hover:border-mat-500'
+                    'flex w-full flex-col gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between',
+                    active && 'text-gold-400'
                   )}
                 >
-                  <div className={cn('font-mono text-[10px]', active ? 'text-gold-400' : 'text-ink-600')}>{s.season_label}</div>
-                  <div className="mt-0.5 font-mono text-lg font-bold text-ink-100">{s.wins}-{s.losses}</div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={cn('font-mono text-xs shrink-0', active ? 'text-gold-400' : 'text-ink-600')}>{s.season_label}</span>
+                    <span className="truncate text-sm font-semibold text-ink-100">{s.team_name || '—'}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:justify-end">
+                    <span className="font-mono text-lg font-bold text-ink-100">{s.wins}-{s.losses}</span>
+                    {s.bonus_pct != null && (
+                      <Badge color="gold">{s.bonus_pct}% bonus</Badge>
+                    )}
+                    <span className="font-mono text-[11px] text-ink-500">
+                      Dec {wb.decision}-{lb.decision} · Maj {wb.major}-{lb.major} · TF {wb.tech_fall}-{lb.tech_fall} · Fall {wb.fall}-{lb.fall}
+                    </span>
+                  </div>
                 </button>
               )
             })}
@@ -215,7 +220,21 @@ export default function WrestlerProfile() {
                       <span className={cn('shrink-0 font-bold', m.is_winner ? 'text-pin-400' : 'text-ink-500')}>
                         {m.is_winner ? 'W' : 'L'}
                       </span>
-                      <span className="truncate text-ink-100">vs {m.opponent_name || 'opponent'}</span>
+                      <span className="truncate text-ink-100">
+                        vs{' '}
+                        {m.opponent_id ? (
+                          <Link
+                            to={`/wrestlers/${m.opponent_id}`}
+                            state={{ from: fromKey }}
+                            className="hover:text-gold-400 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {m.opponent_name || 'opponent'}
+                          </Link>
+                        ) : (
+                          m.opponent_name || 'opponent'
+                        )}
+                      </span>
                       {m.opponent_school && <span className="shrink-0 text-ink-500">({m.opponent_school})</span>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">

@@ -9,7 +9,7 @@ export default function AdminRankings() {
       getRankings={api.adminRankings}
       getPool={api.adminRankingsPool}
       saveRankings={api.saveAdminRankings}
-      title="Composite Rankings"
+      title="Mat Savvy Rankings"
       subtitle="Manually managed per weight class — drag to reorder, search the roster to add someone, remove anyone who shouldn't be ranked."
     />
   )

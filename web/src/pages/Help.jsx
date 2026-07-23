@@ -336,7 +336,7 @@ export default function Help() {
               value comes from match <em>quality</em>, not just piling up matches. On top of the average, a flat{' '}
               <strong>medal bonus</strong> is added if a wrestler placed at a tournament that week (1st = +6, down to
               8th = +0.5), rewarding a deep tournament run beyond just per-match quality. An opponent-quality multiplier
-              (same 1.5× / 1.3× / 1.15× tiers as Bracket Challenge) applies per match once composite rankings are live.
+              (same 1.5× / 1.3× / 1.15× tiers as Bracket Challenge) applies per match once Mat Savvy Rankings are live.
               Higher combined roster score wins the week; a win is worth 2 season-standings points, a tie 1, a loss 0.
             </p>
             <h3>Marquee tournament weeks</h3>
