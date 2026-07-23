@@ -97,6 +97,34 @@ query "leagues/draft/autopick" verb=POST {
       }
     }
 
+    // Only autopick wrestlers who actually rostered for THIS league's own
+    // season - same reasoning as the manual pick/waiver endpoints.
+    db.get season {
+      field_name = "id"
+      field_value = $league.season_id
+    } as $autopick_season
+
+    function.run season_label_from_year {
+      input = {year: $autopick_season.year}
+    } as $autopick_season_label
+
+    db.query canonical_wrestler_team {
+      where = $db.canonical_wrestler_team.season_label == $autopick_season_label
+      return = {type: "list", paging: {page: 1, per_page: 50000}}
+    } as $autopick_roster_rows
+
+    var $autopick_season_roster_map {
+      value = {}
+    }
+
+    foreach ($autopick_roster_rows.items) {
+      each as $sr {
+        var.update $autopick_season_roster_map {
+          value = $autopick_season_roster_map|set:($sr.canonical_wrestler_id|to_text):true
+        }
+      }
+    }
+
     var $chosen_weight {
       value = null
     }
@@ -237,25 +265,40 @@ query "leagues/draft/autopick" verb=POST {
           }
 
           else {
-            var $first_wc {
-              value = $weight_classes|slice:0:1|first
-            }
+            // roster_alternate_slots is PER weight class - find this team's
+            // first weight that doesn't already have a full set of
+            // alternates yet, the same way the starter branch above finds
+            // the first open starter weight. The old version always chose
+            // weight_classes[0] outright, so every alternate round for
+            // every team piled up at the season's first weight class
+            // regardless of whether it already had one.
+            foreach ($weight_classes) {
+              each as $wc2 {
+                conditional {
+                  if ($chosen_season_weight_class_id == null) {
+                    db.query roster_slot {
+                      where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $on_clock_membership.id && $db.roster_slot.season_weight_class_id == $wc2.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+                      return = {type: "list"}
+                    } as $wc_alternates
 
-            var.update $chosen_season_weight_class_id {
-              value = $first_wc.id
-            }
+                    conditional {
+                      if (($wc_alternates|count) < $league.roster_alternate_slots) {
+                        var.update $chosen_season_weight_class_id {
+                          value = $wc2.id
+                        }
 
-            var.update $chosen_weight {
-              value = $first_wc.weight
-            }
+                        var.update $chosen_weight {
+                          value = $wc2.weight
+                        }
 
-            db.query roster_slot {
-              where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $on_clock_membership.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
-              return = {type: "list"}
-            } as $existing_alternates
-
-            var.update $slot_index {
-              value = ($existing_alternates|count) + 1
+                        var.update $slot_index {
+                          value = ($wc_alternates|count) + 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -264,15 +307,28 @@ query "leagues/draft/autopick" verb=POST {
           error = "Could not find an open weight class to autopick into."
         }
 
+        // Must actually compete at the weight the slot being filled is for -
+        // this endpoint used to pick the lowest-id undrafted wrestler
+        // regardless of weight, which is how the whole demo league ended up
+        // with e.g. a 174lb wrestler sitting in a 125lb slot.
+        var $chosen_weight_text {
+          value = ($chosen_weight|to_text)
+        }
+
         db.query canonical_wrestler {
+          where = $db.canonical_wrestler.current_weight_class == $chosen_weight_text
           sort = {canonical_wrestler.id: "asc"}
           return = {type: "list", paging: {page: 1, per_page: 500}}
         } as $candidate_page
 
         foreach ($candidate_page.items) {
           each as $candidate {
+            var $autopick_candidate_key {
+              value = ($candidate.id|to_text)
+            }
+
             conditional {
-              if ($chosen_wrestler_id == null && ($drafted_wrestler_map|has:($candidate.id|to_text)) == false) {
+              if ($chosen_wrestler_id == null && ($drafted_wrestler_map|has:$autopick_candidate_key) == false && ($autopick_season_roster_map|has:$autopick_candidate_key)) {
                 var.update $chosen_wrestler_id {
                   value = $candidate.id
                 }
@@ -282,7 +338,7 @@ query "leagues/draft/autopick" verb=POST {
         }
 
         precondition ($chosen_wrestler_id != null) {
-          error = "Could not find an undrafted wrestler in the first 500 candidates."
+          error = "Could not find an undrafted wrestler at " ~ $chosen_weight_text ~ " lbs in the first 500 candidates at that weight."
         }
       }
     }

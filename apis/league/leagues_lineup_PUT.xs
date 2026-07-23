@@ -81,10 +81,22 @@ query "leagues/lineup" verb=PUT {
       value = {}
     }
 
+    // Keyed by "wrestlerId:weightClassId" - not just wrestler ownership,
+    // since owning a wrestler doesn't mean they can fill ANY weight's lineup
+    // slot, only the weight class they're actually rostered at (their
+    // starter or alternate slot for that specific weight).
+    var $owned_wrestler_weight_pairs {
+      value = {}
+    }
+
     foreach ($roster) {
       each as $r {
         var.update $owned_wrestler_ids {
           value = $owned_wrestler_ids|set:($r.canonical_wrestler_id|to_text):true
+        }
+
+        var.update $owned_wrestler_weight_pairs {
+          value = $owned_wrestler_weight_pairs|set:(($r.canonical_wrestler_id|to_text) ~ ":" ~ ($r.season_weight_class_id|to_text)):true
         }
       }
     }
@@ -102,6 +114,11 @@ query "leagues/lineup" verb=PUT {
         precondition ($owned_wrestler_ids|has:($slot.canonical_wrestler_id|to_text)) {
           error_type = "inputerror"
           error = "You don't own that wrestler in this league."
+        }
+
+        precondition ($owned_wrestler_weight_pairs|has:(($slot.canonical_wrestler_id|to_text) ~ ":" ~ ($slot.season_weight_class_id|to_text))) {
+          error_type = "inputerror"
+          error = "That wrestler isn't rostered at that weight class."
         }
 
         precondition (($seen_weight_classes|has:($slot.season_weight_class_id|to_text)) == false) {

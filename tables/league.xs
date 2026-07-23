@@ -41,7 +41,11 @@ table league {
     json? scoring_config?
 
     int roster_starter_slots?=10
-    int roster_alternate_slots?=2
+
+    // Alternates PER weight class (not a flat total) - default 1 means one
+    // bench/backup slot at every weight, so a 10-weight season gives each
+    // team roster_starter_slots + (roster_alternate_slots * 10) = 20 slots.
+    int roster_alternate_slots?=1
 
     // Draft timing/format settings (pick time limit, snake order seed, etc.)
     json? draft_config?

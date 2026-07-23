@@ -70,6 +70,50 @@ query "leagues/waiver/claim" verb=POST {
       error = "That roster spot isn't yours to drop."
     }
 
+    var $drop_weight {
+      value = null
+    }
+
+    conditional {
+      if ($drop_slot.season_weight_class_id != null) {
+        db.get season_weight_class {
+          field_name = "id"
+          field_value = $drop_slot.season_weight_class_id
+        } as $dwc
+
+        var.update $drop_weight {
+          value = $dwc.weight
+        }
+      }
+    }
+
+    precondition ($drop_weight == null || $wrestler.current_weight_class == ($drop_weight|to_text)) {
+      error_type = "inputerror"
+      error = "That wrestler competes at " ~ $wrestler.current_weight_class ~ " lbs, not " ~ ($drop_weight|to_text) ~ " lbs."
+    }
+
+    // Must actually be on that season's real roster - same reasoning as the
+    // draft: a league scoped to an older season can't add a graduated
+    // wrestler (or a future signee) off waivers either.
+    db.get season {
+      field_name = "id"
+      field_value = $league.season_id
+    } as $waiver_season
+
+    function.run season_label_from_year {
+      input = {year: $waiver_season.year}
+    } as $waiver_season_label
+
+    db.query canonical_wrestler_team {
+      where = $db.canonical_wrestler_team.canonical_wrestler_id == $input.canonical_wrestler_id && $db.canonical_wrestler_team.season_label == $waiver_season_label
+      return = {type: "exists"}
+    } as $waiver_on_season_roster
+
+    precondition ($waiver_on_season_roster) {
+      error_type = "inputerror"
+      error = "That wrestler wasn't on an active roster for the " ~ $waiver_season_label ~ " season."
+    }
+
     db.add waiver_claim {
       data = {
         created_at             : now

@@ -27,6 +27,16 @@ table canonical_wrestler_team {
     text season_label filters=trim
 
     int? match_count?
+
+    // Manual admin correction to the "who's the starter at this weight"
+    // heuristic (computed live from season match counts wherever it's
+    // shown - most matches at a weight is a solid proxy for who the coach
+    // actually sends out, real teams are usually consistent about it).
+    // Null means "trust the heuristic"; true/false forces it regardless of
+    // match count (e.g. a true freshman phenom who's started every dual
+    // despite fewer total matches than a senior teammate who wrestled more
+    // non-conference tournaments).
+    bool? is_starter_override?
   }
 
   index = [

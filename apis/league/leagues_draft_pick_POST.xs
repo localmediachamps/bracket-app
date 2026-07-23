@@ -162,6 +162,34 @@ query "leagues/draft/pick" verb=POST {
           error = "Invalid weight class for this league's season."
         }
 
+        precondition ($wrestler.current_weight_class == ($weight_class.weight|to_text)) {
+          error_type = "inputerror"
+          error = "That wrestler competes at " ~ $wrestler.current_weight_class ~ " lbs, not " ~ ($weight_class.weight|to_text) ~ " lbs."
+        }
+
+        // Must actually be on that season's real roster - a league scoped to
+        // an older season (e.g. a 2025-26 mock league) can only draft
+        // wrestlers who competed that year, not next year's signees or
+        // wrestlers who'd already graduated by then.
+        db.get season {
+          field_name = "id"
+          field_value = $league.season_id
+        } as $draft_season
+
+        function.run season_label_from_year {
+          input = {year: $draft_season.year}
+        } as $season_label
+
+        db.query canonical_wrestler_team {
+          where = $db.canonical_wrestler_team.canonical_wrestler_id == $input.canonical_wrestler_id && $db.canonical_wrestler_team.season_label == $season_label
+          return = {type: "exists"}
+        } as $on_season_roster
+
+        precondition ($on_season_roster) {
+          error_type = "inputerror"
+          error = "That wrestler wasn't on an active roster for the " ~ $season_label ~ " season."
+        }
+
         var.update $weight {
           value = $weight_class.weight
         }
@@ -192,8 +220,11 @@ query "leagues/draft/pick" verb=POST {
           }
 
           else {
+            // roster_alternate_slots is PER weight class - an alternate at
+            // 125 doesn't compete with an alternate at 133 for the cap, the
+            // same way starters don't.
             db.query roster_slot {
-              where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $my_membership.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+              where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $my_membership.id && $db.roster_slot.season_weight_class_id == $input.season_weight_class_id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
               return = {type: "list"}
             } as $existing_alternates
 
@@ -203,7 +234,7 @@ query "leagues/draft/pick" verb=POST {
 
             precondition ($alternate_count < $league.roster_alternate_slots) {
               error_type = "inputerror"
-              error = "You have no open alternate slots."
+              error = "You already have the max alternates at this weight class."
             }
 
             var.update $slot_index {
