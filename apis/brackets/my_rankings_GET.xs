@@ -3,6 +3,13 @@
 // OFFICIAL composite ranking, so a user gets the exact same "justify this
 // pick" evidence the admin rankings UI shows) but scoped to $auth.id
 // instead of admin-gated.
+//
+// A user never starts from a blank list: until they save their OWN ranking
+// for this weight (a row in user_wrestler_ranking), this returns the Mat
+// Savvy composite ranking itself as the starting point - same wrestlers,
+// same order, fully editable client-side, not yet persisted as theirs.
+// Saving (my/rankings/{weight} PUT) is what actually forks it into their
+// own user_wrestler_ranking rows; nothing here writes anything.
 query "my/rankings" verb=GET {
   api_group = "brackets"
   auth = "user"
@@ -17,57 +24,14 @@ query "my/rankings" verb=GET {
       where = ($db.user_wrestler_ranking.user_id == $auth.id) && ($db.user_wrestler_ranking.weight == $input.weight) && ($db.user_wrestler_ranking.season_year == $input.season_year)
       sort = {user_wrestler_ranking.rank: "asc"}
       return = {type: "list"}
-    } as $rows
+    } as $user_rows
 
-    var $out {
-      value = []
-    }
-
-    foreach ($rows) {
-      each as $r {
-        db.get canonical_wrestler {
-          field_name = "id"
-          field_value = $r.canonical_wrestler_id
-        } as $w
-
-        var $team_name {
-          value = null
-        }
-
-        conditional {
-          if ($w != null && $w.current_team_id != null) {
-            db.get canonical_team {
-              field_name = "id"
-              field_value = $w.current_team_id
-            } as $t
-
-            conditional {
-              if ($t != null) {
-                var.update $team_name {
-                  value = $t.name
-                }
-              }
-            }
-          }
-        }
-
-        array.push $out {
-          value = {
-            id                   : $r.id
-            canonical_wrestler_id: $r.canonical_wrestler_id
-            display_name         : $w|get:"display_name":null
-            team_name            : $team_name
-            rank                 : $r.rank
-          }
-        }
-      }
-    }
-
-    // Top-12 head-to-head cross-reference vs the OFFICIAL composite ranking
-    // (same reference point admin/rankings uses) - "justifies" a pick with
-    // real evidence regardless of who's building the list.
+    // Needed either way: as the source list itself when the user hasn't
+    // built their own yet, and as the head-to-head justification lookup
+    // below regardless of which list is being shown.
     db.query wrestler_composite_ranking {
       where = ($db.wrestler_composite_ranking.weight == $input.weight) && ($db.wrestler_composite_ranking.season_year == $input.season_year) && ($db.wrestler_composite_ranking.rank <= 15)
+      sort = {wrestler_composite_ranking.rank: "asc"}
       return = {type: "list"}
     } as $official_ranked
 
@@ -84,6 +48,102 @@ query "my/rankings" verb=GET {
 
         var.update $ranked_lookup {
           value = $ranked_lookup|set:($orr.canonical_wrestler_id|to_text):{rank: $orr.rank, display_name: $orw|get:"display_name":null}
+        }
+      }
+    }
+
+    var $out {
+      value = []
+    }
+    var $is_seeded {
+      value = false
+    }
+
+    conditional {
+      if (($user_rows|count) > 0) {
+        foreach ($user_rows) {
+          each as $r {
+            db.get canonical_wrestler {
+              field_name = "id"
+              field_value = $r.canonical_wrestler_id
+            } as $w
+
+            var $team_name {
+              value = null
+            }
+
+            conditional {
+              if ($w != null && $w.current_team_id != null) {
+                db.get canonical_team {
+                  field_name = "id"
+                  field_value = $w.current_team_id
+                } as $t
+
+                conditional {
+                  if ($t != null) {
+                    var.update $team_name {
+                      value = $t.name
+                    }
+                  }
+                }
+              }
+            }
+
+            array.push $out {
+              value = {
+                id                   : $r.id
+                canonical_wrestler_id: $r.canonical_wrestler_id
+                display_name         : $w|get:"display_name":null
+                team_name            : $team_name
+                rank                 : $r.rank
+              }
+            }
+          }
+        }
+      }
+      else {
+        var.update $is_seeded {
+          value = true
+        }
+
+        foreach ($official_ranked) {
+          each as $orr {
+            db.get canonical_wrestler {
+              field_name = "id"
+              field_value = $orr.canonical_wrestler_id
+            } as $w
+
+            var $team_name {
+              value = null
+            }
+
+            conditional {
+              if ($w != null && $w.current_team_id != null) {
+                db.get canonical_team {
+                  field_name = "id"
+                  field_value = $w.current_team_id
+                } as $t
+
+                conditional {
+                  if ($t != null) {
+                    var.update $team_name {
+                      value = $t.name
+                    }
+                  }
+                }
+              }
+            }
+
+            array.push $out {
+              value = {
+                id                   : null
+                canonical_wrestler_id: $orr.canonical_wrestler_id
+                display_name         : $w|get:"display_name":null
+                team_name            : $team_name
+                rank                 : $orr.rank
+              }
+            }
+          }
         }
       }
     }
@@ -161,7 +221,8 @@ query "my/rankings" verb=GET {
   }
 
   response = {
-    rankings: $out_with_h2h
+    rankings : $out_with_h2h
+    is_seeded: $is_seeded
   }
   guid = "T3wYq7XtBn5McLpRo8HbFd2GkSj9"
 }

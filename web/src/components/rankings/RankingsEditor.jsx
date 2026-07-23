@@ -154,6 +154,12 @@ export default function RankingsEditor({
             </Button>
           </div>
 
+          {data?.is_seeded && rows?.length > 0 && (
+            <div className="border-b border-mat-700 bg-gold-500/[0.06] px-4 py-2 text-xs text-gold-300">
+              Starting from the Mat Savvy Rankings — reorder, add, or remove anyone, then save to make it yours.
+            </div>
+          )}
+
           {isLoading || !rows ? (
             <div className="p-6 text-sm text-ink-500">Loading…</div>
           ) : rows.length === 0 ? (
@@ -228,7 +234,14 @@ export default function RankingsEditor({
           )}
         </Card>
 
-        <Card className="flex max-h-[calc(100vh-96px)] flex-col p-0 lg:sticky lg:top-6">
+        {/* max-h is a flat fraction of viewport height, not `100vh - Npx` -
+            the latter ignored how tall this page's own title/subtitle/
+            season/weight-tab header block above the grid actually is,
+            so the card could still end up taller than the room actually
+            left below that header, forcing the whole page (and the
+            rankings card next to it, which stretches to match via the
+            grid's default row-stretch) to overflow. */}
+        <Card className="flex max-h-[65vh] flex-col p-0 lg:sticky lg:top-6">
           <div className="shrink-0 border-b border-mat-700 px-4 py-3">
             <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-200">{poolTitle ?? `Add from ${weight} lbs roster`}</h2>
             <div className="relative">
