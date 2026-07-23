@@ -90,14 +90,30 @@ export default function DraftRoom() {
 
   const canAutopickForCurrent = myMember && (myMember.membership_id === draft?.current_membership_id || myMember.role === 'owner' || myMember.role === 'commissioner')
 
+  const isComplete = draft?.status === 'complete'
+
   const picksByRound = useMemo(() => {
     const grouped = new Map()
     for (const p of picks) {
       if (!grouped.has(p.round_number)) grouped.set(p.round_number, [])
       grouped.get(p.round_number).push(p)
     }
-    return [...grouped.entries()].sort((a, b) => b[0] - a[0])
+    // Reviewing a finished draft reads naturally round 1 first; a live
+    // draft in progress is more useful with the newest pick on top.
+    return [...grouped.entries()].sort((a, b) => (isComplete ? a[0] - b[0] : b[0] - a[0]))
+  }, [picks, isComplete])
+
+  const picksByTeam = useMemo(() => {
+    const grouped = new Map()
+    for (const p of picks) {
+      if (!grouped.has(p.membership_id)) grouped.set(p.membership_id, [])
+      grouped.get(p.membership_id).push(p)
+    }
+    for (const list of grouped.values()) list.sort((a, b) => a.overall_pick_number - b.overall_pick_number)
+    return grouped
   }, [picks])
+
+  const [reviewView, setReviewView] = useState('round')
 
   if (isLoading) {
     return (
@@ -202,15 +218,87 @@ export default function DraftRoom() {
         </div>
       </Card>
 
-      {draft.status === 'complete' ? (
-        <Card className="p-8 text-center">
-          <Swords size={28} className="mx-auto text-gold-400" />
-          <p className="mt-3 text-sm font-semibold text-ink-100">The draft is complete.</p>
-          <p className="mt-1 text-xs text-ink-500">
-            {isTournamentDraft
-              ? 'Tournament rosters are locked in for this week only.'
-              : 'Rosters are locked in — head to the league to set your first lineup.'}
-          </p>
+      {isComplete && (
+        <Card className="flex flex-wrap items-center gap-3 p-4">
+          <Swords size={20} className="shrink-0 text-gold-400" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink-100">The draft is complete — picks are locked, but the board below is still browsable any time.</p>
+            <p className="mt-0.5 text-xs text-ink-500">
+              {isTournamentDraft
+                ? 'Tournament rosters are locked in for this week only.'
+                : 'Rosters are locked in — head to the league to set your first lineup.'}
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {isComplete ? (
+        <Card className="p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Every pick, {picks.length} total</div>
+            <div className="flex items-center gap-1 rounded-lg border border-mat-700 bg-mat-850 p-1">
+              <button
+                type="button"
+                onClick={() => setReviewView('round')}
+                className={'rounded-md px-2.5 py-1 text-xs font-bold transition-colors ' + (reviewView === 'round' ? 'bg-mat-700 text-gold-400' : 'text-ink-500 hover:text-ink-200')}
+              >
+                By round
+              </button>
+              <button
+                type="button"
+                onClick={() => setReviewView('team')}
+                className={'rounded-md px-2.5 py-1 text-xs font-bold transition-colors ' + (reviewView === 'team' ? 'bg-mat-700 text-gold-400' : 'text-ink-500 hover:text-ink-200')}
+              >
+                By team
+              </button>
+            </div>
+          </div>
+
+          {reviewView === 'round' ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {picksByRound.map(([round, roundPicks]) => (
+                <div key={round}>
+                  <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-600">Round {round}</div>
+                  <div className="space-y-1">
+                    {roundPicks.map((p) => {
+                      const member = members.find((m) => m.membership_id === p.membership_id)
+                      return (
+                        <div key={p.overall_pick_number} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-ink-300">{p.wrestler?.display_name}</span>
+                          <span className="shrink-0 text-ink-600">
+                            {member?.user?.display_name || member?.user?.username} · {p.weight}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {members.map((m) => {
+                const teamPicks = picksByTeam.get(m.membership_id) ?? []
+                return (
+                  <div key={m.membership_id}>
+                    <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-ink-300">
+                      <Avatar user={m.user} size="sm" /> {m.user?.display_name || m.user?.username}
+                    </div>
+                    <div className="space-y-1">
+                      {teamPicks.map((p) => (
+                        <div key={p.overall_pick_number} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-ink-300">{p.wrestler?.display_name}</span>
+                          <span className="shrink-0 text-ink-600">
+                            R{p.round_number} · {p.weight}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
