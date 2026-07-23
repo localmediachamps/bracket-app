@@ -114,7 +114,9 @@ export default function TeamProfile() {
               >
                 <span className="w-9 shrink-0 font-mono text-xs font-bold text-gold-500">{w.weight_class || '—'}</span>
                 <span className="min-w-0 flex-1 truncate font-semibold text-ink-100">{w.display_name}</span>
-                <span className="shrink-0 text-xs text-ink-500">{w.match_count} matches</span>
+                <span className="shrink-0 font-mono text-xs font-bold text-ink-300">
+                  {w.wins != null ? `${w.wins}-${w.losses}` : `${w.match_count} matches`}
+                </span>
               </Link>
             ))}
           </div>

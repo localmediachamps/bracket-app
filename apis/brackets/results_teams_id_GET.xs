@@ -97,6 +97,14 @@ query "results/teams/{id}" verb=GET {
           value = null
         }
 
+        var $season_wins {
+          value = 0
+        }
+
+        var $season_losses {
+          value = 0
+        }
+
         var $bounds {
           value = $season_bounds[$l.season_label]
         }
@@ -105,13 +113,30 @@ query "results/teams/{id}" verb=GET {
           if ($bounds != null) {
             db.query wrestler_match_history {
               where = (($db.wrestler_match_history.winner_canonical_wrestler_id == $l.canonical_wrestler_id) || ($db.wrestler_match_history.loser_canonical_wrestler_id == $l.canonical_wrestler_id)) && ($db.wrestler_match_history.occurred_at >= $bounds.start) && ($db.wrestler_match_history.occurred_at <= $bounds.end)
-              return = {type: "single"}
-            } as $sample_match
+              return = {type: "list"}
+            } as $season_matches
 
-            conditional {
-              if ($sample_match != null) {
-                var.update $weight_class {
-                  value = $sample_match.weight_class
+            foreach ($season_matches) {
+              each as $sm {
+                conditional {
+                  if ($weight_class == null) {
+                    var.update $weight_class {
+                      value = $sm.weight_class
+                    }
+                  }
+                }
+
+                conditional {
+                  if ($sm.winner_canonical_wrestler_id == $l.canonical_wrestler_id) {
+                    math.add $season_wins {
+                      value = 1
+                    }
+                  }
+                  else {
+                    math.add $season_losses {
+                      value = 1
+                    }
+                  }
                 }
               }
             }
@@ -124,6 +149,8 @@ query "results/teams/{id}" verb=GET {
             display_name: $wrestler_name_map[$l.canonical_wrestler_id]
             weight_class: $weight_class
             match_count : $l.match_count
+            wins        : $season_wins
+            losses      : $season_losses
           }
         }
 
