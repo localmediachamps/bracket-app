@@ -8,6 +8,7 @@ import { toast } from '../lib/store'
 import { Badge, Button, Card, Input, Select, Skeleton, Textarea } from '../components/ui'
 import InviteMemberBox from '../components/league/InviteMemberBox'
 import WeeksPanel from '../components/league/WeeksPanel'
+import { cn } from '../lib/utils'
 
 const rise = {
   hidden: { opacity: 0, y: 14 },
@@ -51,8 +52,9 @@ export default function LeagueSettings() {
   const [description, setDescription] = useState('')
   const [privacy, setPrivacy] = useState('private')
   const [memberLimit, setMemberLimit] = useState('')
-  const [starterSlots, setStarterSlots] = useState('')
+  const [alternateMode, setAlternateMode] = useState('per_weight')
   const [alternateSlots, setAlternateSlots] = useState('')
+  const [alternatePoolSize, setAlternatePoolSize] = useState('')
 
   useEffect(() => {
     if (!league) return
@@ -60,8 +62,9 @@ export default function LeagueSettings() {
     setDescription(league.description ?? '')
     setPrivacy(league.privacy ?? 'private')
     setMemberLimit(league.member_limit != null ? String(league.member_limit) : '')
-    setStarterSlots(String(league.roster_starter_slots ?? 10))
+    setAlternateMode(league.roster_alternate_mode ?? 'per_weight')
     setAlternateSlots(String(league.roster_alternate_slots ?? 1))
+    setAlternatePoolSize(String(league.roster_alternate_pool_size ?? 5))
   }, [league])
 
   const saveInfoMutation = useMutation({
@@ -82,8 +85,9 @@ export default function LeagueSettings() {
   const saveRosterMutation = useMutation({
     mutationFn: () =>
       api.updateLeague(id, {
-        roster_starter_slots: Number(starterSlots),
-        roster_alternate_slots: Number(alternateSlots),
+        roster_alternate_mode: alternateMode,
+        roster_alternate_slots: alternateMode === 'per_weight' ? Number(alternateSlots) : undefined,
+        roster_alternate_pool_size: alternateMode === 'flat_pool' ? Number(alternatePoolSize) : undefined,
       }),
     onSuccess: () => {
       toast.success('Roster configuration saved')
@@ -151,12 +155,64 @@ export default function LeagueSettings() {
           description={
             draftHasStarted
               ? "Locked once the draft starts - changing roster shape after picks exist would leave rosters inconsistent with what was actually drafted."
-              : "Starters: one required roster slot per weight class (drafted first). Alternates: bench/backup slot(s) per weight class, for tactical swaps during lineup-setting (e.g. benching an injured or overmatched starter). Total roster size = starters + (alternates × number of weight classes)."
+              : "Every team gets one starter per weight class - that's fixed by how many weight classes college wrestling has, not something to configure. What you do control is the bench: either a fixed number of backups at every weight, or one shared pool of backups your teams can stack however they want."
           }
         >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input label="Starters (one per weight class)" type="number" min={1} value={starterSlots} onChange={(e) => setStarterSlots(e.target.value)} disabled={draftHasStarted} />
-            <Input label="Alternates per weight class" type="number" min={0} value={alternateSlots} onChange={(e) => setAlternateSlots(e.target.value)} disabled={draftHasStarted} />
+          <div className="space-y-4">
+            <div className="rounded-lg border border-mat-700 bg-mat-850/50 px-3.5 py-2.5">
+              <p className="text-xs font-bold uppercase tracking-wide text-ink-500">Starters</p>
+              <p className="mt-0.5 text-sm text-ink-200">10 — one per weight class (125 through 285 lbs), always.</p>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">Bench / alternates</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  disabled={draftHasStarted}
+                  onClick={() => setAlternateMode('per_weight')}
+                  className={cn(
+                    'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                    alternateMode === 'per_weight' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+                  )}
+                >
+                  <p className="text-sm font-bold text-ink-100">One backup per weight</p>
+                  <p className="mt-0.5 text-xs text-ink-500">A fixed number of bench slots at every single weight class.</p>
+                </button>
+                <button
+                  type="button"
+                  disabled={draftHasStarted}
+                  onClick={() => setAlternateMode('flat_pool')}
+                  className={cn(
+                    'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                    alternateMode === 'flat_pool' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+                  )}
+                >
+                  <p className="text-sm font-bold text-ink-100">Custom total pool</p>
+                  <p className="mt-0.5 text-xs text-ink-500">One shared number of bench spots - stack them on any weight(s) you want.</p>
+                </button>
+              </div>
+            </div>
+
+            {alternateMode === 'per_weight' ? (
+              <Input
+                label="Backups per weight class"
+                type="number"
+                min={0}
+                value={alternateSlots}
+                onChange={(e) => setAlternateSlots(e.target.value)}
+                disabled={draftHasStarted}
+              />
+            ) : (
+              <Input
+                label="Total bench pool size"
+                type="number"
+                min={0}
+                value={alternatePoolSize}
+                onChange={(e) => setAlternatePoolSize(e.target.value)}
+                disabled={draftHasStarted}
+              />
+            )}
           </div>
           {!draftHasStarted && (
             <Button className="mt-3" onClick={() => saveRosterMutation.mutate()} loading={saveRosterMutation.isPending}>

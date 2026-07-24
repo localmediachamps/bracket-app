@@ -40,12 +40,30 @@ table league {
     // victory_points, medal_bonus, opponent multiplier tiers, placement_points
     json? scoring_config?
 
+    // NOT a commissioner setting - college wrestling always has one starter
+    // slot per weight class, so this is derived from the season's own
+    // season_weight_class count wherever rounds/roster size are computed
+    // (see leagues_draft_start_POST.xs), never edited directly. Kept as a
+    // stored field for display/back-compat rather than dropped.
     int roster_starter_slots?=10
 
-    // Alternates PER weight class (not a flat total) - default 1 means one
-    // bench/backup slot at every weight, so a 10-weight season gives each
-    // team roster_starter_slots + (roster_alternate_slots * 10) = 20 slots.
+    // Which of the two alternate models this league uses - see
+    // roster_alternate_slots / roster_alternate_pool_size below.
+    enum roster_alternate_mode?="per_weight" {
+      values = ["per_weight", "flat_pool"]
+    }
+
+    // roster_alternate_mode=per_weight only: alternates PER weight class,
+    // default 1 means one bench/backup slot at every weight, so a 10-weight
+    // season gives each team roster_starter_slots + (roster_alternate_slots
+    // * 10) total slots. Ignored when mode=flat_pool.
     int roster_alternate_slots?=1
+
+    // roster_alternate_mode=flat_pool only: a single bench pool size shared
+    // across ALL weights (e.g. 5 total bench spots the team can stack
+    // however they want - three backup 125s and none anywhere else is
+    // legal). Ignored when mode=per_weight.
+    int? roster_alternate_pool_size?=5
 
     // Draft timing/format settings (pick time limit, snake order seed, etc.)
     json? draft_config?

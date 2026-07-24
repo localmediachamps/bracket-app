@@ -15,7 +15,9 @@ query "leagues/{id}" verb=PATCH {
     text? avatar_emoji? filters=trim
     json? scoring_config?
     int? roster_starter_slots? filters=min:1
+    text? roster_alternate_mode? filters=trim|lower
     int? roster_alternate_slots? filters=min:0
+    int? roster_alternate_pool_size? filters=min:0
     json? draft_config?
     json? bowl_config?
   }
@@ -67,6 +69,24 @@ query "leagues/{id}" verb=PATCH {
     precondition ($league.owner_id == $auth.id || $is_league_admin || $is_site_admin) {
       error_type = "accessdenied"
       error = "Only the league owner or a commissioner can update this league."
+    }
+
+    var $changing_roster_shape {
+      value = ($input.roster_starter_slots != null || $input.roster_alternate_mode != null || $input.roster_alternate_slots != null || $input.roster_alternate_pool_size != null)
+    }
+
+    precondition ($changing_roster_shape == false || $league.status == "forming") {
+      error_type = "inputerror"
+      error = "Roster shape is locked once the draft has started - changing it after picks exist would leave rosters inconsistent with what was actually drafted."
+    }
+
+    conditional {
+      if ($input.roster_alternate_mode != null) {
+        precondition ($input.roster_alternate_mode == "per_weight" || $input.roster_alternate_mode == "flat_pool") {
+          error_type = "inputerror"
+          error = "roster_alternate_mode must be per_weight or flat_pool."
+        }
+      }
     }
 
     var $payload {
@@ -130,9 +150,25 @@ query "leagues/{id}" verb=PATCH {
     }
 
     conditional {
+      if ($input.roster_alternate_mode != null) {
+        var.update $payload {
+          value = $payload|set:"roster_alternate_mode":$input.roster_alternate_mode
+        }
+      }
+    }
+
+    conditional {
       if ($input.roster_alternate_slots != null) {
         var.update $payload {
           value = $payload|set:"roster_alternate_slots":$input.roster_alternate_slots
+        }
+      }
+    }
+
+    conditional {
+      if ($input.roster_alternate_pool_size != null) {
+        var.update $payload {
+          value = $payload|set:"roster_alternate_pool_size":$input.roster_alternate_pool_size
         }
       }
     }

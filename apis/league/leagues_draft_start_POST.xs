@@ -112,16 +112,40 @@ query "leagues/draft/start" verb=POST {
           error = "This league's preseason draft has already been started or completed."
         }
 
-        // roster_alternate_slots is PER weight class (a bench/backup slot at
-        // every weight), not a flat total - total rounds = starters + one
-        // round per weight per alternate slot.
+        // Starters = one per weight class, always - derived from the
+        // season's real weight classes rather than trusting the stored
+        // roster_starter_slots field, since that's no longer a commissioner
+        // setting (see league.xs). Alternates depend on roster_alternate_mode:
+        // per_weight = one round per weight per alternate slot; flat_pool =
+        // a single flat number of extra rounds shared across all weights.
         db.query season_weight_class {
           where = $db.season_weight_class.season_id == $league.season_id
           return = {type: "list"}
         } as $preseason_weight_classes
 
+        var $starter_rounds {
+          value = ($preseason_weight_classes|count)
+        }
+
+        var $alternate_rounds {
+          value = 0
+        }
+
+        conditional {
+          if ($league.roster_alternate_mode == "flat_pool") {
+            var.update $alternate_rounds {
+              value = ($league.roster_alternate_pool_size != null ? $league.roster_alternate_pool_size : 0)
+            }
+          }
+          else {
+            var.update $alternate_rounds {
+              value = ($league.roster_alternate_slots * ($preseason_weight_classes|count))
+            }
+          }
+        }
+
         var.update $rounds {
-          value = $league.roster_starter_slots + ($league.roster_alternate_slots * ($preseason_weight_classes|count))
+          value = ($starter_rounds + $alternate_rounds)
         }
       }
     }

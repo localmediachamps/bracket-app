@@ -265,34 +265,103 @@ query "leagues/draft/autopick" verb=POST {
           }
 
           else {
-            // roster_alternate_slots is PER weight class - find this team's
-            // first weight that doesn't already have a full set of
-            // alternates yet, the same way the starter branch above finds
-            // the first open starter weight. The old version always chose
-            // weight_classes[0] outright, so every alternate round for
-            // every team piled up at the season's first weight class
-            // regardless of whether it already had one.
-            foreach ($weight_classes) {
-              each as $wc2 {
-                conditional {
-                  if ($chosen_season_weight_class_id == null) {
-                    db.query roster_slot {
-                      where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $on_clock_membership.id && $db.roster_slot.season_weight_class_id == $wc2.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
-                      return = {type: "list"}
-                    } as $wc_alternates
+            conditional {
+              if ($league.roster_alternate_mode == "flat_pool") {
+                // flat_pool: no per-weight cap, so any weight class works as
+                // long as it still has an undrafted, rostered candidate -
+                // just always picking weight_classes[0] would eventually
+                // fail outright once THAT weight's real candidate pool ran
+                // dry, even with plenty of room left in the flat pool.
+                db.query roster_slot {
+                  where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $on_clock_membership.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+                  return = {type: "list"}
+                } as $team_alternates_flat
 
+                foreach ($weight_classes) {
+                  each as $wc3 {
                     conditional {
-                      if (($wc_alternates|count) < $league.roster_alternate_slots) {
-                        var.update $chosen_season_weight_class_id {
-                          value = $wc2.id
+                      if ($chosen_season_weight_class_id == null) {
+                        var $wc3_weight_text {
+                          value = ($wc3.weight|to_text)
                         }
 
-                        var.update $chosen_weight {
-                          value = $wc2.weight
+                        db.query canonical_wrestler {
+                          where = $db.canonical_wrestler.current_weight_class == $wc3_weight_text
+                          sort = {canonical_wrestler.id: "asc"}
+                          return = {type: "list", paging: {page: 1, per_page: 500}}
+                        } as $wc3_candidates
+
+                        var $wc3_has_candidate {
+                          value = false
                         }
 
-                        var.update $slot_index {
-                          value = ($wc_alternates|count) + 1
+                        foreach ($wc3_candidates.items) {
+                          each as $wc3_cand {
+                            var $wc3_cand_key {
+                              value = ($wc3_cand.id|to_text)
+                            }
+
+                            conditional {
+                              if (($drafted_wrestler_map|has:$wc3_cand_key) == false && ($autopick_season_roster_map|has:$wc3_cand_key)) {
+                                var.update $wc3_has_candidate {
+                                  value = true
+                                }
+                              }
+                            }
+                          }
+                        }
+
+                        conditional {
+                          if ($wc3_has_candidate) {
+                            var.update $chosen_season_weight_class_id {
+                              value = $wc3.id
+                            }
+
+                            var.update $chosen_weight {
+                              value = $wc3.weight
+                            }
+
+                            var.update $slot_index {
+                              value = ($team_alternates_flat|count) + 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              else {
+                // per_weight - find this team's first weight that doesn't
+                // already have a full set of alternates yet, the same way
+                // the starter branch above finds the first open starter
+                // weight. The old version always chose weight_classes[0]
+                // outright, so every alternate round for every team piled
+                // up at the season's first weight class regardless of
+                // whether it already had one.
+                foreach ($weight_classes) {
+                  each as $wc2 {
+                    conditional {
+                      if ($chosen_season_weight_class_id == null) {
+                        db.query roster_slot {
+                          where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $on_clock_membership.id && $db.roster_slot.season_weight_class_id == $wc2.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+                          return = {type: "list"}
+                        } as $wc_alternates
+
+                        conditional {
+                          if (($wc_alternates|count) < $league.roster_alternate_slots) {
+                            var.update $chosen_season_weight_class_id {
+                              value = $wc2.id
+                            }
+
+                            var.update $chosen_weight {
+                              value = $wc2.weight
+                            }
+
+                            var.update $slot_index {
+                              value = ($wc_alternates|count) + 1
+                            }
+                          }
                         }
                       }
                     }

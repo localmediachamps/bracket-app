@@ -70,12 +70,23 @@ query "leagues/waiver/claim" verb=POST {
       error = "That roster spot isn't yours to drop."
     }
 
+    // A flat_pool alternate isn't tied to any one weight (that's the whole
+    // point of the pool being flat), so swapping one in off waivers can
+    // change weight class - the new slot just gets re-pointed at whichever
+    // season_weight_class actually matches the incoming wrestler. Starter
+    // slots and per_weight alternate slots are still weight-locked: the
+    // slot itself represents one specific weight, so the incoming wrestler
+    // must match it exactly.
+    var $is_flat_pool_alternate {
+      value = ($drop_slot.slot_type == "alternate" && $league.roster_alternate_mode == "flat_pool")
+    }
+
     var $drop_weight {
       value = null
     }
 
     conditional {
-      if ($drop_slot.season_weight_class_id != null) {
+      if ($drop_slot.season_weight_class_id != null && $is_flat_pool_alternate == false) {
         db.get season_weight_class {
           field_name = "id"
           field_value = $drop_slot.season_weight_class_id
@@ -90,6 +101,48 @@ query "leagues/waiver/claim" verb=POST {
     precondition ($drop_weight == null || $wrestler.current_weight_class == ($drop_weight|to_text)) {
       error_type = "inputerror"
       error = "That wrestler competes at " ~ $wrestler.current_weight_class ~ " lbs, not " ~ ($drop_weight|to_text) ~ " lbs."
+    }
+
+    // For a flat_pool alternate, look up the season_weight_class that
+    // actually matches the INCOMING wrestler's weight, rather than reusing
+    // the dropped wrestler's - this is what lets a flat-pool swap change
+    // weight class at all.
+    var $new_slot_season_weight_class_id {
+      value = $drop_slot.season_weight_class_id
+    }
+
+    conditional {
+      if ($is_flat_pool_alternate) {
+        db.query season_weight_class {
+          where = $db.season_weight_class.season_id == $league.season_id
+          return = {type: "list"}
+        } as $league_weight_classes
+
+        var $incoming_weight_class_id {
+          value = null
+        }
+
+        foreach ($league_weight_classes) {
+          each as $lwc {
+            conditional {
+              if ($incoming_weight_class_id == null && ($lwc.weight|to_text) == $wrestler.current_weight_class) {
+                var.update $incoming_weight_class_id {
+                  value = $lwc.id
+                }
+              }
+            }
+          }
+        }
+
+        precondition ($incoming_weight_class_id != null) {
+          error_type = "inputerror"
+          error = "Couldn't find this league's weight class matching " ~ $wrestler.current_weight_class ~ " lbs."
+        }
+
+        var.update $new_slot_season_weight_class_id {
+          value = $incoming_weight_class_id
+        }
+      }
     }
 
     // Must actually be on that season's real roster - same reasoning as the
@@ -139,7 +192,7 @@ query "leagues/waiver/claim" verb=POST {
         league_id              : $league.id
         membership_id          : $my_membership.id
         canonical_wrestler_id  : $input.canonical_wrestler_id
-        season_weight_class_id : $drop_slot.season_weight_class_id
+        season_weight_class_id : $new_slot_season_weight_class_id
         slot_type              : $drop_slot.slot_type
         slot_index             : $drop_slot.slot_index
         status                 : "active"

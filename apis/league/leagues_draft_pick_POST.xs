@@ -220,25 +220,50 @@ query "leagues/draft/pick" verb=POST {
           }
 
           else {
-            // roster_alternate_slots is PER weight class - an alternate at
-            // 125 doesn't compete with an alternate at 133 for the cap, the
-            // same way starters don't.
-            db.query roster_slot {
-              where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $my_membership.id && $db.roster_slot.season_weight_class_id == $input.season_weight_class_id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
-              return = {type: "list"}
-            } as $existing_alternates
+            conditional {
+              if ($league.roster_alternate_mode == "flat_pool") {
+                // flat_pool: one shared cap across ALL weights - a team can
+                // stack every bench spot on one weight if they want, as long
+                // as the TOTAL doesn't exceed roster_alternate_pool_size.
+                db.query roster_slot {
+                  where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $my_membership.id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+                  return = {type: "list"}
+                } as $existing_alternates_flat
 
-            var $alternate_count {
-              value = $existing_alternates|count
-            }
+                var $alternate_count_flat {
+                  value = $existing_alternates_flat|count
+                }
 
-            precondition ($alternate_count < $league.roster_alternate_slots) {
-              error_type = "inputerror"
-              error = "You already have the max alternates at this weight class."
-            }
+                precondition ($alternate_count_flat < $league.roster_alternate_pool_size) {
+                  error_type = "inputerror"
+                  error = "You already have the max alternates for your roster."
+                }
 
-            var.update $slot_index {
-              value = $alternate_count + 1
+                var.update $slot_index {
+                  value = $alternate_count_flat + 1
+                }
+              }
+              else {
+                // per_weight - an alternate at 125 doesn't compete with an
+                // alternate at 133 for the cap, the same way starters don't.
+                db.query roster_slot {
+                  where = $db.roster_slot.league_id == $league.id && $db.roster_slot.membership_id == $my_membership.id && $db.roster_slot.season_weight_class_id == $input.season_weight_class_id && $db.roster_slot.slot_type == "alternate" && $db.roster_slot.status == "active"
+                  return = {type: "list"}
+                } as $existing_alternates
+
+                var $alternate_count {
+                  value = $existing_alternates|count
+                }
+
+                precondition ($alternate_count < $league.roster_alternate_slots) {
+                  error_type = "inputerror"
+                  error = "You already have the max alternates at this weight class."
+                }
+
+                var.update $slot_index {
+                  value = $alternate_count + 1
+                }
+              }
             }
           }
         }
