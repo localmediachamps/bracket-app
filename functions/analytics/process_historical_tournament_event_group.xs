@@ -95,6 +95,7 @@ function process_historical_tournament_event_group {
         var $w_count { value = ($wrestler_names|count) }
 
         var $starter_count { value = 0 }
+        var $starter_names { value = [] }
 
         foreach ($wrestler_names) {
           each as $wn {
@@ -107,6 +108,7 @@ function process_historical_tournament_event_group {
                 conditional {
                   if ($input.starter_wrestler_ids|has:$wid_key) {
                     math.add $starter_count { value = 1 }
+                    array.push $starter_names { value = $wn }
                   }
                 }
               }
@@ -118,11 +120,13 @@ function process_historical_tournament_event_group {
 
         db.add historical_tournament_event_team {
           data = {
-            event_id         : $event.id
-            canonical_team_id: $resolved_team_id
-            team_name_raw    : $sn
-            wrestler_count   : $w_count
-            starter_count    : $starter_count
+            event_id             : $event.id
+            canonical_team_id    : $resolved_team_id
+            team_name_raw        : $sn
+            wrestler_count       : $w_count
+            starter_count        : $starter_count
+            wrestler_names       : $wrestler_names
+            starter_wrestler_names: $starter_names
           }
         } as $new_team_row
 

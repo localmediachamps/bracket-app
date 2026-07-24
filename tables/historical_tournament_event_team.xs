@@ -24,6 +24,14 @@ table historical_tournament_event_team {
 
     int wrestler_count?
     int starter_count?
+
+    // Actual wrestler names (raw text), not just counts - needed to
+    // correctly dedupe/merge sibling sub-events of one bigger real event
+    // (e.g. "Rutgers Quad" is really 5 separate 2-team dual rows in the
+    // source data, one per opponent) without double-counting a wrestler
+    // who wrestled multiple matches at the same event under a summed count.
+    json? wrestler_names?
+    json? starter_wrestler_names?
   }
 
   index = [
