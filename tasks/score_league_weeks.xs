@@ -195,6 +195,28 @@ task score_league_weeks {
                       value = $league_overrides|get:"placement_points_defaults":$default_config.placement_points_defaults
                     }
 
+                    // Conference/nationals always score every match at full
+                    // value - postseason rosters are exclusively in
+                    // tournament play that week, so there's no dual-vs-
+                    // tournament fairness gap for averaging to correct.
+                    // head_to_head honors the league's own setting (default
+                    // full_sum, commissioner can opt into averaging).
+                    var $configured_scoring_mode {
+                      value = $league_overrides|get:"multi_match_scoring_mode":$default_config.multi_match_scoring_mode
+                    }
+
+                    var $effective_scoring_mode {
+                      value = "full_sum"
+                    }
+
+                    conditional {
+                      if ($week.week_type == "head_to_head") {
+                        var.update $effective_scoring_mode {
+                          value = $configured_scoring_mode
+                        }
+                      }
+                    }
+
                     conditional {
                       if ($week.week_type == "head_to_head" || $week.week_type == "conference" || $week.week_type == "nationals") {
                         function.run score_league_lineups_for_week {
@@ -207,6 +229,7 @@ task score_league_weeks {
                             victory_points : $victory_points
                             medal_bonus    : $medal_bonus
                             opponent_multipliers: $opponent_multipliers
+                            scoring_mode   : $effective_scoring_mode
                           }
                         } as $lineup_result
 

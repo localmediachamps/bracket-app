@@ -8,12 +8,18 @@
 // standings-computation time (not built yet - out of scope this increment).
 //
 // Per real match: base victory_points[victory_type] (0 if this wrestler
-// lost - losses count as 0 toward the average), times an opponent-quality
-// multiplier looked up against wrestler_composite_ranking - same tier
-// lookup shape as functions/scoring/score_entry.xs's bracket/pickem scorer,
-// a graceful no-op (1x) until that table has real rows. lineup_slot.points
-// is the AVERAGE of per-match points across the week (not a sum), plus a
-// flat medal_bonus if one of the week's matches was an "Nth Place Match"
+// lost - losses count as 0), times an opponent-quality multiplier looked up
+// against wrestler_composite_ranking - same tier lookup shape as
+// functions/scoring/score_entry.xs's bracket/pickem scorer, a graceful no-op
+// (1x) until that table has real rows. When a wrestler has more than one
+// real match in the week, lineup_slot.points is either the FULL SUM of
+// per-match points (scoring_mode = "full_sum", the default - every match
+// scores at full value) or the AVERAGE across the week (scoring_mode =
+// "average" - only meaningful for head_to_head weeks where a tournament
+// wrestler's multiple matches would otherwise unfairly outscore a
+// dual-meet-only wrestler's single match; the caller decides which mode
+// applies per week_type, see tasks/score_league_weeks.xs), plus a flat
+// medal_bonus if one of the week's matches was an "Nth Place Match"
 // (round_label parsed the same way Results.jsx's placementInfo() does -
 // winner of that match takes the Nth place, loser takes N+1th).
 function score_league_lineups_for_week {
@@ -26,6 +32,7 @@ function score_league_lineups_for_week {
     json victory_points
     json medal_bonus
     json opponent_multipliers
+    text scoring_mode?="full_sum"
   }
 
   stack {
@@ -275,20 +282,33 @@ function score_league_lineups_for_week {
                   }
                 }
 
-                var $avg_points {
+                // full_sum (default): every match scores at full value.
+                // average: normalize multi-match weeks down to a single
+                // match's worth, so a tournament wrestler's several matches
+                // don't automatically outscore a dual-only wrestler's one.
+                var $match_points_total {
                   value = 0
                 }
 
                 conditional {
-                  if ($match_count > 0) {
-                    var.update $avg_points {
-                      value = $points_sum / $match_count
+                  if ($input.scoring_mode == "average") {
+                    conditional {
+                      if ($match_count > 0) {
+                        var.update $match_points_total {
+                          value = $points_sum / $match_count
+                        }
+                      }
+                    }
+                  }
+                  else {
+                    var.update $match_points_total {
+                      value = $points_sum
                     }
                   }
                 }
 
                 var $slot_total {
-                  value = $avg_points + $medal_amount
+                  value = $match_points_total + $medal_amount
                 }
 
                 db.edit lineup_slot {

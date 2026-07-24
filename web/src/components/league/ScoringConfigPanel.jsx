@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Save } from 'lucide-react'
 import { api } from '../../lib/api'
 import { toast } from '../../lib/store'
+import { cn } from '../../lib/utils'
 import { Button, Input } from '../ui'
 
 const VICTORY_TYPES = [
@@ -35,6 +36,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
   const [medalBonus, setMedalBonus] = useState({})
   const [multipliers, setMultipliers] = useState({})
   const [h2hPoints, setH2hPoints] = useState({ win: '', tie: '', loss: '' })
+  const [scoringMode, setScoringMode] = useState('full_sum')
 
   useEffect(() => {
     if (!defaults) return
@@ -51,6 +53,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
       )
     )
     setH2hPoints({ win: String(h2h.win ?? 2), tie: String(h2h.tie ?? 1), loss: String(h2h.loss ?? 0) })
+    setScoringMode(scoringConfig?.multi_match_scoring_mode ?? defaults.multi_match_scoring_mode ?? 'full_sum')
   }, [defaults, scoringConfig])
 
   const saveMutation = useMutation({
@@ -68,6 +71,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
           medal_bonus: { ...toNumMap(medalBonus), default: 0 },
           opponent_multipliers,
           head_to_head_result_points: toNumMap(h2hPoints),
+          multi_match_scoring_mode: scoringMode,
         },
       })
     },
@@ -142,12 +146,50 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
 
       <div>
         <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Head-to-head result — flat points on top of the match average, for winning/tying/losing your weekly matchup
+          Head-to-head result — flat points on top of the match total, for winning/tying/losing your weekly matchup
         </p>
         <div className="grid grid-cols-3 gap-2 sm:max-w-sm">
           <Input label="Win" type="number" step="0.5" value={h2hPoints.win} onChange={(e) => setH2hPoints((v) => ({ ...v, win: e.target.value }))} disabled={!isCommissioner} />
           <Input label="Tie" type="number" step="0.5" value={h2hPoints.tie} onChange={(e) => setH2hPoints((v) => ({ ...v, tie: e.target.value }))} disabled={!isCommissioner} />
           <Input label="Loss" type="number" step="0.5" value={h2hPoints.loss} onChange={(e) => setH2hPoints((v) => ({ ...v, loss: e.target.value }))} disabled={!isCommissioner} />
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-1 text-xs font-bold uppercase tracking-wide text-ink-500">
+          Multiple matches in a week — regular-season weeks only
+        </p>
+        <p className="mb-2 text-xs text-ink-500">
+          Some regular-season weeks mix duals with tournaments, where a wrestler can pick up several real matches
+          instead of just one. Choose how those matches combine into that lineup slot's score. Conference and
+          nationals weeks always count every match at full value, regardless of this setting — the whole league is
+          exclusively in tournament play those weeks, so there's no dual-vs-tournament mismatch to correct for.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={!isCommissioner}
+            onClick={() => setScoringMode('full_sum')}
+            className={cn(
+              'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              scoringMode === 'full_sum' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+            )}
+          >
+            <p className="text-sm font-bold text-ink-100">Full sum (default)</p>
+            <p className="mt-0.5 text-xs text-ink-500">Every real match that week scores at full value.</p>
+          </button>
+          <button
+            type="button"
+            disabled={!isCommissioner}
+            onClick={() => setScoringMode('average')}
+            className={cn(
+              'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              scoringMode === 'average' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+            )}
+          >
+            <p className="text-sm font-bold text-ink-100">Average</p>
+            <p className="mt-0.5 text-xs text-ink-500">Matches that week are normalized down to one match's worth.</p>
+          </button>
         </div>
       </div>
 

@@ -13,6 +13,13 @@
 // head_to_head_result_points: flat points a head_to_head week's win/tie/loss
 // result adds to the season-long standings ledger (on top of, not instead
 // of, the per-match averaging that decides the winner).
+// multi_match_scoring_mode: "full_sum" (default) or "average" - controls how
+// a lineup_slot's points are computed when its wrestler had more than one
+// real match in the week (tournament/dual-tournament weeks). Only applies to
+// head_to_head weeks - conference/nationals always use full_sum regardless
+// of this setting, since every roster is exclusively in tournament play that
+// week (no duals happening alongside to create the fairness problem
+// averaging exists to solve in the first place).
 // placement_points_defaults: fallback rank->points tables, keyed by week_type
 // (marquee_tournament/conference/nationals), used only when a specific
 // season_week's own placement_points_config is null. Every week type feeds
@@ -72,6 +79,14 @@ function get_default_league_config {
         |set:"win":2
         |set:"tie":1
         |set:"loss":0
+    }
+
+    // "full_sum" or "average" - see header comment above. Defaults to
+    // full_sum so every real match a wrestler competes in scores at full
+    // value unless the commissioner opts into averaging for head_to_head
+    // weeks specifically.
+    var $multi_match_scoring_mode {
+      value = "full_sum"
     }
 
     // Fallback placement->points tables per week_type, used only when a
@@ -156,6 +171,7 @@ function get_default_league_config {
         medal_bonus               : $medal_bonus
         opponent_multipliers      : $opponent_multipliers
         head_to_head_result_points: $head_to_head_result_points
+        multi_match_scoring_mode  : $multi_match_scoring_mode
         placement_points_defaults : $placement_points_defaults
         placement_default_multipliers: $placement_default_multipliers
       }
