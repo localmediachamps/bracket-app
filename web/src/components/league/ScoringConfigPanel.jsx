@@ -25,6 +25,58 @@ const MULTIPLIER_TIERS = [
   { key: 'blood_round', label: 'Blood Round', hint: 'ranked #9-12' },
 ]
 
+function round2(n) {
+  return Math.round(n * 100) / 100
+}
+
+// Once a commissioner has the RATIOS between values the way they want (e.g.
+// a fall is worth 2x a decision), scaling everything up or down together is
+// easier than retyping every field by hand. One-shot bulk transform on
+// whatever's currently in the fields below it - not a persistent binding
+// like WeeksPanel's PlacementScaleControl, since these fields are hand-
+// edited as the primary input and the scale is just a convenience on top.
+// Resets to 1x after each apply so it never silently compounds.
+function ScaleAllControl({ onApply }) {
+  const [multiplier, setMultiplier] = useState(1)
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2.5 rounded-lg border border-mat-700 bg-mat-850/40 px-3 py-2">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-ink-500">Scale all by</span>
+      <input
+        type="range"
+        min={0.25}
+        max={4}
+        step={0.25}
+        value={multiplier}
+        onChange={(e) => setMultiplier(Number(e.target.value))}
+        className="h-1.5 w-28 accent-gold-500"
+      />
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0.25}
+          max={10}
+          step={0.25}
+          value={multiplier}
+          onChange={(e) => setMultiplier(Number(e.target.value) || 0)}
+          className="w-14 rounded-md border border-mat-700 bg-mat-850 px-1.5 py-1 text-center text-xs text-ink-100 focus:border-gold-500/50 focus:outline-none"
+        />
+        <span className="text-xs font-bold text-ink-400">×</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          onApply(multiplier)
+          setMultiplier(1)
+        }}
+        className="rounded-md border border-mat-700 bg-mat-800 px-2.5 py-1 text-xs font-bold text-ink-100 hover:border-gold-500/50"
+      >
+        Apply
+      </button>
+    </div>
+  )
+}
+
 // This whole card exists because league.scoring_config was already fully
 // wired into the scoring cron (tasks/score_league_weeks.xs overlays it on
 // the site defaults every week) but had never had ANY settings UI - a
@@ -82,6 +134,20 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
     onError: (err) => toast.error('Could not save', { body: err.message }),
   })
 
+  const applyVictoryPointsScale = (multiplier) => {
+    setVictoryPoints((v) => Object.fromEntries(Object.entries(v).map(([k, val]) => [k, String(round2((Number(val) || 0) * multiplier))])))
+  }
+
+  const applyMedalBonusScale = (multiplier) => {
+    setMedalBonus((v) => Object.fromEntries(Object.entries(v).map(([k, val]) => [k, String(round2((Number(val) || 0) * multiplier))])))
+  }
+
+  const applyMultipliersScale = (multiplier) => {
+    setMultipliers((v) =>
+      Object.fromEntries(Object.entries(v).map(([k, obj]) => [k, { ...obj, multiplier: String(round2((Number(obj?.multiplier) || 0) * multiplier)) }]))
+    )
+  }
+
   if (!defaults) return null
 
   return (
@@ -100,6 +166,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
               Points per match, by how it ended
             </p>
+            {isCommissioner && <ScaleAllControl onApply={applyVictoryPointsScale} />}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {VICTORY_TYPES.map((vt) => (
                 <Input
@@ -119,6 +186,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
               Medal bonus — extra points for a wrestler who placed at a tournament that week
             </p>
+            {isCommissioner && <ScaleAllControl onApply={applyMedalBonusScale} />}
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
               {PLACEMENT_RANKS.map((r) => (
                 <Input
@@ -139,6 +207,7 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
               Opponent-quality multiplier — bonus for beating a highly-ranked wrestler
             </p>
+            {isCommissioner && <ScaleAllControl onApply={applyMultipliersScale} />}
             <div className="grid gap-2 sm:grid-cols-3">
               {MULTIPLIER_TIERS.map((t) => (
                 <Input
