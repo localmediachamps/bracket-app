@@ -218,6 +218,12 @@ export const api = {
       season_week_id: seasonWeekId,
       placement_points_config: placementPointsConfig,
     }),
+  setWeekType: (leagueId, seasonWeekId, weekType) =>
+    put(XANO_LEAGUE, `/leagues/week/type`, {
+      league_id: leagueId,
+      season_week_id: seasonWeekId,
+      week_type: weekType,
+    }),
 
   leagueLineup: (leagueId, seasonWeekId) => get(XANO_LEAGUE, `/leagues/lineup${qs({ league_id: leagueId, season_week_id: seasonWeekId })}`),
   setLeagueLineup: (leagueId, seasonWeekId, slots) => put(XANO_LEAGUE, `/leagues/lineup`, { league_id: leagueId, season_week_id: seasonWeekId, slots }),

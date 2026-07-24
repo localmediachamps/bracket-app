@@ -205,12 +205,76 @@ task score_league_weeks {
                       value = $league_overrides|get:"multi_match_scoring_mode":$default_config.multi_match_scoring_mode
                     }
 
+                    // Resolve THIS league's effective week type/tournament
+                    // config - season_week is shared across every league in
+                    // the season, but a league_week_override row (if one
+                    // exists for this league+week) lets each league flip
+                    // head_to_head <-> marquee_tournament and pick its own
+                    // tournament independently (see tables/
+                    // league_week_override.xs, leagues_week_type_PUT.xs).
+                    // Only ever queried for weeks whose season-level base is
+                    // head_to_head or marquee_tournament - conference/
+                    // nationals never get an override row, so this is a
+                    // harmless no-op lookup for those weeks.
+                    var $week_override {
+                      value = null
+                    }
+
+                    conditional {
+                      if ($week.week_type == "head_to_head" || $week.week_type == "marquee_tournament") {
+                        db.query league_week_override {
+                          where = $db.league_week_override.league_id == $league.id && $db.league_week_override.season_week_id == $week.id
+                          return = {type: "single"}
+                        } as $week_override_query
+
+                        var.update $week_override {
+                          value = $week_override_query
+                        }
+                      }
+                    }
+
+                    var $effective_week_type {
+                      value = $week.week_type
+                    }
+
+                    var $effective_linked_tournament_id {
+                      value = $week.linked_tournament_id
+                    }
+
+                    var $effective_tournament_game_mode {
+                      value = $week.tournament_game_mode
+                    }
+
+                    var $effective_placement_points_config {
+                      value = $week.placement_points_config
+                    }
+
+                    conditional {
+                      if ($week_override != null) {
+                        var.update $effective_week_type {
+                          value = $week_override.week_type
+                        }
+
+                        var.update $effective_linked_tournament_id {
+                          value = $week_override.linked_tournament_id
+                        }
+
+                        var.update $effective_tournament_game_mode {
+                          value = $week_override.tournament_game_mode
+                        }
+
+                        var.update $effective_placement_points_config {
+                          value = $week_override.placement_points_config
+                        }
+                      }
+                    }
+
                     var $effective_scoring_mode {
                       value = "full_sum"
                     }
 
                     conditional {
-                      if ($week.week_type == "head_to_head") {
+                      if ($effective_week_type == "head_to_head") {
                         var.update $effective_scoring_mode {
                           value = $configured_scoring_mode
                         }
@@ -218,7 +282,7 @@ task score_league_weeks {
                     }
 
                     conditional {
-                      if ($week.week_type == "head_to_head" || $week.week_type == "conference" || $week.week_type == "nationals") {
+                      if ($effective_week_type == "head_to_head" || $effective_week_type == "conference" || $effective_week_type == "nationals") {
                         function.run score_league_lineups_for_week {
                           input = {
                             league_id      : $league.id
@@ -234,7 +298,7 @@ task score_league_weeks {
                         } as $lineup_result
 
                         conditional {
-                          if ($week.week_type == "head_to_head") {
+                          if ($effective_week_type == "head_to_head") {
                             db.query matchup {
                               where = $db.matchup.league_id == $league.id && $db.matchup.season_week_id == $week.id
                               return = {type: "list"}
@@ -529,13 +593,13 @@ task score_league_weeks {
                             }
 
                             var $postseason_placement_cfg {
-                              value = $placement_defaults|get:$week.week_type:{}
+                              value = $placement_defaults|get:$effective_week_type:{}
                             }
 
                             conditional {
-                              if ($week.placement_points_config != null) {
+                              if ($effective_placement_points_config != null) {
                                 var.update $postseason_placement_cfg {
-                                  value = $week.placement_points_config
+                                  value = $effective_placement_points_config
                                 }
                               }
                             }
@@ -601,15 +665,15 @@ task score_league_weeks {
                           }
                         }
                       }
-                      elseif ($week.week_type == "marquee_tournament" && $week.linked_tournament_id != null) {
+                      elseif ($effective_week_type == "marquee_tournament" && $effective_linked_tournament_id != null) {
                         var $member_scores {
                           value = {}
                         }
 
                         conditional {
-                          if ($week.tournament_game_mode == "bracket" || $week.tournament_game_mode == "bracket_pickem") {
+                          if ($effective_tournament_game_mode == "bracket" || $effective_tournament_game_mode == "bracket_pickem") {
                             db.query user_bracket {
-                              where = $db.user_bracket.tournament_id == $week.linked_tournament_id
+                              where = $db.user_bracket.tournament_id == $effective_linked_tournament_id
                               return = {type: "list"}
                             } as $bracket_entries
 
@@ -649,9 +713,9 @@ task score_league_weeks {
                         }
 
                         conditional {
-                          if ($week.tournament_game_mode == "pickem" || $week.tournament_game_mode == "bracket_pickem") {
+                          if ($effective_tournament_game_mode == "pickem" || $effective_tournament_game_mode == "bracket_pickem") {
                             db.query pickem_entry {
-                              where = $db.pickem_entry.tournament_id == $week.linked_tournament_id
+                              where = $db.pickem_entry.tournament_id == $effective_linked_tournament_id
                               return = {type: "list"}
                             } as $pickem_entries
 
@@ -715,9 +779,9 @@ task score_league_weeks {
                         }
 
                         conditional {
-                          if ($week.placement_points_config != null) {
+                          if ($effective_placement_points_config != null) {
                             var.update $placement_cfg {
-                              value = $week.placement_points_config
+                              value = $effective_placement_points_config
                             }
                           }
                         }

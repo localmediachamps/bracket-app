@@ -86,110 +86,133 @@ export default function ScoringConfigPanel({ leagueId, scoringConfig, defaults, 
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Points per match, by how it ended
-        </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {VICTORY_TYPES.map((vt) => (
-            <Input
-              key={vt.key}
-              label={vt.label}
-              type="number"
-              step="0.5"
-              value={victoryPoints[vt.key] ?? ''}
-              onChange={(e) => setVictoryPoints((v) => ({ ...v, [vt.key]: e.target.value }))}
-              disabled={!isCommissioner}
-            />
-          ))}
+      <div className="rounded-xl border border-mat-700 p-4">
+        <div className="mb-4">
+          <p className="text-sm font-bold text-ink-100">Wrestler performance scoring</p>
+          <p className="mt-0.5 text-xs text-ink-500">
+            Points earned by the wrestlers on your roster, from their own real match results - applies every week
+            your roster is in play (regular season, conference, and nationals alike).
+          </p>
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
+              Points per match, by how it ended
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {VICTORY_TYPES.map((vt) => (
+                <Input
+                  key={vt.key}
+                  label={vt.label}
+                  type="number"
+                  step="0.5"
+                  value={victoryPoints[vt.key] ?? ''}
+                  onChange={(e) => setVictoryPoints((v) => ({ ...v, [vt.key]: e.target.value }))}
+                  disabled={!isCommissioner}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
+              Medal bonus — extra points for a wrestler who placed at a tournament that week
+            </p>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+              {PLACEMENT_RANKS.map((r) => (
+                <Input
+                  key={r}
+                  label={`#${r}`}
+                  type="number"
+                  step="0.5"
+                  value={medalBonus[String(r)] ?? ''}
+                  onChange={(e) => setMedalBonus((v) => ({ ...v, [String(r)]: e.target.value }))}
+                  disabled={!isCommissioner}
+                  className="text-center"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
+              Opponent-quality multiplier — bonus for beating a highly-ranked wrestler
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {MULTIPLIER_TIERS.map((t) => (
+                <Input
+                  key={t.key}
+                  label={`${t.label} (${t.hint})`}
+                  type="number"
+                  step="0.05"
+                  value={multipliers[t.key]?.multiplier ?? ''}
+                  onChange={(e) => setMultipliers((v) => ({ ...v, [t.key]: { ...v[t.key], multiplier: e.target.value } }))}
+                  disabled={!isCommissioner}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-ink-500">
+              Multiple matches in a week — regular-season weeks only
+            </p>
+            <p className="mb-2 text-xs text-ink-500">
+              Some regular-season weeks mix duals with tournaments, where a wrestler can pick up several real
+              matches instead of just one. Choose how those matches combine into that lineup slot's score.
+              Conference and nationals weeks always count every match at full value, regardless of this setting —
+              the whole league is exclusively in tournament play those weeks, so there's no dual-vs-tournament
+              mismatch to correct for.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                disabled={!isCommissioner}
+                onClick={() => setScoringMode('full_sum')}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                  scoringMode === 'full_sum' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+                )}
+              >
+                <p className="text-sm font-bold text-ink-100">Full sum (default)</p>
+                <p className="mt-0.5 text-xs text-ink-500">Every real match that week scores at full value.</p>
+              </button>
+              <button
+                type="button"
+                disabled={!isCommissioner}
+                onClick={() => setScoringMode('average')}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                  scoringMode === 'average' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
+                )}
+              >
+                <p className="text-sm font-bold text-ink-100">Average</p>
+                <p className="mt-0.5 text-xs text-ink-500">Matches that week are normalized down to one match's worth.</p>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Medal bonus — extra points for a wrestler who placed at a tournament that week
-        </p>
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-          {PLACEMENT_RANKS.map((r) => (
-            <Input
-              key={r}
-              label={`#${r}`}
-              type="number"
-              step="0.5"
-              value={medalBonus[String(r)] ?? ''}
-              onChange={(e) => setMedalBonus((v) => ({ ...v, [String(r)]: e.target.value }))}
-              disabled={!isCommissioner}
-              className="text-center"
-            />
-          ))}
+      <div className="rounded-xl border border-mat-700 p-4">
+        <div className="mb-4">
+          <p className="text-sm font-bold text-ink-100">Head-to-head week scoring</p>
+          <p className="mt-0.5 text-xs text-ink-500">
+            Points awarded to your fantasy team based on how your weekly matchup against another manager turned
+            out - separate from the wrestler-performance points above. Only applies during head-to-head weeks.
+          </p>
         </div>
-      </div>
 
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Opponent-quality multiplier — bonus for beating a highly-ranked wrestler
-        </p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {MULTIPLIER_TIERS.map((t) => (
-            <Input
-              key={t.key}
-              label={`${t.label} (${t.hint})`}
-              type="number"
-              step="0.05"
-              value={multipliers[t.key]?.multiplier ?? ''}
-              onChange={(e) => setMultipliers((v) => ({ ...v, [t.key]: { ...v[t.key], multiplier: e.target.value } }))}
-              disabled={!isCommissioner}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Head-to-head result — flat points on top of the match total, for winning/tying/losing your weekly matchup
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:max-w-sm">
-          <Input label="Win" type="number" step="0.5" value={h2hPoints.win} onChange={(e) => setH2hPoints((v) => ({ ...v, win: e.target.value }))} disabled={!isCommissioner} />
-          <Input label="Tie" type="number" step="0.5" value={h2hPoints.tie} onChange={(e) => setH2hPoints((v) => ({ ...v, tie: e.target.value }))} disabled={!isCommissioner} />
-          <Input label="Loss" type="number" step="0.5" value={h2hPoints.loss} onChange={(e) => setH2hPoints((v) => ({ ...v, loss: e.target.value }))} disabled={!isCommissioner} />
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-1 text-xs font-bold uppercase tracking-wide text-ink-500">
-          Multiple matches in a week — regular-season weeks only
-        </p>
-        <p className="mb-2 text-xs text-ink-500">
-          Some regular-season weeks mix duals with tournaments, where a wrestler can pick up several real matches
-          instead of just one. Choose how those matches combine into that lineup slot's score. Conference and
-          nationals weeks always count every match at full value, regardless of this setting — the whole league is
-          exclusively in tournament play those weeks, so there's no dual-vs-tournament mismatch to correct for.
-        </p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            disabled={!isCommissioner}
-            onClick={() => setScoringMode('full_sum')}
-            className={cn(
-              'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-              scoringMode === 'full_sum' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
-            )}
-          >
-            <p className="text-sm font-bold text-ink-100">Full sum (default)</p>
-            <p className="mt-0.5 text-xs text-ink-500">Every real match that week scores at full value.</p>
-          </button>
-          <button
-            type="button"
-            disabled={!isCommissioner}
-            onClick={() => setScoringMode('average')}
-            className={cn(
-              'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-              scoringMode === 'average' ? 'border-gold-500/60 bg-gold-500/10' : 'border-mat-700 hover:border-mat-600'
-            )}
-          >
-            <p className="text-sm font-bold text-ink-100">Average</p>
-            <p className="mt-0.5 text-xs text-ink-500">Matches that week are normalized down to one match's worth.</p>
-          </button>
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
+            Result of your weekly matchup
+          </p>
+          <div className="grid grid-cols-3 gap-2 sm:max-w-sm">
+            <Input label="Win" type="number" step="0.5" value={h2hPoints.win} onChange={(e) => setH2hPoints((v) => ({ ...v, win: e.target.value }))} disabled={!isCommissioner} />
+            <Input label="Tie" type="number" step="0.5" value={h2hPoints.tie} onChange={(e) => setH2hPoints((v) => ({ ...v, tie: e.target.value }))} disabled={!isCommissioner} />
+            <Input label="Loss" type="number" step="0.5" value={h2hPoints.loss} onChange={(e) => setH2hPoints((v) => ({ ...v, loss: e.target.value }))} disabled={!isCommissioner} />
+          </div>
         </div>
       </div>
 

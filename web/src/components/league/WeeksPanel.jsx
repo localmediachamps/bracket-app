@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, Settings, Trophy } from 'lucide-react'
+import { Search, Settings, Trophy, Plus, ChevronDown, Undo2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { toast } from '../../lib/store'
+import { cn } from '../../lib/utils'
 import { Badge, Button, Card, Input, Modal, Select } from '../ui'
 
 const PLACEMENT_RANKS = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -11,6 +12,11 @@ const MODE_LABEL = {
   bracket: 'Bracket challenge (full field)',
   pickem: "Pick'em (full field)",
   bracket_pickem: 'Bracket + pick\'em',
+}
+
+function fmtDate(ms) {
+  if (!ms) return ''
+  return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function round2(n) {
@@ -124,10 +130,45 @@ function TournamentPickerModal({ open, onClose, tournaments, search, onSearch, o
   )
 }
 
-// marquee_tournament weeks - browse every tournament available this season,
-// pick one + a contest mode, then scale its placement points off the shared
-// base table (1x by default - marquee IS the reference scale).
-function MarqueeWeekRow({ leagueId, week, isCommissioner, tournaments, baseTable }) {
+// Weeks this league could flag as marquee (still head_to_head for this
+// league, not yet locked/scored) - or, once at least one marquee week
+// exists, weeks this league could revert back to head_to_head.
+function WeekTypePickerModal({ open, onClose, eligibleWeeks, onPick, saving }) {
+  return (
+    <Modal open={open} onClose={onClose} title="Make a week marquee">
+      <p className="mb-3 text-xs text-ink-500">
+        Only for your league - other leagues sharing this season keep their own choice for these weeks.
+      </p>
+      <div className="max-h-96 space-y-1.5 overflow-y-auto">
+        {eligibleWeeks.map((w) => (
+          <button
+            key={w.id}
+            disabled={saving}
+            onClick={() => onPick(w)}
+            className="flex w-full items-center justify-between rounded-lg border border-mat-700 px-3.5 py-2.5 text-left hover:border-gold-500/50 hover:bg-mat-800/50 disabled:opacity-50"
+          >
+            <div>
+              <p className="text-sm font-semibold text-ink-100">Week {w.week_number}</p>
+              <p className="text-xs text-ink-500">
+                {fmtDate(w.starts_at)}–{fmtDate(w.ends_at)}
+              </p>
+            </div>
+            <span className="shrink-0 text-xs font-bold text-gold-400">Make marquee →</span>
+          </button>
+        ))}
+        {eligibleWeeks.length === 0 && (
+          <p className="p-6 text-center text-sm text-ink-500">
+            No upcoming head-to-head weeks left to convert - once a week opens, locks, or scores it can't change type.
+          </p>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// One row of the marquee-weeks table - collapsed shows the week's current
+// state at a glance, expanded reveals the tournament picker + point scale.
+function MarqueeWeekTableRow({ leagueId, week, isCommissioner, tournaments, baseTable, expanded, onToggle }) {
   const qc = useQueryClient()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -135,6 +176,7 @@ function MarqueeWeekRow({ leagueId, week, isCommissioner, tournaments, baseTable
 
   const configured = week.tournament_game_mode && week.linked_tournament_id
   const tournamentName = tournaments?.find((t) => String(t.id) === String(week.linked_tournament_id))?.name
+  const scaleMultiplier = detectMultiplier(week.placement_points_config, baseTable, 1)
 
   const saveConfigMutation = useMutation({
     mutationFn: (tournament) => api.configureWeek(leagueId, week.id, mode, tournament.id, week.placement_points_config ?? undefined),
@@ -155,39 +197,76 @@ function MarqueeWeekRow({ leagueId, week, isCommissioner, tournaments, baseTable
     onError: (err) => toast.error('Could not save', { body: err.message }),
   })
 
+  const revertMutation = useMutation({
+    mutationFn: () => api.setWeekType(leagueId, week.id, 'head_to_head'),
+    onSuccess: () => {
+      toast.success(`Week ${week.week_number} is head-to-head again`)
+      qc.invalidateQueries({ queryKey: ['league-weeks', leagueId] })
+    },
+    onError: (err) => toast.error('Could not revert', { body: err.message }),
+  })
+
   return (
-    <div className="space-y-3 border-b border-mat-700 p-4 last:border-b-0">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-sm font-bold text-ink-100">{configured ? tournamentName : 'Not yet chosen'}</div>
-          <div className="text-xs text-ink-500">Week {week.week_number} · marquee tournament</div>
-        </div>
-        {configured ? <Badge color="gold">{MODE_LABEL[week.tournament_game_mode]}</Badge> : <Badge color="ink">Not configured</Badge>}
-      </div>
+    <>
+      <tr className={cn('cursor-pointer transition-colors hover:bg-mat-800/40', expanded && 'bg-mat-800/40')} onClick={onToggle}>
+        <td className="rounded-l-lg px-2 py-2 font-mono text-sm text-ink-300">Wk {week.week_number}</td>
+        <td className="px-2 py-2 text-xs text-ink-500">
+          {fmtDate(week.starts_at)}–{fmtDate(week.ends_at)}
+        </td>
+        <td className="px-2 py-2 text-sm font-semibold text-ink-100">{configured ? tournamentName ?? '—' : 'Not yet chosen'}</td>
+        <td className="px-2 py-2">
+          {configured ? <Badge color="gold">{MODE_LABEL[week.tournament_game_mode]}</Badge> : <Badge color="ink">Not configured</Badge>}
+        </td>
+        <td className="px-2 py-2">
+          <Badge color={round2(scaleMultiplier) === 1 ? 'ink' : 'gold'}>{round2(scaleMultiplier) === 1 ? 'Default' : `${scaleMultiplier}×`}</Badge>
+        </td>
+        <td className="rounded-r-lg px-2 py-2 text-right">
+          <ChevronDown size={16} className={cn('inline-block text-ink-500 transition-transform', expanded && 'rotate-180')} />
+        </td>
+      </tr>
+      {expanded && (
+        <tr>
+          <td colSpan={6} className="px-2 pb-4">
+            <div className="space-y-3 rounded-lg border border-mat-700 bg-mat-850/50 p-3">
+              {isCommissioner && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={mode} onChange={(e) => setMode(e.target.value)} className="w-auto" onClick={(e) => e.stopPropagation()}>
+                    {Object.entries(MODE_LABEL).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}>
+                    <Trophy size={14} /> {configured ? 'Change tournament' : 'Choose tournament'}
+                  </Button>
+                  {week.status === 'upcoming' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      loading={revertMutation.isPending}
+                      onClick={(e) => { e.stopPropagation(); revertMutation.mutate() }}
+                    >
+                      <Undo2 size={14} /> Revert to head-to-head
+                    </Button>
+                  )}
+                </div>
+              )}
 
-      {isCommissioner && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={mode} onChange={(e) => setMode(e.target.value)} className="w-auto">
-            {Object.entries(MODE_LABEL).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)}>
-            <Trophy size={14} /> {configured ? 'Change tournament' : 'Choose tournament'}
-          </Button>
-        </div>
-      )}
-
-      {configured && isCommissioner && (
-        <PlacementScaleControl
-          baseTable={baseTable}
-          defaultMultiplier={1}
-          existingConfig={week.placement_points_config}
-          saving={saveScaleMutation.isPending}
-          onSave={(table) => saveScaleMutation.mutate(table)}
-        />
+              {configured && isCommissioner && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <PlacementScaleControl
+                    baseTable={baseTable}
+                    defaultMultiplier={1}
+                    existingConfig={week.placement_points_config}
+                    saving={saveScaleMutation.isPending}
+                    onSave={(table) => saveScaleMutation.mutate(table)}
+                  />
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
 
       <TournamentPickerModal
@@ -198,7 +277,7 @@ function MarqueeWeekRow({ leagueId, week, isCommissioner, tournaments, baseTable
         onSearch={setSearch}
         onPick={(t) => saveConfigMutation.mutate(t)}
       />
-    </div>
+    </>
   )
 }
 
@@ -209,7 +288,8 @@ const POSTSEASON_LABEL = {
 
 // conference/nationals weeks - always roster-scored (no tournament/mode to
 // pick), just a placement-points scale relative to the same marquee base
-// table. Defaults to 1.5x for conference, 2x for nationals.
+// table. Defaults to 1.5x for conference, 2x for nationals. Universal across
+// every league in the season - never per-league overridable.
 function PostseasonWeekRow({ leagueId, week, isCommissioner, baseTable }) {
   const qc = useQueryClient()
   const label = POSTSEASON_LABEL[week.week_type] ?? { title: week.week_type, hint: '' }
@@ -256,11 +336,17 @@ function PostseasonWeekRow({ leagueId, week, isCommissioner, baseTable }) {
 }
 
 /** Commissioner (and member-visible) panel for the season's non-head-to-head
- * weeks - browse every tournament available this season and choose which
- * ones fill this league's marquee weeks, scale their placement points (and
- * conference/nationals') off one shared base table via a single multiplier
- * instead of typing every rank's value by hand. */
+ * weeks. Marquee weeks are per-league - a commissioner can flag any upcoming
+ * head-to-head week as marquee for their own league (independent of every
+ * other league sharing the season), then browse every tournament available
+ * this season and pick one + a contest mode, scaling its placement points
+ * off a shared base table via a single multiplier. Postseason (conference/
+ * nationals) stays universal across every league, unchanged. */
 export default function WeeksPanel({ leagueId, isCommissioner }) {
+  const qc = useQueryClient()
+  const [expandedWeekId, setExpandedWeekId] = useState(null)
+  const [addPickerOpen, setAddPickerOpen] = useState(false)
+
   const { data: weeks, isLoading } = useQuery({
     queryKey: ['league-weeks', leagueId],
     queryFn: () => api.leagueWeeks(leagueId),
@@ -281,34 +367,94 @@ export default function WeeksPanel({ leagueId, isCommissioner }) {
 
   const marqueeWeeks = (weeks ?? []).filter((w) => w.week_type === 'marquee_tournament')
   const postseasonWeeks = (weeks ?? []).filter((w) => w.week_type === 'conference' || w.week_type === 'nationals')
+  const eligibleWeeks = (weeks ?? []).filter((w) => w.week_type === 'head_to_head' && w.status === 'upcoming')
+
+  const setTypeMutation = useMutation({
+    mutationFn: (week) => api.setWeekType(leagueId, week.id, 'marquee_tournament'),
+    onSuccess: (_, week) => {
+      toast.success(`Week ${week.week_number} is now a marquee week for your league`)
+      qc.invalidateQueries({ queryKey: ['league-weeks', leagueId] })
+      setAddPickerOpen(false)
+      setExpandedWeekId(week.id)
+    },
+    onError: (err) => toast.error('Could not change week type', { body: err.message }),
+  })
 
   if (isLoading || !baseTable) return null
-  if (marqueeWeeks.length === 0 && postseasonWeeks.length === 0) return null
+  if (marqueeWeeks.length === 0 && postseasonWeeks.length === 0 && eligibleWeeks.length === 0) return null
 
   return (
     <div className="space-y-4">
-      {marqueeWeeks.length > 0 && (
-        <Card className="divide-y divide-mat-700 p-0">
-          <div className="p-4 pb-0">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Marquee tournament weeks</div>
-            <p className="mt-0.5 text-xs text-ink-500">Regular-season events the league competes in instead of head-to-head that week.</p>
+      {(marqueeWeeks.length > 0 || (isCommissioner && eligibleWeeks.length > 0)) && (
+        <Card className="p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Marquee tournament weeks</div>
+              <p className="mt-0.5 text-xs text-ink-500">
+                Regular-season events your league competes in instead of head-to-head that week - your choice, independent of other leagues.
+              </p>
+            </div>
+            {isCommissioner && (
+              <Button variant="secondary" size="sm" onClick={() => setAddPickerOpen(true)}>
+                <Plus size={14} /> Add a marquee week
+              </Button>
+            )}
           </div>
-          {marqueeWeeks.map((week) => (
-            <MarqueeWeekRow key={week.id} leagueId={leagueId} week={week} isCommissioner={isCommissioner} tournaments={tournaments} baseTable={baseTable} />
-          ))}
+
+          {marqueeWeeks.length > 0 ? (
+            <div className="overflow-x-auto -mx-1 px-1">
+              <table className="w-full min-w-[640px] border-separate border-spacing-y-1.5">
+                <thead>
+                  <tr className="text-left text-[10px] font-bold uppercase tracking-[0.12em] text-ink-500">
+                    <th className="w-16 px-2">Week</th>
+                    <th className="w-28 px-2">Dates</th>
+                    <th className="px-2">Tournament</th>
+                    <th className="px-2">Mode</th>
+                    <th className="w-24 px-2">Scale</th>
+                    <th className="w-8 px-2" aria-label="expand" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {marqueeWeeks.map((week) => (
+                    <MarqueeWeekTableRow
+                      key={week.id}
+                      leagueId={leagueId}
+                      week={week}
+                      isCommissioner={isCommissioner}
+                      tournaments={tournaments}
+                      baseTable={baseTable}
+                      expanded={expandedWeekId === week.id}
+                      onToggle={() => setExpandedWeekId((cur) => (cur === week.id ? null : week.id))}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-ink-500">No marquee weeks yet - add one to run a bracket/pick'em week instead of head-to-head.</p>
+          )}
         </Card>
       )}
+
       {postseasonWeeks.length > 0 && (
         <Card className="divide-y divide-mat-700 p-0">
           <div className="p-4 pb-0">
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-500">Postseason</div>
-            <p className="mt-0.5 text-xs text-ink-500">Conference and national championships - the two weeks that matter most.</p>
+            <p className="mt-0.5 text-xs text-ink-500">Conference and national championships - the two weeks that matter most, the same for every league this season.</p>
           </div>
           {postseasonWeeks.map((week) => (
             <PostseasonWeekRow key={week.id} leagueId={leagueId} week={week} isCommissioner={isCommissioner} baseTable={baseTable} />
           ))}
         </Card>
       )}
+
+      <WeekTypePickerModal
+        open={addPickerOpen}
+        onClose={() => setAddPickerOpen(false)}
+        eligibleWeeks={eligibleWeeks}
+        saving={setTypeMutation.isPending}
+        onPick={(w) => setTypeMutation.mutate(w)}
+      />
     </div>
   )
 }
