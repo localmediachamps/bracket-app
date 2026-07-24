@@ -75,48 +75,59 @@ function get_default_league_config {
     }
 
     // Fallback placement->points tables per week_type, used only when a
-    // season_week's own placement_points_config is null. Values are examples
-    // from Garrett's own explanation of the relative weighting he wants
-    // (marquee 1st=6, conference 1st=12, nationals 1st=20) - fully
-    // commissioner-overridable per week, not fixed. Each table is built as
-    // its own var first (same pattern as victory_points/medal_bonus above)
-    // rather than as a nested filter chain inside an object literal.
+    // season_week's own placement_points_config is null. Conference and
+    // nationals are DERIVED from the same marquee base table via a clean
+    // scale factor (1.5x / 2x) - not independently-authored numbers - so
+    // the commissioner-facing "sliding scale" UI (LeagueSettings ->
+    // ScoringConfigPanel / WeeksPanel) can show and reason about one
+    // consistent multiplier per week type rather than three unrelated
+    // tables. Each table is built as its own var first (same pattern as
+    // victory_points/medal_bonus above) rather than as a nested filter
+    // chain inside an object literal.
     var $placement_marquee {
       value = {}
-        |set:"1":6
-        |set:"2":5
+        |set:"1":8
+        |set:"2":6
         |set:"3":4
         |set:"4":3
         |set:"5":2
-        |set:"6":1
+        |set:"6":1.5
         |set:"7":1
         |set:"8":0.5
         |set:"default":0
     }
 
+    var $conference_multiplier {
+      value = 1.5
+    }
+
+    var $nationals_multiplier {
+      value = 2
+    }
+
     var $placement_conference {
       value = {}
         |set:"1":12
-        |set:"2":10
-        |set:"3":8
-        |set:"4":6
-        |set:"5":5
-        |set:"6":4
-        |set:"7":3
-        |set:"8":2
+        |set:"2":9
+        |set:"3":6
+        |set:"4":4.5
+        |set:"5":3
+        |set:"6":2.25
+        |set:"7":1.5
+        |set:"8":0.75
         |set:"default":0
     }
 
     var $placement_nationals {
       value = {}
-        |set:"1":20
-        |set:"2":16
-        |set:"3":13
-        |set:"4":11
-        |set:"5":9
-        |set:"6":7
-        |set:"7":5
-        |set:"8":4
+        |set:"1":16
+        |set:"2":12
+        |set:"3":8
+        |set:"4":6
+        |set:"5":4
+        |set:"6":3
+        |set:"7":2
+        |set:"8":1
         |set:"default":0
     }
 
@@ -128,6 +139,17 @@ function get_default_league_config {
       }
     }
 
+    // Exposed alongside the tables so the frontend can show "conference is
+    // 1.5x the marquee default, nationals is 2x" as a real, editable number
+    // rather than a fact baked invisibly into two separate hardcoded tables.
+    var $placement_default_multipliers {
+      value = {
+        marquee_tournament: 1
+        conference        : $conference_multiplier
+        nationals         : $nationals_multiplier
+      }
+    }
+
     var $config {
       value = {
         victory_points            : $victory_points
@@ -135,6 +157,7 @@ function get_default_league_config {
         opponent_multipliers      : $opponent_multipliers
         head_to_head_result_points: $head_to_head_result_points
         placement_points_defaults : $placement_points_defaults
+        placement_default_multipliers: $placement_default_multipliers
       }
     }
   }

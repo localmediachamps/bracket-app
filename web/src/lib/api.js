@@ -204,12 +204,13 @@ export const api = {
   leagueWeightClasses: (leagueId) => get(XANO_LEAGUE, `/leagues/weight-classes${qs({ league_id: leagueId })}`),
   leagueWeeks: (leagueId) => get(XANO_LEAGUE, `/leagues/weeks${qs({ league_id: leagueId })}`),
   leagueScoringDefaults: () => get(XANO_LEAGUE, `/leagues/scoring/defaults`),
-  configureWeek: (leagueId, seasonWeekId, tournamentGameMode, linkedTournamentId) =>
+  configureWeek: (leagueId, seasonWeekId, tournamentGameMode, linkedTournamentId, placementPointsConfig) =>
     put(XANO_LEAGUE, `/leagues/week/config`, {
       league_id: leagueId,
       season_week_id: seasonWeekId,
       tournament_game_mode: tournamentGameMode,
       linked_tournament_id: linkedTournamentId,
+      placement_points_config: placementPointsConfig,
     }),
   configureWeekPlacementPoints: (leagueId, seasonWeekId, placementPointsConfig) =>
     put(XANO_LEAGUE, `/leagues/week/placement-config`, {
