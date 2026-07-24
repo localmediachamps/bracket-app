@@ -16,6 +16,10 @@ import {
   Crown,
   Medal,
   ArrowRight,
+  MessageSquare,
+  Heart,
+  Flag,
+  ShieldAlert,
 } from 'lucide-react'
 import { Card, Badge } from '../components/ui'
 import { cn } from '../lib/utils'
@@ -27,6 +31,7 @@ const SECTIONS = [
   { key: 'leaderboard', label: 'Master Leaderboard', icon: Trophy },
   { key: 'groups', label: 'Groups', icon: Users },
   { key: 'leagues', label: 'Fantasy Draft Leagues', icon: Swords },
+  { key: 'message-boards', label: 'Message Boards', icon: MessageSquare },
   { key: 'privacy', label: 'Privacy & Visibility', icon: Eye },
   { key: 'pricing', label: 'Pricing & Plans', icon: CreditCard },
   { key: 'faq', label: 'FAQ', icon: HelpCircle },
@@ -360,20 +365,48 @@ export default function Help() {
             <p>Each week you're paired against one other league member. Every one of your 10 starters scores from their real matches that week:</p>
             <ScoreTable cols={['Victory type', 'Base points/match']} rows={[['Decision', '3'], ['Major decision', '4'], ['Technical fall', '5'], ['Fall / forfeit / DQ', '6'], ['Medical forfeit / injury default', '3']]} />
             <p>
-              A wrestler's score for the week is the <strong>average</strong> points-per-match (not a sum) — so lineup
-              value comes from match <em>quality</em>, not just piling up matches. On top of the average, a flat{' '}
-              <strong>medal bonus</strong> is added if a wrestler placed at a tournament that week (1st = +6, down to
-              8th = +0.5), rewarding a deep tournament run beyond just per-match quality. An opponent-quality multiplier
-              (same 1.5× / 1.3× / 1.15× tiers as Bracket Challenge) applies per match once Mat Savvy Rankings are live.
-              Higher combined roster score wins the week; a win is worth 2 season-standings points, a tie 1, a loss 0.
+              Some weeks mix duals with tournaments, where a wrestler can rack up several real matches instead of
+              just one — by default, every real match that week scores at <strong>full value</strong>, so drafting
+              someone who's about to compete in a tournament is real upside. A commissioner can instead switch a
+              league to <strong>average</strong> scoring, which normalizes a multi-match week down to one match's
+              worth (lineup value from match <em>quality</em>, not quantity) — this only ever applies to regular
+              season weeks; conference and nationals always score every match at full value, since the whole league
+              is exclusively in tournament play those weeks. On top of that, a flat <strong>medal bonus</strong> is
+              added if a wrestler placed at a tournament that week (1st = +6, down to 8th = +0.5), and an
+              opponent-quality multiplier (same 1.5× / 1.3× / 1.15× tiers as Bracket Challenge) applies per match once
+              Mat Savvy Rankings are live. Higher combined roster score wins the week; a win is worth 2
+              season-standings points, a tie 1, a loss 0.
             </p>
+            <p className="text-ink-500">
+              Commissioners set all of this from <strong>Commissioner Settings → Scoring configuration</strong>,
+              split clearly into what scores the <em>wrestlers</em> on your roster versus what scores your{' '}
+              <em>team's</em> weekly matchup result — and a "scale all by" slider on each points table lets you
+              adjust every value's ratio at once instead of retyping numbers one at a time.
+            </p>
+            <img
+              src="/help/scoring_config_help.png"
+              alt="The Scoring Configuration settings card showing the Wrestler Performance Scoring group with scale-all sliders above the victory-point and medal-bonus tables"
+              className="mt-2 w-full rounded-xl border border-mat-700"
+            />
             <h3>Marquee tournament weeks</h3>
             <p>
-              For select big events during the season (commissioner's choice — think major regular-season invitationals),
-              the roster/lineup engine steps aside entirely for that week. Instead, the commissioner runs it as its own
-              standalone Bracket Challenge and/or Pick'em Showdown contest against that event's full field, with a
-              per-tournament placement-to-points table deciding how many season-standings points each league member earns.
+              For select big events during the season, the roster/lineup engine steps aside entirely for that week.
+              Instead, the whole league runs it as its own standalone Bracket Challenge and/or Pick'em Showdown
+              contest against that event's real field, with a placement-to-points table (adjustable with the same
+              "scale all by" slider) deciding how many season-standings points each league member earns.
             </p>
+            <p>
+              Marquee weeks are <strong>each league's own choice</strong>, set independently from{' '}
+              <strong>Commissioner Settings → Season week scoring</strong> — a commissioner can flag any upcoming
+              week as marquee (or switch it back to head-to-head) without affecting any other league sharing the
+              same season, and can add more than one marquee week if several big events fall on the calendar.
+              Choosing a tournament, contest mode, and point scale all happen right in that same table.
+            </p>
+            <img
+              src="/help/marquee_weeks_help.png"
+              alt="The Season Week Scoring card showing the marquee tournament weeks table with one week expanded, its linked tournament, contest mode, and point scale visible"
+              className="mt-2 w-full rounded-xl border border-mat-700"
+            />
             <h3>Conference & Nationals</h3>
             <p>
               Your roster, waivers, and trades all keep running straight through conference week and the NCAA
@@ -395,6 +428,61 @@ export default function Help() {
               conference/nationals placement points all feed the same running total. Most cumulative points after
               Nationals wins the league. No separate bracket/playoff — one continuous season, one champion.
             </p>
+          </Section>
+
+          <Section id="message-boards" icon={MessageSquare} title="Message Boards">
+            <p>
+              Two places to talk wrestling: your <strong>league's own message board</strong> (private to your league's
+              members) and <strong>Community</strong> — a platform-wide board open to every Mat Savvy user, organized
+              into channels.
+            </p>
+            <h3>Your league's board</h3>
+            <p>
+              Every active member of a Fantasy Draft League can read and post on that league's message board — talk
+              trades, plan your lineup, or just trash-talk before this week's matchups. Open it from your league page
+              (<strong>Message board</strong>, next to Trades and Waivers). Only your league's members ever see it.
+            </p>
+            <img
+              src="/help/league_board_help.png"
+              alt="A league message board showing a top-level post with two threaded replies, likes, and a Reply button, all labeled"
+              className="mt-2 w-full rounded-xl border border-mat-700"
+            />
+            <h3>Community — the platform-wide board</h3>
+            <p>
+              <strong>Community</strong> (in the main sidebar) is open to every user, organized into channels — think a
+              simple version of a Discord server. Pick a channel from the sidebar, read what's there, and post your
+              own message. New channels are added by Mat Savvy admins as the community grows.
+            </p>
+            <img
+              src="/help/community_board_help.png"
+              alt="The Community page showing a channel sidebar with a General channel selected, and two posts in the feed"
+              className="mt-2 w-full rounded-xl border border-mat-700"
+            />
+            <h3>Replies, likes, and sorting</h3>
+            <p>
+              Click <strong>Reply</strong> on any post to start a thread underneath it, Reddit-style — replies can get
+              their own replies, as deep as the conversation goes. Every post can be{' '}
+              <span className="inline-flex items-center gap-1"><Heart size={13} className="text-blood-400" /> liked</span>{' '}
+              once per person; tap it again to unlike. Use the <strong>Recent / Top / Most discussed</strong> tabs
+              above any feed to sort by newest, most-liked, or most-replied-to.
+            </p>
+            <h3>Keeping it clean</h3>
+            <p>
+              See something that doesn't belong? Click{' '}
+              <span className="inline-flex items-center gap-1"><Flag size={13} className="text-ink-400" /> Report</span>{' '}
+              on the post — it's pulled from view right away and a Mat Savvy admin reviews it. New posts are also
+              periodically screened automatically for anything that would violate the guidelines below. Reported or
+              flagged content is either restored (if it's actually fine) or removed; repeated confirmed violations on
+              an account lead to a temporary, then eventually permanent, hold on posting to message boards — nothing
+              else about your account is affected either way.
+            </p>
+            <div className="flex items-start gap-3 rounded-xl border border-mat-700 bg-mat-850/60 p-4">
+              <ShieldAlert size={18} className="mt-0.5 shrink-0 text-gold-400" />
+              <p className="!mt-0 text-ink-400">
+                Keep it to wrestling, trash-talk, and league business. No harassment, slurs, or anything that
+                wouldn't be fine for a stranger to read over your shoulder.
+              </p>
+            </div>
           </Section>
 
           <Section id="privacy" icon={Eye} title="Privacy & Visibility">
