@@ -8,6 +8,7 @@ export const XANO_AUTH = 'https://xhuf-7flt-jytp.n7d.xano.io/api:47V6PWBN'
 export const XANO_APP = 'https://xhuf-7flt-jytp.n7d.xano.io/api:17Ryya5W'
 export const XANO_ADMIN = 'https://xhuf-7flt-jytp.n7d.xano.io/api:PBpa1T2y'
 export const XANO_LEAGUE = 'https://xhuf-7flt-jytp.n7d.xano.io/api:league'
+export const XANO_BOARD = 'https://xhuf-7flt-jytp.n7d.xano.io/api:jFpab90C'
 export const XANO_BILLING = 'https://xhuf-7flt-jytp.n7d.xano.io/api:M18VHDCS'
 
 async function apiFetch(base, path, options = {}) {
@@ -255,6 +256,25 @@ export const api = {
     }),
 
   leagueResultsAnalystAsk: (leagueId, message) => post(XANO_LEAGUE, `/leagues/results-analyst`, { league_id: leagueId, message }),
+
+  /* ── League message board ─────────────────────────────── */
+  leagueBoard: (leagueId, sort = 'recent', page = 1) => get(XANO_LEAGUE, `/leagues/board${qs({ league_id: leagueId, sort, page })}`),
+  postToLeagueBoard: (leagueId, body, parentPostId) => post(XANO_LEAGUE, `/leagues/board/post`, { league_id: leagueId, body, parent_post_id: parentPostId }),
+  deleteLeagueBoardPost: (postId) => del(XANO_LEAGUE, `/leagues/board/post/${postId}`),
+
+  /* ── Master (platform-wide) message board ─────────────── */
+  boardChannels: () => get(XANO_BOARD, '/board/channels'),
+  boardPosts: (channelId, sort = 'recent', page = 1) => get(XANO_BOARD, `/board/posts${qs({ channel_id: channelId, sort, page })}`),
+  postToBoard: (channelId, body, parentPostId) => post(XANO_BOARD, '/board/post', { channel_id: channelId, body, parent_post_id: parentPostId }),
+  boardPostReplies: (postId) => get(XANO_BOARD, `/board/post/replies${qs({ post_id: postId })}`),
+  reportBoardPost: (postId, reason) => post(XANO_BOARD, '/board/post/report', { post_id: postId, reason }),
+  likeBoardPost: (postId) => post(XANO_BOARD, '/board/post/like', { post_id: postId }),
+
+  /* ── Admin: message board moderation ──────────────────── */
+  adminBoardFlagged: (page = 1) => get(XANO_ADMIN, `/admin/board/flagged${qs({ page })}`),
+  adminResolveBoardPost: (postId, action) => post(XANO_ADMIN, `/admin/board/post/resolve`, { post_id: postId, action }),
+  adminCreateBoardChannel: (payload) => post(XANO_ADMIN, `/admin/board/channels`, payload),
+  adminUpdateBoardChannel: (channelId, payload) => put(XANO_ADMIN, `/admin/board/channels/${channelId}`, payload),
 
   /* ── Billing ──────────────────────────────────────────── */
   billingStatus: () => get(XANO_BILLING, '/billing/status'),

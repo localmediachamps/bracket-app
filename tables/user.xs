@@ -72,6 +72,18 @@ table user {
     // an account somehow exists without ever accepting, which shouldn't be
     // possible via the app's own signup flow.
     timestamp? terms_accepted_at?
+
+    // Message-board posting mute (2026-07-24) - deliberately scoped to ONLY
+    // blocking new board_post creation, checked in the two board-post-create
+    // endpoints, not a general account suspension. Everything else (leagues,
+    // drafts, brackets) is unaffected. Escalates via board_strike_count each
+    // time an admin confirms a flagged/reported post with the "strike"
+    // action: strike 1 = 7-day mute, strike 2 = 30-day mute, strike 3+ =
+    // permanent (see functions/board/apply_board_strike.xs).
+    // board_muted_permanently always wins over board_muted_until.
+    int board_strike_count?=0
+    timestamp? board_muted_until?
+    bool board_muted_permanently?=false
   }
 
   index = [

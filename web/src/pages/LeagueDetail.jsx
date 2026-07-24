@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle, ArrowRightLeft, Check, Crown, DoorOpen, Layers, LifeBuoy, ListChecks,
-  Play, RefreshCw, Shield, Swords, Trophy, Users, X,
+  MessageSquare, Play, RefreshCw, Shield, Swords, Trophy, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast, useAuthStore } from '../lib/store'
@@ -333,6 +333,11 @@ export default function LeagueDetail() {
               <Link to={`/leagues/${id}/trades`}>
                 <Button variant="secondary" className="w-full">
                   <ArrowRightLeft size={16} /> Trades
+                </Button>
+              </Link>
+              <Link to={`/leagues/${id}/board`}>
+                <Button variant="secondary" className="w-full">
+                  <MessageSquare size={16} /> Message board
                 </Button>
               </Link>
               <Link to={`/leagues/${id}/draft`}>

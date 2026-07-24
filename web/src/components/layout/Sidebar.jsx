@@ -4,6 +4,7 @@ import {
   Bell, Trophy, Users, LayoutDashboard, LogOut, Shield, User as UserIcon,
   ScrollText, Swords, Crown, GraduationCap, CalendarRange, CalendarDays, LifeBuoy,
   ChevronLeft, ChevronRight, ChevronsUpDown, Star, CreditCard, UserRound, ListOrdered,
+  MessageSquare,
 } from 'lucide-react'
 import { useAuthStore } from '../../lib/store'
 import { Avatar } from '../ui'
@@ -17,6 +18,7 @@ export const SIDEBAR_NAV = [
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/groups', label: 'Groups', icon: Users, auth: true },
   { to: '/leagues', label: 'Leagues', icon: CalendarRange, auth: true },
+  { to: '/community', label: 'Community', icon: MessageSquare, auth: true },
   { to: '/rankings', label: 'Rankings', icon: ListOrdered },
   { to: '/teams', label: 'Teams', icon: GraduationCap },
   { to: '/wrestlers', label: 'Wrestlers', icon: UserRound },
