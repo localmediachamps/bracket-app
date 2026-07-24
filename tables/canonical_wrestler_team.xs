@@ -37,6 +37,16 @@ table canonical_wrestler_team {
     // despite fewer total matches than a senior teammate who wrestled more
     // non-conference tournaments).
     bool? is_starter_override?
+
+    // Cached result of the same heuristic (most matches this season at this
+    // weight, overridden by is_starter_override when set) - refreshed by
+    // tasks/compute_starter_tags.xs. Stored rather than computed live on
+    // every read because several list views (waiver wire, trade research)
+    // need "is this wrestler a starter" for hundreds of wrestlers across
+    // dozens of teams at once, where recomputing per-team live (as
+    // results/teams/{id} still does for its single-team detail view) would
+    // mean redoing every team's full match-history scan on every page load.
+    bool? is_starter?
   }
 
   index = [

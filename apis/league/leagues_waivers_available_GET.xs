@@ -21,6 +21,16 @@ query "leagues/waivers/available" verb=GET {
     int? weight_class?
     int? team_id?
     text? q? filters=trim|max:100
+
+    // Defaults to true - most teams only ever start one wrestler per weight,
+    // so showing every backup/redshirt on every roster by default buried the
+    // wrestlers actually worth claiming under hundreds of irrelevant ones.
+    // Pass false to see the full undrafted pool (bench guys, injury fill-ins,
+    // etc.) via an explicit "show all wrestlers" toggle.
+    bool? starters_only?=true
+
+    // weight (ascending) | name (a-z) | school (a-z, then weight)
+    text? sort_by?=weight filters=trim|lower
   }
 
   stack {
@@ -87,10 +97,42 @@ query "leagues/waivers/available" verb=GET {
       value = {}
     }
 
+    // is_starter is a stored field (see canonical_wrestler_team.xs), kept
+    // fresh by tasks/compute_starter_tags.xs - reading it here is a plain
+    // map lookup, not a live per-team recomputation, so this stays cheap
+    // even across the hundreds of teams a league-wide waiver pool spans.
+    var $starter_map {
+      value = {}
+    }
+
     foreach ($season_roster_rows.items) {
       each as $sr {
+        var $sr_key {
+          value = ($sr.canonical_wrestler_id|to_text)
+        }
+
         var.update $season_roster_map {
-          value = $season_roster_map|set:($sr.canonical_wrestler_id|to_text):true
+          value = $season_roster_map|set:$sr_key:true
+        }
+
+        var.update $starter_map {
+          value = $starter_map|set:$sr_key:($sr.is_starter == true)
+        }
+      }
+    }
+
+    db.query canonical_team {
+      return = {type: "list", paging: {page: 1, per_page: 50000}}
+    } as $all_teams
+
+    var $team_name_map {
+      value = {}
+    }
+
+    foreach ($all_teams.items) {
+      each as $tm {
+        var.update $team_name_map {
+          value = $team_name_map|set:($tm.id|to_text):$tm.name
         }
       }
     }
@@ -132,8 +174,20 @@ query "leagues/waivers/available" verb=GET {
           value = ($candidate.id|to_text)
         }
 
+        var $passes_starter_filter {
+          value = true
+        }
+
         conditional {
-          if (($rostered_map|has:$candidate_key) == false && ($season_roster_map|has:$candidate_key)) {
+          if ($input.starters_only == true) {
+            var.update $passes_starter_filter {
+              value = ($starter_map|get:$candidate_key:false)
+            }
+          }
+        }
+
+        conditional {
+          if (($rostered_map|has:$candidate_key) == false && ($season_roster_map|has:$candidate_key) && $passes_starter_filter) {
             array.push $available_all {
               value = $candidate
             }
@@ -142,8 +196,51 @@ query "leagues/waivers/available" verb=GET {
       }
     }
 
+    // Default DB sort above (display_name asc) already covers sort_by=name -
+    // only weight and school need a re-sort here.
+    var $sorted_all {
+      value = $available_all
+    }
+
+    conditional {
+      if ($input.sort_by == "weight") {
+        var.update $sorted_all {
+          value = $available_all|sort:"current_weight_class":"text"
+        }
+      }
+      elseif ($input.sort_by == "school") {
+        // Sort by the secondary key (weight) FIRST, then the primary key
+        // (school) - |sort is stable, so weight order survives within each
+        // school group only if it's already in place before the school sort
+        // runs, not after.
+        var $weight_first {
+          value = $available_all|sort:"current_weight_class":"text"
+        }
+
+        var $with_team_name {
+          value = []
+        }
+
+        foreach ($weight_first) {
+          each as $ca {
+            var $ca_team_name {
+              value = $team_name_map|get:($ca.current_team_id|to_text):""
+            }
+
+            array.push $with_team_name {
+              value = ($ca|set:"_sort_team_name":$ca_team_name)
+            }
+          }
+        }
+
+        var.update $sorted_all {
+          value = $with_team_name|sort:"_sort_team_name":"text"
+        }
+      }
+    }
+
     var $total_count {
-      value = ($available_all|count)
+      value = ($sorted_all|count)
     }
 
     var $offset {
@@ -151,7 +248,7 @@ query "leagues/waivers/available" verb=GET {
     }
 
     var $available_page {
-      value = ($available_all|slice:$offset:$input.per_page)
+      value = ($sorted_all|slice:$offset:$input.per_page)
     }
 
     // Enrich just this page (not the whole undrafted pool) with the same

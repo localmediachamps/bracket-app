@@ -2,13 +2,19 @@ import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Search, Users } from 'lucide-react'
 import { api } from '../lib/api'
 import { toast } from '../lib/store'
 import { Button, Card, Input, Modal, Select, Skeleton } from '../components/ui'
 import CompetitionCard from '../components/wrestlers/CompetitionCard'
 
 const WEIGHTS = ['125', '133', '141', '149', '157', '165', '174', '184', '197', '285']
+
+const SORT_OPTIONS = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'school', label: 'School' },
+]
 
 export default function LeagueWaivers() {
   const { id } = useParams()
@@ -18,6 +24,8 @@ export default function LeagueWaivers() {
   const [teamId, setTeamId] = useState('')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [showAll, setShowAll] = useState(false)
+  const [sortBy, setSortBy] = useState('weight')
   const [claimTarget, setClaimTarget] = useState(null)
   const [dropSlotId, setDropSlotId] = useState('')
 
@@ -28,16 +36,18 @@ export default function LeagueWaivers() {
 
   useEffect(() => {
     setPage(1)
-  }, [weightClass, teamId, debouncedSearch])
+  }, [weightClass, teamId, debouncedSearch, showAll, sortBy])
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['waivers-available', id, page, weightClass, teamId, debouncedSearch],
+    queryKey: ['waivers-available', id, page, weightClass, teamId, debouncedSearch, showAll, sortBy],
     queryFn: () =>
       api.waiversAvailable(id, {
         page,
         weight_class: weightClass || undefined,
         team_id: teamId || undefined,
         q: debouncedSearch || undefined,
+        starters_only: !showAll,
+        sort_by: sortBy,
       }),
   })
 
@@ -86,7 +96,7 @@ export default function LeagueWaivers() {
       </h1>
       <p className="text-sm text-ink-500">Claims resolve instantly, first-come — pick who you're dropping to make room.</p>
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_180px_220px]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_150px_180px_150px]">
         <div className="relative">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search wrestlers…" className="pl-8" />
@@ -107,6 +117,24 @@ export default function LeagueWaivers() {
             </option>
           ))}
         </Select>
+        <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          {SORT_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              Sort: {s.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-mat-700 bg-mat-850/50 px-4 py-2.5">
+        <p className="text-xs text-ink-500">
+          {showAll
+            ? "Showing every unrostered wrestler, including backups and bench guys."
+            : "Showing likely starters only — the wrestler most teams actually send out at each weight."}
+        </p>
+        <Button variant="secondary" size="sm" onClick={() => setShowAll((v) => !v)}>
+          <Users size={14} /> {showAll ? 'Starters only' : 'Show all wrestlers'}
+        </Button>
       </div>
 
       {isLoading ? (
