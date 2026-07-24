@@ -8,6 +8,7 @@ import { toast } from '../lib/store'
 import { Badge, Button, Card, Input, Select, Skeleton, Textarea } from '../components/ui'
 import InviteMemberBox from '../components/league/InviteMemberBox'
 import WeeksPanel from '../components/league/WeeksPanel'
+import ScoringConfigPanel from '../components/league/ScoringConfigPanel'
 import { cn } from '../lib/utils'
 
 const rise = {
@@ -41,6 +42,11 @@ export default function LeagueSettings() {
   const { data, isLoading } = useQuery({
     queryKey: ['league', id],
     queryFn: () => api.league(id),
+  })
+
+  const { data: scoringDefaults } = useQuery({
+    queryKey: ['league-scoring-defaults'],
+    queryFn: () => api.leagueScoringDefaults(),
   })
 
   const league = data?.league
@@ -219,6 +225,21 @@ export default function LeagueSettings() {
               <Save size={15} /> Save roster configuration
             </Button>
           )}
+        </SettingCard>
+      </motion.div>
+
+      <motion.div variants={rise}>
+        <SettingCard
+          title="Scoring configuration"
+          description="How fantasy points get calculated every week, across every week type. These apply on top of the per-week placement points below - a wrestler's own match results always feed the same season-long points ledger."
+        >
+          <ScoringConfigPanel
+            leagueId={id}
+            scoringConfig={league?.scoring_config}
+            defaults={scoringDefaults}
+            isCommissioner={isCommissioner}
+            draftHasStarted={draftHasStarted}
+          />
         </SettingCard>
       </motion.div>
 

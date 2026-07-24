@@ -203,6 +203,7 @@ export const api = {
   draftPool: (leagueId, q, page, seasonWeekId) => get(XANO_LEAGUE, `/leagues/draft/pool${qs({ league_id: leagueId, q, page, season_week_id: seasonWeekId })}`),
   leagueWeightClasses: (leagueId) => get(XANO_LEAGUE, `/leagues/weight-classes${qs({ league_id: leagueId })}`),
   leagueWeeks: (leagueId) => get(XANO_LEAGUE, `/leagues/weeks${qs({ league_id: leagueId })}`),
+  leagueScoringDefaults: () => get(XANO_LEAGUE, `/leagues/scoring/defaults`),
   configureWeek: (leagueId, seasonWeekId, tournamentGameMode, linkedTournamentId) =>
     put(XANO_LEAGUE, `/leagues/week/config`, {
       league_id: leagueId,
